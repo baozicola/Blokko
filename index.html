@@ -1,0 +1,2082 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>自介生成器 (v1.0.3)</title>
+    
+    <script>
+        // Anti-FOUC (Flash of Unstyled Content) Script
+        try {
+            if (localStorage.getItem('genV75Theme') === 'dark') {
+                document.documentElement.classList.add('dark-mode');
+            }
+        } catch (e) {
+            console.error('Failed to apply theme from localStorage', e);
+        }
+    </script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" />
+
+    <style>
+        /* CSS 变量 */
+        :root {
+            --bg-editor: #ffffff; --bg-preview-pane: #f0f2f5; --bg-preview-page: #ffffff;
+            --bg-card: #ffffff; --bg-input: #f9f9f9; --bg-section: #fdfdfd;
+            --bg-modal-overlay: rgba(0, 0, 0, 0.6); --bg-inset: #f0f2f5;
+            --bg-image-thumb: #eeeeee; --bg-image-upload-hover: #eef5ff;
+            --text-primary: #1a1a1a; --text-secondary: #555555; --text-label: #333333;
+            --text-placeholder: #999; --text-on-primary: #ffffff; --text-action: #007AFF;
+            --border-color: #e8e8e8; --border-input: #d1d5db; --border-dashed: #cccccc;
+            --shadow-light: rgba(0, 0, 0, 0.05); --shadow-medium: rgba(0, 0, 0, 0.08);
+            --preset-text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+            --color-primary: #007AFF; --color-primary-hover: #0056CC; --color-danger: #ff4757;
+            --color-danger-hover: #e03c48; --color-secondary: #8e8e93; --color-secondary-hover: #636366;
+            --header-height: 55px; --transition-speed: 0.3s; --transition-short: 0.2s;
+            /* Global Card Styles */
+            --g-card-bg-color: var(--bg-card); --g-card-text-color: var(--text-primary); --g-card-opacity: 1;
+            --g-card-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            --g-card-border-radius: 12px; --g-card-text-align: left;
+            --g-card-line-height: 1.5; --g-card-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            --g-card-font-size: 1rem;
+            --g-card-text-stroke: 0px transparent;
+            /* Active Card Styles */
+            --active-card-shadow: var(--g-card-shadow); --active-card-border: none;
+            --active-card-text-shadow: none; --active-card-font-family: var(--g-card-font-family);
+            --active-card-font-size: var(--g-card-font-size); --tag-bg-color: #eef1f5; --tag-text-color: #3c3c43;
+        }
+        html.dark-mode {
+            --bg-editor: #1f2229; --bg-preview-pane: #121417; --bg-preview-page: #1f2229;
+            --bg-card: #2c303a; --bg-input: #2c303a; --bg-section: #252830;
+            --bg-modal-overlay: rgba(0, 0, 0, 0.7); --bg-inset: #2c2c2e;
+            --bg-image-thumb: #3e4451; --bg-image-upload-hover: #2c3e50;
+            --text-primary: #f0f2f5; --text-secondary: #a0aec0; --text-label: #e2e8f0;
+            --text-placeholder: #777; --text-on-primary: #ffffff; --text-action: #3498db;
+            --border-color: #3e4451; --border-input: #4a5160; --border-dashed: #555;
+            --shadow-light: rgba(0, 0, 0, 0.2); --shadow-medium: rgba(0, 0, 0, 0.3);
+            --preset-text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+            --g-card-bg-color: var(--bg-card); --g-card-text-color: var(--text-primary);
+            --g-card-shadow: 0 4px 12px rgba(0,0,0,0.25);
+        }
+        * { box-sizing: border-box; }
+        html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; }
+        body { font-family: var(--g-card-font-family, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif); background-color: var(--bg-preview-pane); color: var(--text-primary); transition: background-color var(--transition-speed) ease, color var(--transition-speed) ease; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+        .app-header { width: 100%; height: var(--header-height); background: var(--bg-editor); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; position: fixed; top: 0; left: 0; z-index: 100; box-shadow: 0 2px 8px var(--shadow-light); transition: background-color var(--transition-speed) ease, border-color var(--transition-speed) ease; }
+        .app-header-title { font-size: 1.25rem; font-weight: 700; }
+        .theme-switch-wrapper { display: flex; align-items: center; gap: 10px; }
+        .theme-switch-wrapper span { font-size: 0.9rem; color: var(--text-secondary); }
+        .app-container { display: flex; height: 100vh; padding-top: var(--header-height); }
+        .editor-panel { width: 520px; min-width: 450px; max-width: 70vw; height: calc(100vh - var(--header-height)); overflow-y: auto; background: var(--bg-editor); border-right: 1px solid var(--border-color); padding: 25px; transition: background-color var(--transition-speed) ease, border-color var(--transition-speed) ease; flex-shrink: 0; }
+        .resizer { width: 5px; height: calc(100vh - var(--header-height)); background: var(--border-color); cursor: col-resize; z-index: 50; flex-shrink: 0;}
+        .resizer:hover { background: var(--color-primary); }
+        .preview-panel { flex-grow: 1; height: calc(100vh - var(--header-height)); overflow-y: auto; display: flex; justify-content: center; padding: 40px 20px; background: var(--bg-preview-pane); transition: background-color var(--transition-speed) ease; }
+        .preview-wrapper { width: 100%; max-width: 600px; min-height: fit-content; background-color: var(--bg-preview-page); border-radius: 20px; box-shadow: 0 4px 16px var(--shadow-medium); padding: 20px; padding-bottom: 40px; transition: all var(--transition-speed) ease; background-size: cover; background-position: center; position: relative; overflow: hidden; font-family: var(--active-card-font-family); font-size: var(--active-card-font-size); }
+        .preview-wrapper::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 0; background-size: cover; background-position: center; background-image: var(--page-bg-image); transition: filter var(--transition-speed) ease; }
+        .preview-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; border-radius: 20px; background-color: var(--page-overlay-color, #FFF); opacity: var(--page-overlay-opacity, 0.5); z-index: 1; pointer-events: none; transition: opacity var(--transition-speed) ease, background-color var(--transition-speed) ease; }
+        .preview-header, .preview-blocks-container { position: relative; z-index: 2; word-wrap: break-word; overflow-wrap: break-word; width: 100%; box-sizing: border-box; }
+        [data-state-key]:hover, [data-card-key]:hover, .tag-pill:hover { outline: 1px dashed var(--color-primary); cursor: text; }
+        [contenteditable="true"] { outline: 2px solid var(--color-primary); box-shadow: 0 0 8px rgba(0, 122, 255, 0.5); background-color: rgba(0, 122, 255, 0.1); border-radius: 4px; }
+        .btn { display: inline-block; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; transition: background-color var(--transition-short) ease, transform var(--transition-short) ease, box-shadow var(--transition-short) ease; text-align: center; width: 100%; color: var(--text-on-primary); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .btn-primary { background: var(--color-primary); } .btn-primary:hover:not(:disabled) { background: var(--color-primary-hover); box-shadow: 0 4px 8px rgba(0,122,255,0.3); }
+        .btn-secondary { background: var(--color-secondary); } .btn-secondary:hover:not(:disabled) { background: var(--color-secondary-hover); box-shadow: 0 4px 8px rgba(142,142,147,0.3); }
+        .btn-danger { background: var(--color-danger); } .btn-danger:hover:not(:disabled) { background: var(--color-danger-hover); box-shadow: 0 4px 8px rgba(255,71,87,0.3); }
+        .btn-default { background-color: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-secondary); } .btn-default:hover:not(:disabled) { background-color: var(--border-color); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .btn:active:not(:disabled) { transform: scale(0.98); } .btn:disabled { background: #999; cursor: not-allowed; opacity: 0.6; }
+        .btn-small { padding: 6px 10px; font-size: 0.9rem; }
+        .btn-icon { width: auto; padding: 6px 10px; font-size: 0.9rem; }
+        .editor-section { width: 100%; background: var(--bg-section); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; margin-bottom: 25px; transition: background-color var(--transition-speed) ease, border-color var(--transition-speed) ease; box-shadow: 0 2px 8px var(--shadow-light); }
+        .editor-section legend { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid var(--border-color); width: 100%; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .editor-section legend::after { content: " ▼"; font-size: 0.8rem; }
+        .editor-section.collapsed legend::after { content: " ▶"; }
+        .editor-section.collapsed .section-content { display: none; }
+        .section-content { padding-top: 15px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-size: 0.9rem; font-weight: 600; color: var(--text-label); margin-bottom: 8px; }
+        .form-group input[type="text"], .form-group input[type="number"], .form-group input[type="file"], .form-group select, .form-group textarea { width: 100%; padding: 10px; font-size: 14px; background: var(--bg-input); border: 1px solid var(--border-input); border-radius: 6px; color: var(--text-primary); transition: all var(--transition-short) ease; max-width: 100%; overflow-wrap: break-word; }
+        .form-group input[type="text"]:focus, .form-group input[type="number"]:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.2); }
+        .form-group textarea { min-height: 80px; resize: vertical; }
+        .input-group { display: flex; align-items: center; gap: 0; border: 1px solid var(--border-input); border-radius: 6px; overflow: hidden;}
+        .input-group:focus-within { border-color: var(--color-primary); box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.2); }
+        .input-group.simple { border: none; border-radius: 0; gap: 10px; } .input-group.simple:focus-within { box-shadow: none; }
+        .input-group input[type="color"] { flex-shrink: 0; width: 40px; height: 38px; border: none; background: transparent; cursor: pointer; }
+        .input-group input[type="text"].color-hex-input { flex-grow: 1; border: none; border-left: 1px solid var(--border-input); border-radius: 0; padding-left: 10px; background-color: var(--bg-input); color: var(--text-primary); }
+        .input-group input[type="text"].color-hex-input:focus { outline: none; box-shadow: none; }
+        .input-group input[type="range"] { flex-grow: 1; height: 20px; cursor: pointer; min-width: 100px; }
+        .radio-group { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; background: var(--bg-input); border: 1px solid var(--border-input); border-radius: 6px; padding: 10px; }
+        .radio-group label { margin: 0; font-weight: normal; display: flex; align-items: center; gap: 4px; cursor: pointer; font-size: 0.9rem; }
+        .color-control-row { display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-start; min-width: 0; }
+        .color-control-group { flex: 1; min-width: 150px; }
+        .checkbox-group { display: flex; align-items: center; gap: 8px; font-weight: normal; cursor: pointer; }
+        .checkbox-group label { display: flex; align-items: center; gap: 8px; font-weight: normal; cursor: pointer; margin: 0; }
+        .checkbox-group input[type="checkbox"] { width: auto; height: auto; }
+        hr.separator { border: none; border-top: 1px solid var(--border-color); margin: 20px 0; }
+        .tabs { display: flex; border-bottom: 1px solid var(--border-color); margin-bottom: 15px; }
+        .tab-btn { padding: 8px 12px; cursor: pointer; border: none; background: none; color: var(--text-secondary); font-weight: 600; border-bottom: 2px solid transparent; }
+        .tab-btn.active { color: var(--text-primary); border-bottom-color: var(--color-primary); }
+        .tab-content { display: none; } .tab-content.active { display: block; }
+        .gradient-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .preview-header { padding: 30px 15px; text-align: center; border-radius: 16px; transition: all var(--transition-speed) ease; overflow-wrap: break-word; }
+        #preview-avatar { width: 90px; height: 90px; border: 4px solid var(--bg-preview-page); box-shadow: 0 4px 12px var(--shadow-light); object-fit: cover; background-color: #fff; transition: all var(--transition-speed) ease; }
+        #preview-nickname { margin: 12px 0 5px; font-size: 1.6rem; font-weight: 700; color: var(--text-primary); transition: color var(--transition-speed) ease; }
+        #preview-subtitle { margin: 0 0 8px; font-size: 1rem; font-weight: 400; color: var(--text-primary); opacity: 0.7; transition: color var(--transition-speed) ease, margin var(--transition-speed) ease; }
+        #preview-bio { margin: 0; font-size: 0.9rem; line-height: 1.4; color: var(--text-primary); opacity: 0.8; transition: color var(--transition-speed) ease; white-space: pre-wrap; }
+        #preview-subtitle:empty, #preview-bio:empty { display: none; }
+        .tags-container { margin-top: 15px; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+        .tag-pill { display: inline-block; padding: 4px 12px; font-size: 0.8rem; font-weight: 600; border-radius: 16px; background-color: var(--tag-bg-color, var(--bg-input)); color: var(--tag-text-color, var(--text-primary)); transition: all var(--transition-speed) ease; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        #editor-blocks-list .empty-placeholder { text-align: center; padding: 20px; color: var(--text-placeholder); font-style: italic; }
+        .editor-block { background: var(--bg-editor); border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 15px; box-shadow: 0 2px 4px var(--shadow-light); transition: all var(--transition-speed) ease; opacity: 1; transform: scale(1); }
+        .sortable-ghost { background: var(--bg-image-upload-hover) !important; border: 2px dashed var(--color-primary); box-shadow: none !important; opacity: 0.8 !important; }
+        .editor-block.sortable-chosen { box-shadow: 0 4px 12px var(--shadow-medium); transform: scale(1.02); }
+        .editor-block.adding { animation: fadeInScale 0.3s ease forwards; }
+        .editor-block.removing { animation: fadeOutScale 0.3s ease forwards; }
+        .editor-block-header { display: flex; align-items: center; padding: 0 10px; background: var(--bg-section); border-bottom: 1px solid var(--border-color); border-radius: 8px 8px 0 0; }
+        .block-drag-handle { font-size: 1.5rem; color: var(--text-placeholder); padding: 10px; cursor: grab; flex-shrink: 0; }
+        .block-drag-handle:active { cursor: grabbing; }
+        .editor-block-title-input { font-weight: 600; color: var(--text-primary); margin: 0; flex-grow: 1; padding: 10px; border: 1px solid transparent; background: transparent; font-size: 1em; min-width: 0; overflow-wrap: break-word; border-radius: 4px; }
+        .editor-block-title-input:hover { border-color: var(--border-input); }
+        .editor-block-title-input:focus { outline: 1px solid var(--color-primary); background: var(--bg-input); border-color: var(--color-primary); }
+        .block-actions { display: flex; align-items: center; gap: 5px; margin-left: auto; flex-shrink: 0; }
+        .up-down-btns { display: flex; gap: 2px; }
+        .up-down-btns button { font-size: 1rem; width: 28px; height: 28px; padding: 0; line-height: 28px; }
+        .block-settings { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding-left: 10px; flex-shrink: 0; }
+        .block-settings label { font-size: 0.9rem; margin: 0; color: var(--text-secondary); cursor: pointer; }
+        .block-delete-btn { width: auto; padding: 6px 10px; font-size: 0.9rem; flex-shrink: 0; }
+        .editor-block-content { padding: 15px; }
+        .card-editors-list .empty-placeholder { text-align: center; padding: 15px; color: var(--text-placeholder); font-size: 0.9rem; }
+        .editor-card { background: var(--bg-section); border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 15px; position: relative; padding-left: 40px; opacity: 1; transform: scale(1); }
+        .editor-card.sortable-chosen { box-shadow: 0 3px 8px var(--shadow-medium); transform: scale(1.01); }
+        .editor-card.adding { animation: fadeInScale 0.3s ease forwards; }
+        .editor-card.removing { animation: fadeOutScale 0.3s ease forwards; }
+        .card-drag-handle { position: absolute; top: 0; left: 0; bottom: 0; width: 40px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; color: var(--text-placeholder); cursor: grab; border-right: 1px solid var(--border-color); }
+        .card-drag-handle:active { cursor: grabbing; }
+        .editor-card-header { display: flex; justify-content: flex-end; padding: 8px 10px; border-bottom: 1px solid var(--border-color); }
+        .card-delete-btn { width: auto; padding: 4px 8px; font-size: 0.8rem; }
+        .editor-card-content { padding: 15px; }
+        .card-bg-control { display: flex; align-items: center; gap: 10px; }
+        .card-bg-control input[type="file"] { flex-grow: 1; }
+        .card-overlay-controls { border: 1px solid var(--border-input); border-radius: 6px; padding: 10px; margin-top: 10px; background: var(--bg-input); }
+        .card-style-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; }
+        .image-upload-area { background: var(--bg-input); border: 2px dashed var(--border-dashed); border-radius: 8px; padding: 25px; text-align: center; cursor: pointer; color: var(--text-secondary); margin-bottom: 15px; transition: all var(--transition-short) ease; }
+        .image-upload-area:hover { border-color: var(--color-primary); background: var(--bg-image-upload-hover); color: var(--text-action); }
+        .image-thumbnails-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 10px; }
+        .thumbnail-item { display: flex; flex-direction: column; gap: 5px; }
+        .thumbnail-wrapper { position: relative; width: 100%; padding-top: 100%; background: var(--bg-image-thumb); border-radius: 6px; overflow: hidden; transition: all var(--transition-short) ease; }
+        .thumbnail-wrapper img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; transition: transform var(--transition-short) ease; }
+        .thumbnail-wrapper:hover { transform: scale(1.05); box-shadow: 0 4px 12px var(--shadow-medium); }
+        .thumbnail-wrapper:hover img { transform: scale(1.05); }
+        .thumbnail-actions { position: absolute; top: 3px; right: 3px; display: flex; gap: 4px; opacity: 0; transition: opacity var(--transition-short) ease; }
+        .thumbnail-wrapper:hover .thumbnail-actions { opacity: 1; }
+        .thumbnail-actions .btn { width: 24px; height: 24px; padding: 0; font-size: 0.8rem; line-height: 24px; border-radius: 50%; background: rgba(0,0,0,0.6); color: white; border: none; }
+        .thumbnail-actions .btn:hover { background: rgba(0,0,0,0.8); }
+        .thumbnail-item input[type="text"], .thumbnail-item textarea { font-size: 0.8rem; padding: 4px 6px; background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-primary); border-radius: 4px; }
+        .thumbnail-item textarea { resize: none; height: 40px; }
+        .preview-blocks-container { margin-top: 20px; display: flex; flex-direction: column; gap: 20px; width: 100%; box-sizing: border-box; }
+        #preview-blocks-container .empty-placeholder { text-align: center; padding: 50px 0; color: var(--text-placeholder); }
+        .preview-block-wrapper.sortable-drag { opacity: 1 !important; }
+        .preview-block-wrapper { cursor: grab; } .preview-block-wrapper:active { cursor: grabbing; }
+        .preview-cards-single { display: flex; flex-direction: column; gap: 15px; width: 100%; }
+        .preview-cards-dual { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; width: 100%; }
+        .preview-card { box-sizing: border-box; width: 100%; view-transition-name: var(--card-transition-name); }
+        .preview-card-inner { width: 100%; height: 100%; box-sizing: border-box; position: relative; overflow: hidden; color: var(--card-text-color, var(--g-card-text-color)); border-radius: var(--g-card-border-radius); box-shadow: var(--active-card-shadow, none); border: var(--active-card-border, none); font-weight: var(--card-font-weight, normal); text-shadow: var(--active-card-text-shadow, none); padding: 15px; word-wrap: break-word; transition: all var(--transition-short) ease, transform var(--transition-short) ease; -webkit-text-stroke: var(--g-card-text-stroke); line-height: var(--g-card-line-height); }
+        .preview-card-inner::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 0; background-size: cover; background-position: center; border-radius: inherit; background: var(--card-bg-final); transition: background var(--transition-speed) ease; }
+        .preview-card-inner::after { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--card-overlay-color, transparent); opacity: var(--card-overlay-opacity, 0); border-radius: inherit; z-index: 1; pointer-events: none; transition: all var(--transition-short) ease; }
+        .preview-card:hover .preview-card-inner { transform: scale(1.02); box-shadow: 0 6px 16px var(--shadow-medium); }
+        .preview-card.adding .preview-card-inner { animation: fadeInScale 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); }
+        .preview-card.removing .preview-card-inner { animation: fadeOutScale 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); }
+        .preview-card-title, .preview-card-content { position: relative; z-index: 2; margin: 0; word-wrap: break-word; overflow-wrap: break-word; color: inherit; }
+        .preview-card-title { font-size: 1.1em; font-weight: inherit; margin-bottom: 8px; }
+        .preview-card-content { font-size: 0.95em; line-height: inherit; white-space: pre-wrap; }
+        .image-gallery { display: grid; gap: 15px; padding: 15px; border-radius: var(--g-card-border-radius); box-shadow: var(--active-card-shadow, none); border: var(--active-card-border, none); overflow: hidden; position: relative; background: var(--image-block-bg, var(--bg-card)); transition: all var(--transition-speed) ease; width: 100%; box-sizing: border-box; }
+        .image-gallery.layout-1 { grid-template-columns: 1fr; }
+        .image-gallery.layout-2 { grid-template-columns: 1fr 1fr; gap: 10px; }
+        .image-gallery.layout-3 { grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+        .image-gallery figure { margin: 0; position: relative; z-index: 1; display: flex; flex-direction: column; transition: transform 0.3s ease; }
+        .image-gallery img { width: 100%; display: block; border-radius: 8px; height: auto; max-width: 100%; transition: transform 0.3s ease; }
+        .image-gallery img:hover { transform: scale(1.05); }
+        .image-gallery figcaption { text-align: center; margin-top: 8px; font-size: 0.85rem; color: var(--text-secondary); overflow-wrap: break-word; }
+        .image-gallery figcaption strong { display: block; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+        .separator-preview { display: flex; align-items: center; justify-content: center; }
+        .separator-preview-line { flex-grow: 1; height: 1px; }
+        .font-controls { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; align-items: stretch; }
+        .font-controls select { width: 100%; }
+        .font-controls .buttons { display: flex; gap: 10px; }
+        .font-controls .buttons .btn { flex-grow: 1; padding: 8px 12px; font-size: 13px; width: auto; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-modal-overlay); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; visibility: hidden; transition: opacity var(--transition-speed) ease, visibility 0s var(--transition-speed) ease; backdrop-filter: blur(5px); pointer-events: none; }
+        .modal-overlay.visible { opacity: 1; visibility: visible; transition-delay: 0s; pointer-events: auto; }
+        .modal-container { background: var(--bg-editor); border-radius: 16px; box-shadow: 0 10px 30px var(--shadow-medium); padding: 25px; width: 90%; max-width: 500px; border: 1px solid var(--border-color); transform: scale(0.95); opacity: 0; transition: all var(--transition-speed) ease; }
+        .modal-overlay.visible .modal-container { transform: scale(1); opacity: 1; }
+        .modal-container h3 { margin-top: 0; margin-bottom: 20px; font-size: 1.25rem; color: var(--text-primary); }
+        .cropper-img-container { width: 100%; height: 300px; margin-bottom: 20px; background: var(--bg-input); border-radius: 8px; overflow: hidden; }
+        .cropper-img-container img { max-width: 100%; }
+        .modal-actions { display: flex; gap: 15px; justify-content: flex-end; margin-top: 15px; }
+        .modal-actions .btn { width: auto; min-width: 100px; }
+        #download-modal-content { text-align: center; }
+        #download-modal-content img { max-width: 100%; max-height: 50vh; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 15px; }
+        #download-modal-content a { display: block; background: var(--color-primary); color: white; text-decoration: none; padding: 12px 20px; border-radius: 8px; font-size: 1rem; font-weight: 600; margin-bottom: 20px; transition: background-color var(--transition-short) ease; }
+        #download-modal-content a:hover { background-color: var(--color-primary-hover); }
+        .crop-ratios { margin-bottom: 15px; }
+        .crop-ratios label { margin-right: 10px; font-size: 0.9rem; cursor: pointer; }
+        .error-modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--bg-editor); color: var(--text-primary); padding: 25px; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.3); z-index: 2000; max-width: 90%; width: 450px; border: 1px solid var(--border-color); }
+        .error-modal h3 { color: var(--color-danger); margin-top: 0; }
+        .error-modal p { margin: 10px 0; font-size: 0.95rem; }
+        .error-modal .btn { margin-top: 15px; float: right; }
+        #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; font-size: 1.2rem; backdrop-filter: blur(5px); opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0s 0.3s; pointer-events: none; }
+        #loading-overlay.visible { opacity: 1; visibility: visible; transition-delay: 0s; pointer-events: auto; }
+        .spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid var(--color-primary); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px; }
+        .toast-notification-container { position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+        .toast-notification { background-color: var(--bg-card); color: var(--text-primary); padding: 12px 18px; border-radius: 8px; box-shadow: 0 4px 12px var(--shadow-medium); border: 1px solid var(--border-color); opacity: 0; transform: translateX(100%); animation: toast-in 0.5s forwards, toast-out 0.5s 4.5s forwards; font-size: 0.9rem; }
+        .toast-notification.success { border-left: 4px solid #2ecc71; }
+        .toast-notification.error { border-left: 4px solid var(--color-danger); }
+        .toast-notification.info { border-left: 4px solid var(--color-primary); }
+        @keyframes toast-in { to { opacity: 1; transform: translateX(0); } }
+        @keyframes toast-out { to { opacity: 0; transform: translateX(100%); } }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeInScale { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+        @keyframes fadeOutScale { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(0.8); } }
+        .preview-header, .image-gallery figure { animation: fadeIn 0.4s ease forwards; }
+        @media (max-width: 768px) { .app-container { flex-direction: column; } .editor-panel, .preview-panel { height: 50vh; width: 100%; max-width: 100%; } .resizer { display: none; } }
+    </style>
+</head>
+<body>
+
+    <header class="app-header">
+        <div class="app-header-title">自介生成器 (v1.0.3)</div>
+        <div class="theme-switch-wrapper">
+            <span id="theme-label">明亮模式</span>
+            <button id="theme-toggle-btn" class="btn btn-default" style="width: auto; padding: 6px 12px;">切换</button>
+        </div>
+    </header>
+
+    <div class="app-container">
+        <aside class="editor-panel" id="editor-panel">
+            <fieldset class="editor-section">
+                <legend>操作</legend>
+                <div class="section-content">
+                    <div class="form-group" style="display: flex; gap: 10px;"> <button id="undo-btn" class="btn btn-default" disabled>撤回</button> <button id="redo-btn" class="btn btn-default" disabled>重做</button> </div>
+                    <div class="form-group" style="display: flex; gap: 10px;"> <button id="import-btn" class="btn btn-secondary">导入配置</button> <button id="export-btn" class="btn btn-secondary">导出配置</button> </div>
+                    <div class="form-group">
+                        <div class="checkbox-group" style="margin-bottom: 10px;">
+                            <label><input type="checkbox" id="hd-export-toggle"> 超清导出</label>
+                            <span id="export-size-preview" style="font-size: 0.8rem; color: var(--text-secondary);"></span>
+                        </div>
+                        <button id="export-png-btn" class="btn btn-primary">导出为图片</button>
+                    </div>
+                    <div class="form-group">
+                        <label>预设主题:</label>
+                        <div class="input-group simple"> <button data-preset="light" class="btn btn-default btn-small">明亮</button> <button data-preset="dark" class="btn btn-default btn-small">暗黑</button> <button data-preset="mint" class="btn btn-default btn-small">薄荷</button> <button data-preset="coffee" class="btn btn-default btn-small">咖啡</button> </div>
+                    </div>
+                    <input type="file" id="config-file-input" accept=".json" style="display: none;">
+                </div>
+            </fieldset>
+
+            <fieldset class="editor-section" id="personal-info-section">
+                <legend>个人信息</legend>
+                <div class="section-content">
+                    <div class="form-group"><label>昵称:</label><input type="text" data-state-key="personalInfo.nickname" data-preview-target="#preview-nickname"></div>
+                    <div class="form-group"><label>昵称颜色:</label><div class="input-group"><input type="color" data-state-key="personalInfo.nicknameColor"><input type="text" class="color-hex-input" data-color-sync-key="personalInfo.nicknameColor"><button class="btn btn-default btn-small" data-reset-key="personalInfo.nicknameColor">重置</button></div></div>
+                    <div class="form-group"><label>副标题 (可选):</label><input type="text" data-state-key="personalInfo.subtitle" data-preview-target="#preview-subtitle"></div>
+                    <div class="form-group"><label>副标题颜色:</label><div class="input-group"><input type="color" data-state-key="personalInfo.subtitleColor"><input type="text" class="color-hex-input" data-color-sync-key="personalInfo.subtitleColor"><button class="btn btn-default btn-small" data-reset-key="personalInfo.subtitleColor">重置</button></div></div>
+                    <div class="form-group"><label>简介 (可选):</label><textarea data-state-key="personalInfo.bio" rows="3" data-preview-target="#preview-bio"></textarea></div>
+                    <div class="form-group"><label>简介颜色:</label><div class="input-group"><input type="color" data-state-key="personalInfo.bioColor"><input type="text" class="color-hex-input" data-color-sync-key="personalInfo.bioColor"><button class="btn btn-default btn-small" data-reset-key="personalInfo.bioColor">重置</button></div></div>
+                    <hr class="separator">
+                    <div class="form-group"><label>标签 (逗号分隔):</label><input type="text" data-state-key="personalInfo.tags"></div>
+                    <div class="form-group"><label>标签颜色:</label><div class="color-control-row"><div class="color-control-group"><label>背景</label><div class="input-group"><input type="color" data-state-key="personalInfo.tagBgColor"><input type="text" class="color-hex-input" data-color-sync-key="personalInfo.tagBgColor"><button class="btn btn-default btn-small" data-reset-key="personalInfo.tagBgColor">重置</button></div></div><div class="color-control-group"><label>文字</label><div class="input-group"><input type="color" data-state-key="personalInfo.tagTextColor"><input type="text" class="color-hex-input" data-color-sync-key="personalInfo.tagTextColor"><button class="btn btn-default btn-small" data-reset-key="personalInfo.tagTextColor">重置</button></div></div></div></div>
+                    <hr class="separator">
+                    <div class="form-group"><label>头像上传:</label><input type="file" id="avatar-upload" accept="image/*"></div>
+                    <div class="form-group"><label>头像形状:</label><div class="radio-group"><label><input type="radio" name="avatarShape" value="50%" data-state-key="personalInfo.avatarShape">圆形</label><label><input type="radio" name="avatarShape" value="16px" data-state-key="personalInfo.avatarShape">圆角</label><label><input type="radio" name="avatarShape" value="0px" data-state-key="personalInfo.avatarShape">方形</label></div></div>
+                    <div class="color-control-row"><div class="color-control-group"><label>头像边框(px):</label><input type="range" data-state-key="personalInfo.avatarBorderSize" min="0" max="10" step="1"></div><div class="color-control-group"><label>边框颜色:</label><div class="input-group"><input type="color" data-state-key="personalInfo.avatarBorderColor"><input type="text" class="color-hex-input" data-color-sync-key="personalInfo.avatarBorderColor"><button class="btn btn-default btn-small" data-reset-key="personalInfo.avatarBorderColor">重置</button></div></div></div>
+                </div>
+            </fieldset>
+
+            <fieldset class="editor-section collapsed" id="page-styles-section">
+                <legend>页面与头部样式</legend>
+                <div class="section-content">
+                    <div class="tabs"><button class="tab-btn" data-tab="page-bg-solid">纯色/图片</button><button class="tab-btn active" data-tab="page-bg-gradient">渐变</button></div>
+                    <div id="page-bg-solid" class="tab-content"><div class="form-group"><label>页面背景颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.pageBgSolidColor"><input type="text" class="color-hex-input" data-color-sync-key="pageStyles.pageBgSolidColor"></div></div><div class="form-group"><label>背景图 (可选):</label><div class="input-group simple"><input type="file" id="page-bg-upload" accept="image/*" style="width:100%"><button id="clear-page-bg-btn" class="btn btn-default btn-small">清除</button></div></div>
+                    <div id="page-image-controls" style="display:none;"><div class="form-group"><label>图片遮罩颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.pageOverlayColor"><input type="text" class="color-hex-input" data-color-sync-key="pageStyles.pageOverlayColor"></div></div><div class="form-group"><label>图片遮罩不透明度:</label><input type="range" data-state-key="pageStyles.pageOverlayOpacity" min="0" max="1" step="0.05"></div></div></div>
+                    <div id="page-bg-gradient" class="tab-content active"><div class="gradient-controls"><div class="form-group"><label>起始颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.pageBgGradientStart"><input type="text" class="color-hex-input" data-color-sync-key="pageStyles.pageBgGradientStart"></div></div><div class="form-group"><label>结束颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.pageBgGradientEnd"><input type="text" class="color-hex-input" data-color-sync-key="pageStyles.pageBgGradientEnd"></div></div></div></div>
+                    <hr class="separator">
+                    <div class="tabs"><button class="tab-btn" data-tab="header-bg-solid">纯色</button><button class="tab-btn active" data-tab="header-bg-gradient">渐变</button></div>
+                    <div id="header-bg-solid" class="tab-content"><div class="form-group"><label>头部背景颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.headerBgColor"><input type="text" class="color-hex-input" data-color-sync-key="pageStyles.headerBgColor"></div></div></div>
+                    <div id="header-bg-gradient" class="tab-content active"><div class="gradient-controls"><div class="form-group"><label>起始颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.headerBgGradientStart"><input type="text" class="color-hex-input" data-color-sync-key="pageStyles.headerBgGradientStart"></div></div><div class="form-group"><label>结束颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.headerBgGradientEnd"><input type="text" class="color-hex-input" data-color-sync-key="pageStyles.headerBgGradientEnd"></div></div></div></div>
+                    <div class="form-group"><label>头部文字颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.headerTextColor"><input type="text" class="color-hex-input" data-color-sync-key="pageStyles.headerTextColor"></div></div>
+                    <div class="form-group"><label>头部不透明度:</label><input type="range" data-state-key="pageStyles.headerOpacity" min="0" max="1" step="0.05"></div>
+                </div>
+            </fieldset>
+            
+            <fieldset class="editor-section collapsed" id="global-card-styles-section"> 
+                <legend>全局卡片样式</legend>
+                <div class="section-content">
+                    <div class="tabs"><button class="tab-btn active" data-tab="card-bg-solid">纯色</button><button class="tab-btn" data-tab="card-bg-gradient">渐变</button></div>
+                    <div id="card-bg-solid" class="tab-content active"><div class="color-control-row"><div class="color-control-group"><label>背景色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.bgColor"><input type="text" class="color-hex-input" data-color-sync-key="globalCardStyles.bgColor"></div></div><div class="color-control-group"><label>文字颜色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.textColor"><input type="text" class="color-hex-input" data-color-sync-key="globalCardStyles.textColor"></div></div></div></div>
+                    <div id="card-bg-gradient" class="tab-content"><div class="gradient-controls"><div class="form-group"><label>起始颜色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.bgGradientStart"><input type="text" class="color-hex-input" data-color-sync-key="globalCardStyles.bgGradientStart"></div></div><div class="form-group"><label>结束颜色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.bgGradientEnd"><input type="text" class="color-hex-input" data-color-sync-key="globalCardStyles.bgGradientEnd"></div></div></div></div>
+                    <div class="form-group"><label>不透明度:</label><input type="range" data-state-key="globalCardStyles.opacity" min="0" max="1" step="0.05"></div>
+                    <div class="form-group checkbox-group"><label><input type="checkbox" data-state-key="globalCardStyles.shadowEnabled"> 显示卡片阴影</label></div>
+                    <div class="form-group"><label>圆角 (px): <span id="gCardRadiusValue">12</span></label><input type="range" data-state-key="globalCardStyles.radius" min="0" max="40" step="1"></div>
+                    <div class="form-group"><label>对齐:</label><div class="radio-group"><label><input type="radio" name="gCardAlign" value="left" data-state-key="globalCardStyles.textAlign">居左</label><label><input type="radio" name="gCardAlign" value="center" data-state-key="globalCardStyles.textAlign">居中</label><label><input type="radio" name="gCardAlign" value="right" data-state-key="globalCardStyles.textAlign">居右</label></div></div>
+                    <div class="form-group"><label>行高:</label><div class="radio-group"><label><input type="radio" name="gCardLineHeight" value="1.4" data-state-key="globalCardStyles.lineHeight">紧凑</label><label><input type="radio" name="gCardLineHeight" value="1.5" data-state-key="globalCardStyles.lineHeight">中等</label><label><input type="radio" name="gCardLineHeight" value="1.6" data-state-key="globalCardStyles.lineHeight">宽松</label></div></div>
+                    <hr class="separator">
+                    <div class="form-group">
+                        <label>字体:</label>
+                        <div class="font-controls">
+                            <input type="text" id="font-search-input" placeholder="搜索本地字体..." style="margin-bottom: 5px;">
+                            <select id="font-family-select" data-state-key="globalCardStyles.fontFamily"></select>
+                            <div class="buttons">
+                                <button id="load-local-fonts-btn" class="btn btn-default">加载本地</button>
+                                <button id="upload-font-btn" class="btn btn-default">上传字体</button>
+                            </div>
+                            <input type="file" id="font-upload-input" accept=".ttf,.woff,.woff2,.otf" style="display: none;">
+                        </div>
+                    </div>
+                    <div class="form-group"> <label>字号:</label> <select data-state-key="globalCardStyles.fontSize"> <option value="0.9rem">小</option> <option value="1rem" selected>中 (默认)</option> <option value="1.1rem">大</option> </select> </div>
+                    <div class="color-control-row"><div class="color-control-group"><label>文字描边(px):</label><input type="range" data-state-key="globalCardStyles.textStrokeWidth" min="0" max="5" step="0.5"></div><div class="color-control-group"><label>描边颜色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.textStrokeColor"><input type="text" class="color-hex-input" data-color-sync-key="globalCardStyles.textStrokeColor"></div></div></div>
+                </div>
+            </fieldset>
+
+            <fieldset class="editor-section">
+                <legend>内容区块</legend>
+                <div class="section-content">
+                    <div id="editor-blocks-list"></div>
+                    <div class="form-group" style="display: flex; gap: 10px; margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 20px;">
+                        <button id="add-text-block-btn" class="btn btn-default">➕ 文本区块</button>
+                        <button id="add-image-block-btn" class="btn btn-default">🖼️ 图片区块</button>
+                        <button id="add-separator-block-btn" class="btn btn-default">〰️ 分隔线</button>
+                    </div>
+                </div>
+            </fieldset>
+        </aside>
+
+        <div class="resizer" id="resizer"></div>
+        <main class="preview-panel"> <div class="preview-wrapper" id="preview-wrapper"> <div class="preview-overlay" id="preview-overlay"></div> <header class="preview-header" id="preview-header"> <img id="preview-avatar" src="" alt="Avatar"> <h1 id="preview-nickname" data-state-key="personalInfo.nickname"></h1><h2 id="preview-subtitle" data-state-key="personalInfo.subtitle"></h2><p id="preview-bio" data-state-key="personalInfo.bio"></p> <div class="tags-container" id="preview-tags-container"></div> </header> <main class="preview-blocks-container" id="preview-blocks-container"></main> </div> </main>
+    </div>
+
+    <div class="modal-overlay" id="cropper-modal"><div class="modal-container"><h3 id="cropper-title">裁剪图片</h3><div class="crop-ratios radio-group"><label><input type="radio" name="crop-ratio" value="NaN" checked> 自由</label><label><input type="radio" name="crop-ratio" value="1"> 1:1</label><label><input type="radio" name="crop-ratio" value="1.3333"> 4:3</label><label><input type="radio" name="crop-ratio" value="1.7777"> 16:9</label></div><div class="cropper-img-container"><img id="cropper-image" src=""></div><div class="modal-actions"><button id="cropper-cancel-btn" class="btn btn-default">取消</button><button id="cropper-save-btn" class="btn btn-primary">确认</button></div></div></div>
+    <div class="modal-overlay" id="download-modal"><div class="modal-container"><h3 id="download-modal-title">下载已准备好</h3><div id="download-modal-content"></div><div class="modal-actions" style="justify-content: center;"><button id="download-modal-close-btn" class="btn btn-default">关闭</button></div></div></div>
+    
+    <div id="loading-overlay"><div class="spinner"></div><span id="loading-text">正在处理...</span></div>
+    <div class="toast-notification-container" id="toast-container"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
+
+    <script>
+        // === 全新自介生成器 (v1.0.3) ===
+        document.addEventListener('DOMContentLoaded', () => {
+            const App = {
+                state: {},
+                history: [],
+                historyIndex: -1,
+                isRestoringState: false,
+                isEditingText: false,
+                cropper: null,
+                currentCropTarget: null,
+                sortableBlocksEditor: null,
+                sortableBlocksPreview: null,
+                cardSortables: {},
+                imageSortables: {},
+                debouncedSaveToLocal: null,
+                localFonts: [],
+                uploadedFonts: [],
+                presets: {},
+
+                init() {
+                    console.log("App 初始化 v1.0.3 ...");
+                    this.elements = this.queryElements();
+                    this.presets = this.getPresets();
+                    this.state = this.getDefaultState();
+                    this.debouncedSaveToLocal = this.debounce(this.saveToLocal, 500);
+                    
+                    this.bindCoreEvents();
+                    this.bindEditorEvents();
+                    this.bindPreviewEvents();
+                    this.initResizer();
+                    
+                    this.loadPreferences();
+                    this.loadFromLocal();
+                    
+                    this.history = [this.deepClone(this.state)];
+                    this.historyIndex = 0;
+                    this.updateUndoRedoButtons();
+                    
+                    this.syncAllControls();
+                    this.renderAll(true); 
+                    this.populateFontList(); 
+                    this.initAllSortables();
+                    this.updateExportSizePreview();
+                    
+                    document.getElementById('personal-info-section').classList.remove('collapsed');
+                },
+
+                getDefaultState() {
+                    const lightTheme = this.getPresets().light;
+                    return {
+                        personalInfo: { 
+                            nickname: "你的昵称", nicknameColor: lightTheme.pNicknameColor,
+                            subtitle: "这是副标题，双击可编辑", subtitleColor: lightTheme.pSubtitleColor,
+                            bio: "这是简介，双击可编辑", bioColor: lightTheme.pBioColor,
+                            avatarDataUrl: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23cccccc'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E", 
+                            avatarShape: '50%', avatarBorderSize: 4, avatarBorderColor: '#ffffff',
+                            tags: "标签1, 标签2", tagBgColor: lightTheme.pTagBgColor, tagTextColor: lightTheme.pTagTextColor
+                        },
+                        pageStyles: {
+                            pageBgMode: 'gradient',
+                            pageBgSolidColor: lightTheme.pageBgSolidColor, pageBgImageDataUrl: null, 
+                            pageBgGradientStart: lightTheme.pageBgGradientStart, pageBgGradientEnd: lightTheme.pageBgGradientEnd,
+                            pageOverlayColor: "#000000", pageOverlayOpacity: 0.3,
+                            headerBgMode: 'gradient',
+                            headerBgColor: lightTheme.headerBgColor, headerTextColor: lightTheme.headerTextColor, headerOpacity: 1.0, 
+                            headerBgGradientStart: lightTheme.headerBgGradientStart, headerBgGradientEnd: lightTheme.headerBgGradientEnd,
+                        },
+                        blocks: [
+                            { id: this.generateId('b'), type: 'text', title: "单排卡片区块", settings: { layout: 'single' }, cards: [
+                                { id: this.generateId('c'), title: "这是单排卡片", content: "双击这里进行编辑", opacity: 1.0, followGlobalOpacity: true }
+                            ]},
+                            { id: this.generateId('b'), type: 'text', title: "双排卡片区块", settings: { layout: 'dual' }, cards: [
+                                { id: this.generateId('c'), title: "这是双排卡片 1", content: "双击这里进行编辑", opacity: 1.0, followGlobalOpacity: true },
+                                { id: this.generateId('c'), title: "这是双排卡片 2", content: "双击这里进行编辑", opacity: 1.0, followGlobalOpacity: true }
+                            ]},
+                            { id: this.generateId('b'), type: 'separator', title: "分割线", settings: { style: 'solid', color: '#dddddd', thickness: 1, margin: 20 }},
+                            { id: this.generateId('b'), type: 'image', title: "图片区块", settings: { layout: '2', useGlobalStyle: true, followGlobalOpacity: true, bgOpacity: 1.0 }, images: [] }
+                        ],
+                        globalCardStyles: { 
+                            bgMode: 'solid', 
+                            bgColor: lightTheme.gCardBgColor, textColor: lightTheme.gCardTextColor, opacity: 1.0,
+                            bgGradientStart: lightTheme.gCardBgGradientStart, bgGradientEnd: lightTheme.gCardBgGradientEnd,
+                            shadowEnabled: true, radius: 12, textAlign: "left", lineHeight: "1.5", 
+                            fontFamily: "", fontSize: "1rem",
+                            textStrokeWidth: 0, textStrokeColor: "#000000"
+                        }
+                    };
+                },
+                
+                getPresets() {
+                    return {
+                        light: {
+                            pageBgSolidColor: "#f0f2f5", pageBgGradientStart: "#f0f2f5", pageBgGradientEnd: "#e6e9ed",
+                            headerBgColor: "#ffffff", headerBgGradientStart: "#ffffff", headerBgGradientEnd: "#f7f7f7",
+                            headerTextColor: "#1a1a1a",
+                            gCardBgColor: "#ffffff", gCardTextColor: "#1a1a1a", gCardOpacity: 1.0,
+                            gCardBgGradientStart: "#ffffff", gCardBgGradientEnd: "#f5f5f5",
+                            pNicknameColor: "#1a1a1a", pSubtitleColor: "#555555", pBioColor: "#555555",
+                            pTagBgColor: "#eef1f5", pTagTextColor: "#3c3c43",
+                        },
+                        dark: {
+                            pageBgSolidColor: "#121417", pageBgGradientStart: "#121417", pageBgGradientEnd: "#1a1d21",
+                            headerBgColor: "#1f2229", headerBgGradientStart: "#1f2229", headerBgGradientEnd: "#252930",
+                            headerTextColor: "#f0f2f5",
+                            gCardBgColor: "#2c303a", gCardTextColor: "#f0f2f5", gCardOpacity: 0.95,
+                            gCardBgGradientStart: "#2c303a", gCardBgGradientEnd: "#343946",
+                            pNicknameColor: "#f0f2f5", pSubtitleColor: "#a0aec0", pBioColor: "#a0aec0",
+                            pTagBgColor: "#3e4451", pTagTextColor: "#e2e8f0",
+                        },
+                        mint: {
+                            pageBgSolidColor: "#ccfbf1", pageBgGradientStart: "#ccfbf1", pageBgGradientEnd: "#a7f3d0",
+                            headerBgColor: "#f0fdfa", headerBgGradientStart: "#f0fdfa", headerBgGradientEnd: "#e6fcf5",
+                            headerTextColor: "#0f766e",
+                            gCardBgColor: "#ffffff", gCardTextColor: "#134e4a", gCardOpacity: 1.0,
+                            gCardBgGradientStart: "#ffffff", gCardBgGradientEnd: "#fafffd",
+                            pNicknameColor: "#064e3b", pSubtitleColor: "#115e59", pBioColor: "#134e4a",
+                            pTagBgColor: "#a7f3d0", pTagTextColor: "#065f46",
+                        },
+                        coffee: {
+                            pageBgSolidColor: "#f3e8e2", pageBgGradientStart: "#f3e8e2", pageBgGradientEnd: "#e9d8cf",
+                            headerBgColor: "#fdf8f6", headerBgGradientStart: "#fdf8f6", headerBgGradientEnd: "#faf3ef",
+                            headerTextColor: "#432818",
+                            gCardBgColor: "#ffffff", gCardTextColor: "#5e4534", gCardOpacity: 1.0,
+                            gCardBgGradientStart: "#ffffff", gCardBgGradientEnd: "#fffbf8",
+                            pNicknameColor: "#432818", pSubtitleColor: "#6f4e37", pBioColor: "#5e4534",
+                            pTagBgColor: "#e3d5ca", pTagTextColor: "#432818",
+                        }
+                    };
+                },
+
+                queryElements() {
+                    const q = (selector) => document.querySelector(selector);
+                    return {
+                        editorPanel: q('#editor-panel'),
+                        resizer: q('#resizer'),
+                        themeToggleBtn: q('#theme-toggle-btn'), themeLabel: q('#theme-label'),
+                        previewWrapper: q('#preview-wrapper'), previewOverlay: q('#preview-overlay'),
+                        undoBtn: q('#undo-btn'), redoBtn: q('#redo-btn'),
+                        importBtn: q('#import-btn'), exportBtn: q('#export-btn'),
+                        exportPngBtn: q('#export-png-btn'), configFileInput: q('#config-file-input'),
+                        hdExportToggle: q('#hd-export-toggle'), exportSizePreview: q('#export-size-preview'),
+                        previewHeader: q('#preview-header'), previewAvatar: q('#preview-avatar'),
+                        previewNickname: q('#preview-nickname'), previewSubtitle: q('#preview-subtitle'),
+                        previewBio: q('#preview-bio'), previewTagsContainer: q('#preview-tags-container'),
+                        pageBgUpload: q('#page-bg-upload'), clearPageBgBtn: q('#clear-page-bg-btn'),
+                        pageImageControls: q('#page-image-controls'),
+                        cropperModal: q('#cropper-modal'), cropperImage: q('#cropper-image'),
+                        cropperCancelBtn: q('#cropper-cancel-btn'), cropperSaveBtn: q('#cropper-save-btn'),
+                        downloadModal: q('#download-modal'), downloadModalTitle: q('#download-modal-title'),
+                        downloadModalContent: q('#download-modal-content'), downloadModalCloseBtn: q('#download-modal-close-btn'),
+                        addTextBlockBtn: q('#add-text-block-btn'), addImageBlockBtn: q('#add-image-block-btn'),
+                        addSeparatorBlockBtn: q('#add-separator-block-btn'),
+                        editorBlocksList: q('#editor-blocks-list'), previewBlocksContainer: q('#preview-blocks-container'),
+                        fontFamilySelect: q('#font-family-select'),
+                        fontSearchInput: q('#font-search-input'),
+                        loadingOverlay: q('#loading-overlay'), loadingText: q('#loading-text'),
+                        toastContainer: q('#toast-container'),
+                    };
+                },
+
+                bindCoreEvents() {
+                    this.elements.themeToggleBtn.addEventListener('click', () => this.toggleTheme());
+                    this.elements.undoBtn.addEventListener('click', () => this.undo());
+                    this.elements.redoBtn.addEventListener('click', () => this.redo());
+                    this.elements.importBtn.addEventListener('click', () => this.elements.configFileInput.click());
+                    this.elements.exportBtn.addEventListener('click', () => this.exportConfig());
+                    this.elements.exportPngBtn.addEventListener('click', () => this.exportPNG());
+                    this.elements.hdExportToggle.addEventListener('change', () => this.updateExportSizePreview());
+                    this.elements.configFileInput.addEventListener('change', e => this.handleConfigFile(e));
+                    this.elements.downloadModalCloseBtn.addEventListener('click', () => this.hideDownloadModal());
+                    this.elements.cropperCancelBtn.addEventListener('click', () => this.hideCropper());
+                    this.elements.cropperSaveBtn.addEventListener('click', () => this.saveCrop());
+                    this.elements.addTextBlockBtn.addEventListener('click', () => this.addBlock('text'));
+                    this.elements.addImageBlockBtn.addEventListener('click', () => this.addBlock('image'));
+                    this.elements.addSeparatorBlockBtn.addEventListener('click', () => this.addBlock('separator'));
+                    document.getElementById('avatar-upload').addEventListener('change', e => this.handleImageUpload(e, 'avatar'));
+                    this.elements.pageBgUpload.addEventListener('change', e => this.handleImageUpload(e, 'pageBg'));
+                    this.elements.clearPageBgBtn.addEventListener('click', () => {
+                        this.updateState('pageStyles.pageBgImageDataUrl', null, true)
+                        this.showToast('背景图已清除', 'info');
+                    });
+                    document.getElementById('load-local-fonts-btn').addEventListener('click', () => this.loadLocalFonts());
+                    document.getElementById('upload-font-btn').addEventListener('click', () => document.getElementById('font-upload-input').click());
+                    document.getElementById('font-upload-input').addEventListener('change', e => this.handleFontUpload(e));
+                    document.querySelectorAll('input[name="crop-ratio"]').forEach(i => i.addEventListener('change', () => this.updateCropAspectRatio()));
+                    
+                    this.elements.fontSearchInput.addEventListener('input', e => this.populateFontList(e.target.value));
+
+                    document.querySelectorAll('[data-preset]').forEach(btn => {
+                        btn.addEventListener('click', (e) => {
+                            const presetName = e.currentTarget.dataset.preset;
+                            if(this.presets[presetName]) {
+                                this.applyPreset(this.presets[presetName]);
+                            }
+                        });
+                    });
+                    
+                    document.querySelectorAll('.editor-section legend').forEach(legend => {
+                        legend.addEventListener('click', () => {
+                            const section = legend.closest('.editor-section');
+                            section.classList.toggle('collapsed');
+                        });
+                    });
+
+                    document.querySelectorAll('.tabs .tab-btn').forEach(button => {
+                        button.addEventListener('click', () => {
+                            const parent = button.closest('.section-content, .editor-card-content');
+                            parent.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+                            button.classList.add('active');
+                            parent.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                            parent.querySelector(`#${button.dataset.tab}`).classList.add('active');
+                            
+                            const sectionEl = button.closest('.editor-section');
+                            const newMode = button.dataset.tab.includes('gradient') ? 'gradient' : 'solid';
+
+                            if (sectionEl.id === 'global-card-styles-section') {
+                                this.updateState('globalCardStyles.bgMode', newMode, true);
+                            } else if (sectionEl.id === 'page-styles-section') {
+                                if (button.dataset.tab.startsWith('page-bg')) {
+                                    this.updateState('pageStyles.pageBgMode', newMode, true);
+                                } else if (button.dataset.tab.startsWith('header-bg')) {
+                                    this.updateState('pageStyles.headerBgMode', newMode, true);
+                                }
+                            }
+                        });
+                    });
+                },
+                
+                bindEditorEvents() {
+                    this.elements.editorPanel.addEventListener('input', e => {
+                        if (this.isRestoringState) return;
+                        const target = e.target;
+                        const stateKey = target.dataset.stateKey;
+
+                        if (stateKey) {
+                            const value = target.type === 'checkbox' ? target.checked : target.value;
+                            this.updateState(stateKey, value, false);
+                            if (target.type === 'color' && target.nextElementSibling?.dataset.colorSyncKey === stateKey) {
+                                target.nextElementSibling.value = value;
+                            }
+                            if (stateKey === 'globalCardStyles.radius') {
+                                document.getElementById('gCardRadiusValue').textContent = target.value;
+                            }
+                            return;
+                        }
+
+                        const hexSyncKey = target.dataset.colorSyncKey;
+                        if (hexSyncKey) {
+                            if (/^#[0-9A-F]{6}$/i.test(target.value)) {
+                                target.previousElementSibling.value = target.value;
+                                this.updateState(hexSyncKey, target.value, false);
+                            }
+                        }
+
+                        const blockEl = target.closest('.editor-block');
+                        if (blockEl) {
+                            const blockId = blockEl.dataset.blockId;
+                            const cardEl = target.closest('.editor-card');
+                            if (cardEl) {
+                                const cardId = cardEl.dataset.cardId;
+                                const cardKey = target.dataset.cardKey;
+                                if (cardKey) {
+                                    let value = target.type === 'checkbox' ? target.checked : target.value;
+                                    this.updateCard(blockId, cardId, cardKey, value, false);
+                                }
+                                
+                                if (target.type === 'color') {
+                                    const hexInput = target.closest('.input-group')?.querySelector('.color-hex-input');
+                                    if (hexInput) hexInput.value = target.value;
+                                } else if (target.classList.contains('color-hex-input')) {
+                                    if (/^#[0-9A-F]{6}$/i.test(target.value)) {
+                                        target.previousElementSibling.value = target.value;
+                                    }
+                                }
+                            } else {
+                                if (target.classList.contains('editor-block-title-input')) {
+                                    this.updateBlockTitle(blockId, target.value, false);
+                                } else {
+                                    const settingKey = target.dataset.settingKey;
+                                    if(settingKey && target.type !== 'checkbox') {
+                                        this.updateBlockSettings(blockId, settingKey, target.value, false);
+                                    }
+                                    const imageKey = target.dataset.imageKey;
+                                    const thumbItem = target.closest('.thumbnail-item');
+                                    if(imageKey && thumbItem) {
+                                        const index = parseInt(thumbItem.dataset.index);
+                                        this.updateImageData(blockId, index, imageKey, target.value, false);
+                                    }
+                                }
+                            }
+                        }
+                    });
+
+                    this.elements.editorPanel.addEventListener('change', e => {
+                        if (this.isRestoringState) return;
+                        const target = e.target;
+                        
+                        const blockEl = target.closest('.editor-block');
+                        if (blockEl) {
+                            const blockId = blockEl.dataset.blockId;
+                            const settingKey = target.dataset.settingKey;
+                             if (target.type === 'checkbox' && settingKey) {
+                                this.updateBlockSettings(blockId, settingKey, target.checked, true);
+                                this.renderEditorBlockById(blockId);
+                            }
+                            else if (target.type === 'radio' && settingKey) {
+                                this.updateBlockSettings(blockId, settingKey, target.value, true);
+                            }
+                             const cardEl = target.closest('.editor-card');
+                            if(cardEl && target.type === 'checkbox') {
+                                const cardId = cardEl.dataset.cardId;
+                                const cardKey = target.dataset.cardKey;
+                                if(cardKey) {
+                                     this.updateCard(blockId, cardId, cardKey, target.checked, true);
+                                     this.renderEditorCardById(blockId, cardId);
+                                }
+                            }
+                        }
+                        
+                        if (target.dataset.stateKey || target.closest('.editor-block') || target.dataset.colorSyncKey) {
+                            this.pushHistory();
+                        }
+                    });
+
+                    this.elements.editorPanel.addEventListener('click', e => {
+                        const target = e.target;
+                        const resetKey = target.dataset.resetKey;
+                        if(resetKey) {
+                            let basePreset = this.presets.light;
+                            const darkIndicatorColor = this.state.globalCardStyles.textColor;
+                            if (darkIndicatorColor === this.presets.dark.gCardTextColor) basePreset = this.presets.dark;
+                            else if (darkIndicatorColor === this.presets.mint.gCardTextColor) basePreset = this.presets.mint;
+                            else if (darkIndicatorColor === this.presets.coffee.gCardTextColor) basePreset = this.presets.coffee;
+
+                            const keyMap = {
+                                nicknameColor: 'pNicknameColor', subtitleColor: 'pSubtitleColor', bioColor: 'pBioColor',
+                                tagBgColor: 'pTagBgColor', tagTextColor: 'pTagTextColor', avatarBorderColor: '#ffffff'
+                            };
+                            
+                            const [section, key] = resetKey.split('.');
+                            const presetKey = keyMap[key];
+                            
+                            let valueToReset = basePreset[presetKey] || this.presets.light[presetKey];
+                            
+                            this.updateState(resetKey, valueToReset, true);
+                            this.syncControl(resetKey);
+                            this.showToast('颜色已重置', 'info');
+                            return;
+                        }
+
+                        if (target.type === 'radio' && target.dataset.stateKey) {
+                            this.updateState(target.dataset.stateKey, target.value, true);
+                        }
+
+                        const blockEl = target.closest('.editor-block');
+                        if (blockEl) {
+                            const blockId = blockEl.dataset.blockId;
+                            if (target.closest('.block-delete-btn')) { if (window.confirm('确定要删除这个区块吗？')) this.deleteBlock(blockId); }
+                            else if (target.closest('.block-up-btn')) this.moveBlockUp(blockId);
+                            else if (target.closest('.block-down-btn')) this.moveBlockDown(blockId);
+                            else if (target.closest('.add-card-btn')) this.addCard(blockId);
+                            else if (target.closest('.image-upload-area')) blockEl.querySelector('.image-upload-input')?.click();
+                            else if (target.closest('.card-delete-btn')) this.deleteCard(blockId, target.closest('.editor-card').dataset.cardId);
+                            else if (target.closest('.card-clear-bg-btn')) {
+                                this.updateCard(blockId, target.closest('.editor-card').dataset.cardId, 'bgImageDataUrl', null, true);
+                                this.showToast('卡片背景图已清除', 'info');
+                            }
+                            else if (target.closest('.delete-image-btn')) this.deleteImage(blockId, parseInt(target.closest('.thumbnail-item').dataset.index));
+                            else if (target.closest('.crop-image-btn')) this.cropImage(blockId, parseInt(target.closest('.thumbnail-item').dataset.index));
+                        }
+                    });
+
+                    this.elements.editorPanel.addEventListener('change', e => {
+                       const target = e.target;
+                       if (target.classList.contains('card-bg-upload')) {
+                           const cardEl = target.closest('.editor-card');
+                           const blockEl = target.closest('.editor-block');
+                           if(cardEl && blockEl) {
+                               this.handleCardBgUpload(e, blockEl.dataset.blockId, cardEl.dataset.cardId);
+                           }
+                       } else if (target.classList.contains('image-upload-input')) {
+                           const blockEl = target.closest('.editor-block');
+                           if(blockEl) {
+                               this.handleImageGalleryUpload(blockEl.dataset.blockId, e.target.files);
+                               e.target.value = '';
+                           }
+                       }
+                    });
+                },
+
+                bindPreviewEvents() {
+                    this.elements.previewWrapper.addEventListener('dblclick', e => {
+                        const target = e.target.closest('[data-state-key], [data-card-key]');
+                        if (target && !this.isEditingText) {
+                            this.isEditingText = true;
+                            target.contentEditable = true;
+                            target.focus();
+                            document.execCommand('selectAll', false, null);
+                        }
+                    });
+
+                    this.elements.previewTagsContainer.addEventListener('dblclick', e => {
+                        const target = e.target.closest('.tag-pill');
+                        if (target && !this.isEditingText) {
+                            this.isEditingText = true;
+                            target.contentEditable = true;
+                            target.focus();
+                            document.execCommand('selectAll', false, null);
+
+                            const handleEditEnd = () => {
+                                target.contentEditable = false;
+                                this.isEditingText = false;
+                                target.removeEventListener('blur', handleEditEnd);
+                                target.removeEventListener('keydown', handleKeydown);
+                                
+                                const newTagText = target.innerText.trim();
+                                const tagIndex = parseInt(target.dataset.tagIndex);
+                                
+                                let tags = (this.state.personalInfo.tags || '').split(/[,，、]/).map(t => t.trim()).filter(Boolean);
+                                if (newTagText) {
+                                    tags[tagIndex] = newTagText;
+                                } else {
+                                    tags.splice(tagIndex, 1);
+                                }
+                                
+                                this.updateState('personalInfo.tags', tags.join(', '), true);
+                                this.syncControl('personalInfo.tags');
+                            };
+                            
+                            const handleKeydown = (ev) => {
+                                if (ev.key === 'Enter') {
+                                    ev.preventDefault();
+                                    target.blur();
+                                }
+                            };
+
+                            target.addEventListener('blur', handleEditEnd);
+                            target.addEventListener('keydown', handleKeydown);
+                        }
+                    });
+
+                    this.elements.previewWrapper.addEventListener('input', e => {
+                        const target = e.target;
+                        if (target.contentEditable === 'true') {
+                            const stateKey = target.dataset.stateKey;
+                            const cardKey = target.dataset.cardKey;
+                            const value = target.innerText;
+
+                            if (stateKey) {
+                                this.updateState(stateKey, value, false);
+                                this.syncControl(stateKey);
+                            } else if (cardKey) {
+                                const cardEl = target.closest('.preview-card');
+                                const blockEl = target.closest('.preview-block-wrapper');
+                                if (cardEl && blockEl) {
+                                    this.updateCard(blockEl.dataset.blockId, cardEl.dataset.cardId, cardKey, value, false);
+                                    const editorCard = document.querySelector(`.editor-card[data-card-id="${cardEl.dataset.cardId}"]`);
+                                    if (editorCard) {
+                                        const input = editorCard.querySelector(`[data-card-key="${cardKey}"]`);
+                                        if (input) input.value = value;
+                                    }
+                                }
+                            }
+                        }
+                    });
+
+                    this.elements.previewWrapper.addEventListener('blur', e => {
+                        const target = e.target;
+                        if (target.contentEditable === 'true' && !target.classList.contains('tag-pill')) {
+                            this.isEditingText = false;
+                            target.contentEditable = false;
+                            
+                            this.pushHistory();
+
+                            const stateKey = target.dataset.stateKey;
+                            const cardKey = target.dataset.cardKey;
+                            const value = target.innerText;
+
+                            if (stateKey) {
+                                this.updateState(stateKey, value, false);
+                                this.syncControl(stateKey);
+                            } else if (cardKey) {
+                                const cardEl = target.closest('.preview-card');
+                                const blockEl = target.closest('.preview-block-wrapper');
+                                if (cardEl && blockEl) {
+                                    this.updateCard(blockEl.dataset.blockId, cardEl.dataset.cardId, cardKey, value, false);
+                                    this.renderEditorCardById(blockEl.dataset.blockId, cardEl.dataset.cardId);
+                                }
+                            }
+                        }
+                    }, true);
+
+                     this.elements.previewWrapper.addEventListener('keydown', e => {
+                        if (e.target.isContentEditable && e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            e.target.blur();
+                        }
+                    });
+                },
+
+                initResizer() {
+                    const resizer = this.elements.resizer;
+                    const editorPanel = this.elements.editorPanel;
+                    let isResizing = false;
+                
+                    resizer.addEventListener('mousedown', (e) => {
+                        isResizing = true;
+                        document.body.style.cursor = 'col-resize';
+                        document.body.style.userSelect = 'none';
+                
+                        document.addEventListener('mousemove', handleMouseMove);
+                        document.addEventListener('mouseup', stopResize);
+                    });
+                
+                    const handleMouseMove = (e) => {
+                        if (!isResizing) return;
+                        const newWidth = e.clientX;
+                        if (newWidth > 450 && newWidth < window.innerWidth * 0.7) {
+                            editorPanel.style.width = `${newWidth}px`;
+                            this.updateExportSizePreview();
+                        }
+                    };
+                
+                    const stopResize = () => {
+                        isResizing = false;
+                        document.body.style.cursor = 'default';
+                        document.body.style.userSelect = 'auto';
+                        document.removeEventListener('mousemove', handleMouseMove);
+                        document.removeEventListener('mouseup', stopResize);
+                        this.updateExportSizePreview();
+                    };
+                },
+                
+                renderAll(isInitial = false) {
+                    this.updateGlobalCardStyleVars();
+                    this.renderPersonalInfo();
+                    this.renderPageStyles();
+                    this.renderEditorBlocks(isInitial);
+                    this.renderPreviewBlocks();
+                },
+                renderPersonalInfo() {
+                    const info = this.state.personalInfo;
+                    this.elements.previewAvatar.src = info.avatarDataUrl;
+                    this.elements.previewNickname.textContent = info.nickname;
+                    this.elements.previewSubtitle.textContent = info.subtitle;
+                    this.elements.previewBio.textContent = info.bio;
+                    
+                    this.elements.previewNickname.style.color = info.nicknameColor;
+                    this.elements.previewSubtitle.style.color = info.subtitleColor;
+                    this.elements.previewBio.style.color = info.bioColor;
+
+                    this.elements.previewAvatar.style.borderRadius = info.avatarShape;
+                    this.elements.previewAvatar.style.borderWidth = `${info.avatarBorderSize}px`;
+                    this.elements.previewAvatar.style.borderColor = info.avatarBorderColor;
+                    
+                    this.elements.previewTagsContainer.innerHTML = (info.tags || '').split(/[,，、]/)
+                        .map(t => t.trim()).filter(Boolean)
+                        .map((t, index) => `<span class="tag-pill" data-tag-index="${index}">${this.escapeHTML(t)}</span>`).join('');
+                    
+                    const rootStyle = document.documentElement.style;
+                    rootStyle.setProperty('--tag-bg-color', info.tagBgColor);
+                    rootStyle.setProperty('--tag-text-color', info.tagTextColor);
+                },
+                renderPageStyles() {
+                    const styles = this.state.pageStyles;
+                    const wrapper = this.elements.previewWrapper;
+                    
+                    if (styles.pageBgMode === 'gradient') {
+                        wrapper.style.backgroundImage = `linear-gradient(135deg, ${styles.pageBgGradientStart}, ${styles.pageBgGradientEnd})`;
+                        wrapper.style.backgroundColor = 'transparent';
+                    } else { // solid
+                        wrapper.style.backgroundImage = 'none';
+                        wrapper.style.backgroundColor = styles.pageBgSolidColor;
+                    }
+
+                    if (styles.pageBgImageDataUrl) {
+                        wrapper.style.setProperty('--page-bg-image', `url(${styles.pageBgImageDataUrl})`);
+                        this.elements.previewOverlay.style.display = parseFloat(styles.pageOverlayOpacity) > 0 ? 'block' : 'none';
+                        wrapper.style.setProperty('--page-overlay-color', styles.pageOverlayColor);
+                        wrapper.style.setProperty('--page-overlay-opacity', styles.pageOverlayOpacity);
+                    } else {
+                        wrapper.style.setProperty('--page-bg-image', 'none');
+                        this.elements.previewOverlay.style.display = 'none';
+                    }
+
+                    if (styles.headerBgMode === 'gradient') {
+                        this.elements.previewHeader.style.background = `linear-gradient(135deg, ${this.hexToRgba(styles.headerBgGradientStart, styles.headerOpacity)}, ${this.hexToRgba(styles.headerBgGradientEnd, styles.headerOpacity)})`;
+                    } else { // solid
+                         this.elements.previewHeader.style.background = this.hexToRgba(styles.headerBgColor, styles.headerOpacity);
+                    }
+                    
+                    this.elements.previewHeader.style.color = styles.headerTextColor;
+                    this.elements.previewNickname.style.color = this.state.personalInfo.nicknameColor;
+                    this.elements.previewSubtitle.style.color = this.state.personalInfo.subtitleColor;
+                    this.elements.previewBio.style.color = this.state.personalInfo.bioColor;
+                    
+                    this.elements.pageImageControls.style.display = styles.pageBgImageDataUrl ? 'block' : 'none';
+                },
+                renderEditorBlocks(isInitial = false) {
+                    const list = this.elements.editorBlocksList;
+                    list.innerHTML = this.state.blocks.length ? this.state.blocks.map(b => this.createEditorBlockHTML(b, isInitial)).join('') : '<div class="empty-placeholder">暂无区块</div>';
+                    this.state.blocks.forEach(block => {
+                        const blockEl = list.querySelector(`.editor-block[data-block-id="${block.id}"]`);
+                        if (!blockEl) return;
+                        if (block.type === 'text') this.renderEditorCards(block.id, blockEl.querySelector('.card-editors-list'));
+                        else if (block.type === 'image') this.renderEditorImageThumbnails(block.id, blockEl.querySelector('.image-thumbnails-grid'));
+                    });
+                },
+                renderPreviewBlocks() {
+                    this.elements.previewBlocksContainer.innerHTML = this.state.blocks.length ? this.state.blocks.map(b => `<div class="preview-block-wrapper" data-block-id="${b.id}">${this.createPreviewBlockHTML(b)}</div>`).join('') : '<div class="empty-placeholder">(预览区) 无区块</div>';
+                },
+
+                createEditorBlockHTML(block, isInitial = false) {
+                    let settings = '', content = '';
+                    const upDownBtns = `<div class="up-down-btns"><button class="btn btn-default block-up-btn">↑</button><button class="btn btn-default block-down-btn">↓</button></div>`;
+                    
+                    if (block.type === 'text') {
+                        settings = `<label>布局:</label><input type="radio" data-setting-key="layout" name="block-layout-${block.id}" value="single" ${block.settings.layout === 'single' ? 'checked' : ''}><label>单</label><input type="radio" data-setting-key="layout" name="block-layout-${block.id}" value="dual" ${block.settings.layout === 'dual' ? 'checked' : ''}><label>双</label>`;
+                        content = `<div class="card-editors-list"></div><button class="btn btn-default add-card-btn" style="margin-top: 15px;">➕ 添加卡片</button>`;
+                    } else if (block.type === 'image') {
+                        const s = block.settings;
+                        const useGlobalStyle = s.useGlobalStyle !== false;
+                        const followGlobalOpacity = s.followGlobalOpacity !== false;
+                        settings = `<label>布局:</label><input data-setting-key="layout" type="radio" name="block-layout-${block.id}" value="1" ${s.layout === '1' ? 'checked' : ''}><label>1</label><input data-setting-key="layout" type="radio" name="block-layout-${block.id}" value="2" ${s.layout === '2' ? 'checked' : ''}><label>2</label><input data-setting-key="layout" type="radio" name="block-layout-${block.id}" value="3" ${s.layout === '3' ? 'checked' : ''}><label>3</label>`;
+                        content = `<div class="image-upload-area"><input type="file" class="image-upload-input" multiple accept="image/*" style="display: none;">点击上传图片</div>
+                                   <div class="image-thumbnails-grid"></div>
+                                   <hr class="separator">
+                                   <div class="checkbox-group form-group"><label><input type="checkbox" data-setting-key="useGlobalStyle" ${useGlobalStyle ? 'checked':''}>使用全局卡片背景</label></div>
+                                   <div class="image-block-style-override" style="${useGlobalStyle ? 'display:none;' : ''}">
+                                       <div class="color-control-row">
+                                           <div class="color-control-group"><label>背景色:</label><div class="input-group"><input type="color" data-setting-key="bgColor" value="${s.bgColor || ''}"><input type="text" class="color-hex-input" data-setting-key="bgColor" value="${s.bgColor || ''}"></div></div>
+                                       </div>
+                                   </div>
+                                    <div class="checkbox-group form-group"><label><input type="checkbox" data-setting-key="followGlobalOpacity" ${followGlobalOpacity ? 'checked' : ''}>跟随全局不透明度</label></div>
+                                    <div class="form-group" style="margin-top: 10px; ${followGlobalOpacity ? 'display:none;' : ''}"><label>独立不透明度:</label><input type="range" data-setting-key="bgOpacity" min="0" max="1" step="0.05" value="${s.bgOpacity || 1.0}"></div>
+                                   `;
+                    } else if (block.type === 'separator') {
+                        const s = block.settings;
+                        content = `<div class="form-group"><label>样式:</label><div class="radio-group"><label><input type="radio" name="sep-style-${block.id}" data-setting-key="style" value="solid" ${s.style==='solid'?'checked':''}>实线</label><label><input type="radio" name="sep-style-${block.id}" data-setting-key="style" value="dashed" ${s.style==='dashed'?'checked':''}>虚线</label></div></div><div class="color-control-row"><div class="color-control-group"><label>颜色:</label><div class="input-group"><input type="color" data-setting-key="color" value="${s.color}"><input type="text" class="color-hex-input" data-color-sync-key="color" value="${s.color}"></div></div><div class="color-control-group"><label>粗细(px):</label><input type="range" data-setting-key="thickness" min="1" max="10" value="${s.thickness}"></div></div><div class="form-group"><label>垂直间距(px):</label><input type="range" data-setting-key="margin" min="0" max="50" value="${s.margin}"></div>`;
+                    }
+
+                    const collapsedClass = isInitial ? 'collapsed' : '';
+                    return `<div class="editor-block ${collapsedClass}" data-block-id="${block.id}"><div class="editor-block-header"><span class="block-drag-handle">☰</span><input type="text" class="editor-block-title-input" value="${this.escapeHTML(block.title || '')}" placeholder="区块标题 (可编辑)"><div class="block-actions">${upDownBtns}<div class="block-settings">${settings}</div><button class="btn btn-danger btn-small block-delete-btn">删除</button></div></div><div class="editor-block-content">${content}</div></div>`;
+                },
+                createPreviewBlockHTML(block) {
+                    if (block.type === 'text') {
+                        const layoutClass = block.settings.layout === 'dual' ? 'preview-cards-dual' : 'preview-cards-single';
+                        return `<div class="${layoutClass}">${(block.cards || []).map(card => this.createPreviewCardHTML(card)).join('')}</div>`;
+                    } else if (block.type === 'image') {
+                        const galleryHTML = (block.images || []).map(img => `<figure><img src="${img.url}" alt="${this.escapeHTML(img.title || '')}">${(img.title || img.description) ? `<figcaption>${img.title ? `<strong>${this.escapeHTML(img.title)}</strong>` : ''}${this.escapeHTML(img.description || '')}</figcaption>` : ''}</figure>`).join('');
+                        const { bgStyle, finalOpacity } = this.getImageBlockBgStyle(block);
+                        const galleryEl = document.createElement('div');
+                        galleryEl.className = `image-gallery layout-${block.settings.layout || '2'}`;
+                        galleryEl.style.setProperty('--image-block-bg', bgStyle);
+                        if (parseFloat(finalOpacity) === 0) {
+                            galleryEl.style.boxShadow = 'none';
+                            galleryEl.style.border = 'none';
+                        }
+                        galleryEl.innerHTML = galleryHTML;
+                        return galleryEl.outerHTML;
+                    } else if (block.type === 'separator') {
+                         const s = block.settings;
+                         return `<div class="separator-preview" style="margin: ${s.margin}px 0;"><div class="separator-preview-line" style="border-top: ${s.thickness}px ${s.style} ${s.color};"></div></div>`;
+                    }
+                    return '';
+                },
+                createPreviewCardHTML(card) {
+                    const cardEl = document.createElement('div');
+                    cardEl.className = 'preview-card';
+                    cardEl.dataset.cardId = card.id;
+                    cardEl.style.setProperty('--card-transition-name', `card-${card.id}`);
+                    cardEl.innerHTML = `<div class="preview-card-inner">
+                            <h3 class="preview-card-title" data-card-key="title">${this.escapeHTML(card.title || '')}</h3>
+                            <p class="preview-card-content" data-card-key="content">${this.escapeHTML(card.content || '')}</p>
+                        </div>`;
+                    this.applyCardStyles(cardEl, card);
+                    return cardEl.outerHTML;
+                },
+                createEditorCardHTML(card) {
+                    const s = (val, def) => val ?? def;
+                    const followGlobalOpacity = card.followGlobalOpacity !== false;
+                    return `<span class="card-drag-handle">☰</span><div class="editor-card-header"><button class="btn btn-danger btn-small card-delete-btn">删</button></div>
+                        <div class="editor-card-content">
+                            <div class="form-group"><label>标题:</label><input type="text" data-card-key="title" value="${this.escapeHTML(s(card.title, ''))}"></div>
+                            <div class="form-group"><label>内容:</label><textarea data-card-key="content" rows="4">${this.escapeHTML(s(card.content, ''))}</textarea></div>
+                            <hr class="separator"><div class="card-style-grid">
+                                <div class="form-group"><label>字号:</label><select data-card-key="fontSize"><option value="" ${s(card.fontSize, '') === '' ? 'selected' : ''}>默认</option><option value="0.9em" ${card.fontSize === '0.9em' ? 'selected' : ''}>小</option><option value="1em" ${card.fontSize === '1em' ? 'selected' : ''}>中</option><option value="1.1em" ${card.fontSize === '1.1em' ? 'selected' : ''}>大</option></select></div>
+                                <div class="form-group"><label>对齐:</label><div class="radio-group"><label><input type="radio" name="card-${card.id}-align" value="" data-card-key="textAlign" ${s(card.textAlign, '') === '' ? 'checked':''}>默认</label><label><input type="radio" name="card-${card.id}-align" value="left" data-card-key="textAlign" ${card.textAlign === 'left' ?'checked':''}>左</label><label><input type="radio" name="card-${card.id}-align" value="center" data-card-key="textAlign" ${card.textAlign === 'center' ?'checked':''}>中</label><label><input type="radio" name="card-${card.id}-align" value="right" data-card-key="textAlign" ${card.textAlign === 'right' ?'checked':''}>右</label></div></div>
+                                <div class="form-group"><label>字重:</label><select data-card-key="fontWeight"><option value="" ${s(card.fontWeight, '')===''?'selected':''}>默认</option><option value="normal" ${card.fontWeight==='normal'?'selected':''}>常规</option><option value="bold" ${card.fontWeight==='bold'?'selected':''}>粗体</option></select></div>
+                                <div class="form-group checkbox-group"><label><input type="checkbox" data-card-key="textShadowEnabled" ${s(card.textShadowEnabled, false) ? 'checked':''}>文字阴影</label></div>
+                            </div>
+                            <hr class="separator"><div class="form-group"><label>背景图:</label><div class="input-group simple"><input type="file" class="card-bg-upload" accept="image/*"><button class="btn btn-default btn-small card-clear-bg-btn">清除</button></div></div>
+                            <div class="card-overlay-controls" style="${card.bgImageDataUrl?'':'display:none;'}"><label>图片蒙版:</label><div class="color-control-row"><div class="color-control-group"><label>颜色:</label><div class="input-group"><input type="color" data-card-key="overlayColor" value="${s(card.overlayColor, '#ffffff')}"><input class="color-hex-input" type="text" data-card-key="overlayColor" value="${s(card.overlayColor, '#ffffff')}"></div></div><div class="color-control-group"><label>不透明度:</label><input type="range" data-card-key="overlayOpacity" min="0" max="1" step="0.05" value="${s(card.overlayOpacity,0.5)}"></div></div></div>
+                            <hr class="separator">
+                            <div class="color-control-row">
+                                <div class="color-control-group"><label>背景色:</label><div class="input-group"><input type="color" data-card-key="bgColor" value="${s(card.bgColor, '')}"><input class="color-hex-input" type="text" data-card-key="bgColor" value="${s(card.bgColor, '')}" placeholder="全局默认"></div></div>
+                                <div class="color-control-group"><label>文字颜色:</label><div class="input-group"><input type="color" data-card-key="textColor" value="${s(card.textColor, '')}"><input class="color-hex-input" type="text" data-card-key="textColor" value="${s(card.textColor, '')}" placeholder="全局默认"></div></div>
+                            </div>
+                            <div class="form-group checkbox-group"><label><input type="checkbox" data-card-key="followGlobalOpacity" ${followGlobalOpacity ? 'checked' : ''}>跟随全局不透明度</label></div>
+                            <div class="form-group" style="${followGlobalOpacity ? 'display:none;' : 'display:block;'}"><label>独立不透明度:</label><input type="range" data-card-key="opacity" min="0" max="1" step="0.05" value="${s(card.opacity, 1.0)}"></div>
+                        </div>`;
+                },
+                applyCardStyles(cardEl, cardData) {
+                    const g = this.state.globalCardStyles;
+                    const use = (key, val) => (val === undefined || val === null || val === '') ? g[key] : val;
+                    
+                    const followGlobalOpacity = cardData.followGlobalOpacity !== false;
+                    const finalOpacity = followGlobalOpacity ? g.opacity : (cardData.opacity ?? 1.0);
+                    
+                    const innerEl = cardEl.querySelector('.preview-card-inner');
+                    if (!innerEl) return;
+                    
+                    if (parseFloat(finalOpacity) === 0) {
+                        innerEl.style.setProperty('--card-bg-final', 'transparent');
+                        innerEl.style.boxShadow = 'none';
+                        innerEl.style.border = 'none';
+                    } else {
+                        const finalTextColor = cardData.textColor || g.textColor;
+                        let finalBg;
+                        if (cardData.bgImageDataUrl) {
+                            finalBg = `url(${cardData.bgImageDataUrl})`;
+                        } else if (cardData.bgColor) {
+                            finalBg = this.hexToRgba(cardData.bgColor, finalOpacity);
+                        } else {
+                            if (g.bgMode === 'gradient') {
+                                finalBg = `linear-gradient(135deg, ${this.hexToRgba(g.bgGradientStart, finalOpacity)}, ${this.hexToRgba(g.bgGradientEnd, finalOpacity)})`;
+                            } else {
+                                finalBg = this.hexToRgba(g.bgColor, finalOpacity);
+                            }
+                        }
+                        
+                        innerEl.style.setProperty('--card-bg-final', finalBg);
+                        innerEl.style.setProperty('--card-text-color', finalTextColor);
+                        innerEl.style.textAlign = use('textAlign', cardData.textAlign);
+                        innerEl.style.fontSize = cardData.fontSize || 'inherit'; 
+                        innerEl.style.setProperty('--card-font-weight', cardData.fontWeight || 'normal');
+                        innerEl.style.setProperty('--active-card-text-shadow', cardData.textShadowEnabled ? 'var(--preset-text-shadow)' : 'none');
+                        
+                        innerEl.style.setProperty('--card-overlay-color', cardData.overlayColor || '#FFF');
+                        const overlayOpacity = cardData.bgImageDataUrl ? (cardData.overlayOpacity ?? 0.5) : 0;
+                        innerEl.style.setProperty('--card-overlay-opacity', parseFloat(overlayOpacity) > 0 ? overlayOpacity : 0);
+                        
+                        innerEl.style.boxShadow = 'var(--active-card-shadow)';
+                        innerEl.style.border = 'var(--active-card-border)';
+                    }
+                },
+
+                updateState(keyPath, value, pushHistory = true) {
+                    if (pushHistory && !this.isRestoringState) this.pushHistory();
+                    let obj = this.state;
+                    const keys = keyPath.split('.');
+                    for (let i = 0; i < keys.length - 1; i++) { obj = obj?.[keys[i]]; }
+                    if(obj) obj[keys[keys.length - 1]] = value;
+                    this.debouncedSaveToLocal();
+                    this.triggerRender(keyPath);
+                },
+                triggerRender(keyPath) {
+                    if (keyPath.startsWith('personalInfo')) this.renderPersonalInfo();
+                    else if (keyPath.startsWith('pageStyles')) this.renderPageStyles();
+                    else if (keyPath.startsWith('globalCardStyles')) {
+                        this.updateGlobalCardStyleVars();
+                        this.renderPreviewBlocks();
+                    } else if (keyPath.startsWith('blocks')) {
+                         const parts = keyPath.split('.');
+                         const blockIndex = parts[1];
+                         const blockId = this.state.blocks[blockIndex]?.id;
+                         if (blockId) {
+                             if (parts.length <= 3 || (parts[2] === 'settings')) {
+                                this.renderPreviewBlockById(blockId);
+                             } else if (parts[2] === 'cards') {
+                                const cardIndex = parts[3];
+                                const cardId = this.state.blocks[blockIndex]?.cards[cardIndex]?.id;
+                                if (cardId) this.renderPreviewCardById(blockId, cardId);
+                             } else if (parts[2] === 'images') {
+                                this.renderPreviewBlockById(blockId);
+                             }
+                         }
+                    }
+                },
+                syncControl(stateKey) {
+                    this.isRestoringState = true;
+                    try {
+                        const input = document.querySelector(`[data-state-key="${stateKey}"]`);
+                        if (!input) return;
+                        const value = stateKey.split('.').reduce((o, k) => o[k], this.state);
+                        if (input.type === 'radio') {
+                             document.querySelectorAll(`input[name="${input.name}"]`).forEach(radio => {
+                                radio.checked = (radio.value == value);
+                            });
+                        } else if (input.type === 'checkbox') input.checked = !!value;
+                        else input.value = value ?? '';
+                        
+                        if (input.type === 'color') {
+                            const hexInput = document.querySelector(`[data-color-sync-key="${stateKey}"]`);
+                            if(hexInput) hexInput.value = value || '';
+                        }
+                    } catch (e) {
+                         console.error(`Error syncing control for ${stateKey}:`, e);
+                    } finally {
+                        this.isRestoringState = false;
+                    }
+                },
+                syncAllControls() {
+                    this.isRestoringState = true;
+                    document.querySelectorAll('[data-state-key]').forEach(input => {
+                        try {
+                            const value = input.dataset.stateKey.split('.').reduce((o, k) => o[k], this.state);
+                            if (input.type === 'radio') {
+                                input.checked = (input.value == value);
+                            }
+                            else if (input.type === 'checkbox') input.checked = !!value;
+                            else input.value = value ?? '';
+                        } catch (e) {}
+                    });
+                     document.querySelectorAll('.color-hex-input[data-color-sync-key]').forEach(hexInput => {
+                        const colorInput = document.querySelector(`[data-state-key="${hexInput.dataset.colorSyncKey}"]`);
+                        if(colorInput) hexInput.value = colorInput.value;
+                     });
+                     document.getElementById('gCardRadiusValue').textContent = this.state.globalCardStyles.radius;
+                    
+                    const gCardSection = document.getElementById('global-card-styles-section');
+                    const gCardActiveTab = this.state.globalCardStyles.bgMode === 'gradient' ? 'card-bg-gradient' : 'card-bg-solid';
+                    gCardSection.querySelectorAll('.tab-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === gCardActiveTab));
+                    gCardSection.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === gCardActiveTab));
+
+                    const pageSection = document.getElementById('page-styles-section');
+                    const pageActiveTab = this.state.pageStyles.pageBgMode === 'gradient' ? 'page-bg-gradient' : 'page-bg-solid';
+                    const headerActiveTab = this.state.pageStyles.headerBgMode === 'gradient' ? 'header-bg-gradient' : 'header-bg-solid';
+
+                    pageSection.querySelectorAll('[data-tab^="page-bg-"]').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === pageActiveTab));
+                    pageSection.querySelectorAll('#page-bg-solid, #page-bg-gradient').forEach(c => c.classList.toggle('active', c.id === pageActiveTab));
+                    pageSection.querySelectorAll('[data-tab^="header-bg-"]').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === headerActiveTab));
+                    pageSection.querySelectorAll('#header-bg-solid, #header-bg-gradient').forEach(c => c.classList.toggle('active', c.id === headerActiveTab));
+                    
+                    this.isRestoringState = false;
+                },
+
+                findBlock(blockId) { return this.state.blocks.find(b => b.id === blockId); },
+                findBlockIndex(blockId) { return this.state.blocks.findIndex(b => b.id === blockId); },
+                addBlock(type) {
+                    this.pushHistory();
+                    const newBlock = { id: this.generateId('b'), type, title: `${{text:'文本',image:'图片',separator:'分隔线'}[type]}区块` };
+                    if (type === 'text') { newBlock.settings = { layout: 'single' }; newBlock.cards = [];
+                    } else if (type === 'image') { newBlock.settings = { layout: '2', useGlobalStyle: true, followGlobalOpacity: true, bgOpacity: 1.0 }; newBlock.images = []; 
+                    } else if (type === 'separator') { newBlock.settings = { style: 'solid', color: '#cccccc', thickness: 1, margin: 20 }; }
+                    this.state.blocks.push(newBlock); 
+                    this.renderAll();
+                    this.initSortablesForBlock(newBlock.id);
+                    const newBlockEl = this.elements.editorBlocksList.querySelector(`[data-block-id="${newBlock.id}"]`);
+                    if (newBlockEl) {
+                        newBlockEl.classList.remove('collapsed');
+                        newBlockEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                },
+                deleteBlock(blockId) { 
+                    this.pushHistory(); 
+                    this.state.blocks = this.state.blocks.filter(b => b.id !== blockId); 
+                    if (this.cardSortables[blockId]) { this.cardSortables[blockId].destroy(); delete this.cardSortables[blockId]; } 
+                    if (this.imageSortables[blockId]) { this.imageSortables[blockId].destroy(); delete this.imageSortables[blockId]; } 
+                    this.renderAll(); 
+                    this.showToast('区块已删除', 'info');
+                },
+                moveBlockUp(blockId) {
+                    const index = this.findBlockIndex(blockId);
+                    if (index > 0) {
+                        this.pushHistory();
+                        [this.state.blocks[index-1], this.state.blocks[index]] = [this.state.blocks[index], this.state.blocks[index-1]];
+                        this.renderAll();
+                    }
+                },
+                moveBlockDown(blockId) {
+                    const index = this.findBlockIndex(blockId);
+                    if (index < this.state.blocks.length - 1 && index !== -1) {
+                        this.pushHistory();
+                        [this.state.blocks[index+1], this.state.blocks[index]] = [this.state.blocks[index], this.state.blocks[index+1]];
+                        this.renderAll();
+                    }
+                },
+                updateBlockTitle(blockId, title, pushHistory) { 
+                    const block = this.findBlock(blockId); 
+                    if (block) { 
+                        if (pushHistory) this.pushHistory(); 
+                        block.title = title; 
+                        this.debouncedSaveToLocal(); 
+                    } 
+                },
+                updateBlockSettings(blockId, key, value, pushHistory) {
+                    const block = this.findBlock(blockId);
+                    if (!block) return;
+                    if (pushHistory) this.pushHistory();
+                    block.settings[key] = value;
+                    this.debouncedSaveToLocal();
+                    this.renderPreviewBlockById(blockId);
+                },
+                getImageBlockBgStyle(block) {
+                    const g = this.state.globalCardStyles;
+                    const s = block.settings;
+                    const useGlobalStyle = s.useGlobalStyle !== false;
+                    const followGlobalOpacity = s.followGlobalOpacity !== false;
+
+                    const finalOpacity = useGlobalStyle || followGlobalOpacity ? g.opacity : (s.bgOpacity ?? 1.0);
+
+                    let bgStyle;
+                    if (useGlobalStyle) {
+                         if (g.bgMode === 'gradient') {
+                            bgStyle = `linear-gradient(135deg, ${this.hexToRgba(g.bgGradientStart, finalOpacity)}, ${this.hexToRgba(g.bgGradientEnd, finalOpacity)})`;
+                        } else {
+                            bgStyle = this.hexToRgba(g.bgColor, finalOpacity);
+                        }
+                    } else {
+                        bgStyle = this.hexToRgba(s.bgColor, finalOpacity);
+                    }
+                    
+                    if(parseFloat(finalOpacity) === 0) bgStyle = 'transparent';
+
+                    return { bgStyle, finalOpacity };
+                },
+                addCard(blockId) {
+                    this.pushHistory();
+                    const block = this.findBlock(blockId);
+                    if (!block || block.type !== 'text') return;
+                    const newCard = { id: this.generateId('c'), title: `新卡片`, content: '双击预览区可直接编辑内容', opacity: 1.0, followGlobalOpacity: true };
+                    block.cards.push(newCard);
+                    this.renderEditorBlockById(blockId);
+                    
+                    const container = this.elements.previewBlocksContainer.querySelector(`[data-block-id="${blockId}"] > div`);
+                    if (!container) return;
+
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = this.createPreviewCardHTML(newCard);
+                    const newCardEl = tempDiv.firstChild;
+                    newCardEl.classList.add('adding');
+                    container.appendChild(newCardEl);
+                    newCardEl.addEventListener('animationend', () => newCardEl.classList.remove('adding'), { once: true });
+                    
+                    const newCardEditorEl = this.elements.editorBlocksList.querySelector(`.editor-card[data-card-id="${newCard.id}"]`);
+                    if (newCardEditorEl) {
+                        newCardEditorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                },
+                deleteCard(blockId, cardId) {
+                    const block = this.findBlock(blockId);
+                    if (!block) return;
+                    const cardEl = this.elements.previewBlocksContainer.querySelector(`.preview-card[data-card-id="${cardId}"]`);
+                    
+                    const doDelete = () => {
+                        this.pushHistory();
+                        block.cards = block.cards.filter(c => c.id !== cardId);
+                        this.renderEditorBlockById(blockId);
+                        this.renderPreviewBlockById(blockId);
+                    };
+
+                    if (cardEl) {
+                        cardEl.classList.add('removing');
+                        cardEl.addEventListener('animationend', doDelete, { once: true });
+                    } else {
+                        doDelete();
+                    }
+                },
+                updateCard(blockId, cardId, key, value, pushHistory) {
+                    const block = this.findBlock(blockId);
+                    const card = block?.cards.find(c => c.id === cardId);
+                    if (card) {
+                        if (pushHistory) this.pushHistory();
+                        card[key] = value;
+                        this.renderPreviewCardById(blockId, cardId);
+                        if (key === 'bgImageDataUrl') this.renderEditorCardById(blockId, cardId);
+                        this.debouncedSaveToLocal();
+                    }
+                },
+                updateImageData(blockId, index, key, value, pushHistory) {
+                    const block = this.findBlock(blockId);
+                    const img = block?.images[index];
+                    if(img) {
+                        if (pushHistory) this.pushHistory();
+                        img[key] = value;
+                        this.renderPreviewBlockById(blockId);
+                        this.debouncedSaveToLocal();
+                    }
+                },
+                 
+                renderPreviewBlockById(blockId) {
+                    const wrapper = this.elements.previewBlocksContainer.querySelector(`.preview-block-wrapper[data-block-id="${blockId}"]`);
+                    const block = this.findBlock(blockId);
+                    if (block && wrapper) {
+                        wrapper.innerHTML = this.createPreviewBlockHTML(block);
+                    }
+                },
+                renderEditorBlockById(blockId) { 
+                    const el = this.elements.editorBlocksList.querySelector(`.editor-block[data-block-id="${blockId}"]`); 
+                    const block = this.findBlock(blockId); 
+                    if (el && block) { 
+                        const isCollapsed = el.classList.contains('collapsed');
+                        const newHTML = this.createEditorBlockHTML(block);
+                        el.outerHTML = newHTML;
+                        const newEl = this.elements.editorBlocksList.querySelector(`.editor-block[data-block-id="${blockId}"]`);
+                        if(isCollapsed) newEl.classList.add('collapsed'); 
+                        else newEl.classList.remove('collapsed');
+                        
+                        if(block.type === 'text') this.renderEditorCards(block.id, newEl.querySelector('.card-editors-list')); 
+                        else if (block.type === 'image') this.renderEditorImageThumbnails(block.id, newEl.querySelector('.image-thumbnails-grid')); 
+                        
+                        this.initSortablesForBlock(blockId);
+                    } 
+                },
+                renderPreviewCardById(blockId, cardId) { 
+                    const el = this.elements.previewBlocksContainer.querySelector(`.preview-card[data-card-id="${cardId}"]`); 
+                    const block = this.findBlock(blockId); 
+                    const card = block?.cards.find(c => c.id === cardId); 
+                    if (el && card) {
+                        this.applyCardStyles(el, card);
+                        const titleEl = el.querySelector('.preview-card-title');
+                        const contentEl = el.querySelector('.preview-card-content');
+                        if(titleEl) titleEl.innerHTML = this.escapeHTML(card.title || '');
+                        if(contentEl) contentEl.innerHTML = this.escapeHTML(card.content || '');
+                    } 
+                },
+                renderEditorCardById(blockId, cardId) { 
+                    const cardEl = this.elements.editorBlocksList.querySelector(`.editor-card[data-card-id="${cardId}"]`); 
+                    const block = this.findBlock(blockId); 
+                    const card = block?.cards.find(c => c.id === cardId); 
+                    if(card && cardEl) { 
+                        const followGlobal = card.followGlobalOpacity !== false;
+                        cardEl.querySelector('.card-overlay-controls').style.display = card.bgImageDataUrl ? '' : 'none';
+                        cardEl.querySelector('[data-card-key="opacity"]').closest('.form-group').style.display = followGlobal ? 'none' : 'block';
+                    } 
+                },
+                renderEditorCards(blockId, container) { 
+                    if(!container) return; 
+                    const block = this.findBlock(blockId); 
+                    container.innerHTML = !block.cards?.length ? '<div class="empty-placeholder">暂无卡片</div>' : block.cards.map(c => `<div class="editor-card" data-card-id="${c.id}">${this.createEditorCardHTML(c)}</div>`).join(''); 
+                },
+                renderEditorImageThumbnails(blockId, container) { 
+                    if(!container) return; 
+                    const block = this.findBlock(blockId); 
+                    container.innerHTML = !block.images?.length ? '<div class="empty-placeholder">暂无图片</div>' : block.images.map((img, i) => `<div class="thumbnail-item" data-index="${i}"><div class="thumbnail-wrapper"><img src="${img.url}"><div class="thumbnail-actions"><button class="btn btn-icon crop-image-btn" title="裁剪">✂️</button><button class="btn btn-icon btn-danger delete-image-btn" title="删除">❌</button></div></div><input type="text" data-image-key="title" placeholder="标题" value="${this.escapeHTML(img.title||'')}"><textarea data-image-key="description" placeholder="描述">${this.escapeHTML(img.description||'')}</textarea></div>`).join(''); 
+                },
+
+                pushHistory() { 
+                    if (this.isRestoringState) return; 
+                    if (this.historyIndex < this.history.length - 1) { 
+                        this.history = this.history.slice(0, this.historyIndex + 1); 
+                    } 
+                    this.history.push(this.deepClone(this.state)); 
+                    if (this.history.length > 50) this.history.shift(); 
+                    this.historyIndex = this.history.length - 1;
+                    this.updateUndoRedoButtons(); 
+                },
+                undo() { 
+                    if (this.historyIndex <= 0) return; 
+                    this.isRestoringState = true; 
+                    this.historyIndex--; 
+                    this.state = this.deepClone(this.history[this.historyIndex]); 
+                    this.renderAll(true); 
+                    this.syncAllControls(); 
+                    this.updateUndoRedoButtons(); 
+                    this.isRestoringState = false; 
+                    this.showToast('已撤销', 'info');
+                },
+                redo() { 
+                    if (this.historyIndex >= this.history.length - 1) return; 
+                    this.isRestoringState = true; 
+                    this.historyIndex++; 
+                    this.state = this.deepClone(this.history[this.historyIndex]); 
+                    this.renderAll(true); 
+                    this.syncAllControls(); 
+                    this.updateUndoRedoButtons(); 
+                    this.isRestoringState = false; 
+                    this.showToast('已重做', 'info');
+                },
+                updateUndoRedoButtons() { 
+                    this.elements.undoBtn.disabled = this.historyIndex <= 0; 
+                    this.elements.redoBtn.disabled = this.historyIndex >= this.history.length - 1; 
+                },
+                
+                async handleImageUpload(event, target, cardInfo = null) { 
+                    const file = event.target.files[0]; 
+                    if (!file) return; 
+                    this.showLoading('正在处理图片...');
+                    try {
+                        const reader = new FileReader(); 
+                        reader.onload = async e => {
+                            const compressedUrl = await this.compressImage(e.target.result, 0.85, 1200);
+                            if (target === 'avatar' || target === 'pageBg') {
+                                this.showCropper(compressedUrl, { type: target }); 
+                            } else if (target === 'cardBg' && cardInfo) {
+                                this.updateCard(cardInfo.blockId, cardInfo.cardId, 'bgImageDataUrl', compressedUrl, true);
+                            }
+                            this.hideLoading();
+                        }; 
+                        reader.readAsDataURL(file); 
+                    } catch(err) {
+                        this.showErrorModal('图片处理失败', err.message);
+                        this.hideLoading();
+                    }
+                    event.target.value = ''; 
+                },
+                handleCardBgUpload(event, blockId, cardId) { 
+                   this.handleImageUpload(event, 'cardBg', { blockId, cardId });
+                },
+                async handleImageGalleryUpload(blockId, files) { 
+                    const block = this.findBlock(blockId); 
+                    if (!block || !files.length) return; 
+                    this.showLoading(`正在上传 ${files.length} 张图片...`);
+                    try {
+                        this.pushHistory(); 
+                        const newImages = await Promise.all(Array.from(files).map(f => this.readFileAsDataURL(f).then(this.compressImage)));
+                        block.images.push(...newImages.map(url => ({ url, title: '', description: '' })));
+                        this.renderEditorBlockById(blockId); 
+                        this.renderPreviewBlockById(blockId); 
+                    } catch (err) {
+                        this.showErrorModal('图片上传失败', err.message);
+                    } finally {
+                        this.hideLoading();
+                    }
+                },
+                deleteImage(blockId, index) { 
+                    this.pushHistory(); 
+                    const block = this.findBlock(blockId); 
+                    block.images.splice(index, 1); 
+                    this.renderEditorBlockById(blockId); 
+                    this.renderPreviewBlockById(blockId); 
+                },
+                cropImage(blockId, index) { 
+                    const url = this.findBlock(blockId)?.images[index]?.url; 
+                    if (url) this.showCropper(url, { type: 'imageBlock', blockId, index }); 
+                },
+                showCropper(imageSrc, target) { 
+                    this.currentCropTarget = target; 
+                    this.elements.cropperModal.classList.add('visible'); 
+                    this.elements.cropperImage.src = imageSrc; 
+                    if (this.cropper) this.cropper.destroy(); 
+                    this.cropper = new Cropper(this.elements.cropperImage, { aspectRatio: NaN, viewMode: 1, background: false }); 
+                },
+                hideCropper() { 
+                    this.elements.cropperModal.classList.remove('visible'); 
+                    if (this.cropper) { 
+                        this.cropper.destroy(); 
+                        this.cropper = null; 
+                    } 
+                },
+                async saveCrop() {
+                    if (!this.cropper || !this.currentCropTarget) return;
+                    this.showLoading('正在压缩裁剪后的图片...');
+                    try {
+                        const dataUrl = this.cropper.getCroppedCanvas()?.toDataURL();
+                        if (!dataUrl) {
+                            this.showErrorModal('裁剪失败', '无法获取裁剪后的图片数据。');
+                            return;
+                        }
+
+                        const { type, blockId, index } = this.currentCropTarget;
+                        let maxWidth = 1024; // Default for image blocks
+                        if (type === 'pageBg') maxWidth = 1920;
+                        if (type === 'avatar') maxWidth = 300;
+                        
+                        const finalDataUrl = await this.compressImage(dataUrl, 0.85, maxWidth);
+
+                        this.pushHistory();
+                        if (type === 'avatar') {
+                            this.updateState('personalInfo.avatarDataUrl', finalDataUrl, false);
+                        } else if (type === 'pageBg') {
+                            this.updateState('pageStyles.pageBgImageDataUrl', finalDataUrl, false);
+                        } else if (type === 'imageBlock') {
+                            const block = this.findBlock(blockId);
+                            if (block && block.images[index]) {
+                                block.images[index].url = finalDataUrl;
+                                this.renderEditorBlockById(blockId);
+                                this.renderPreviewBlockById(blockId);
+                            }
+                        }
+                        this.hideCropper();
+                    } catch (err) {
+                        console.error('Save crop failed:', err);
+                        this.showErrorModal('保存裁剪失败', '处理图片时发生错误。');
+                    } finally {
+                        this.hideLoading();
+                    }
+                },
+                updateCropAspectRatio() { 
+                    if(this.cropper) this.cropper.setAspectRatio(parseFloat(document.querySelector('input[name="crop-ratio"]:checked').value)); 
+                },
+                
+                async loadLocalFonts() {
+                    if (!window.queryLocalFonts) {
+                        this.showErrorModal('功能不支持', '您的浏览器不支持访问本地字体。请尝试使用“上传字体”功能。');
+                        return;
+                    }
+                    try {
+                        this.showLoading('正在加载本地字体...');
+                        const fonts = await window.queryLocalFonts();
+                        this.localFonts = fonts.map(font => ({ family: font.family, fullName: font.fullName, type: 'local' }));
+                        this.populateFontList();
+                        this.showToast(`加载了 ${this.localFonts.length} 个本地字体`, 'success');
+                    } catch (err) {
+                        console.error('无法访问本地字体:', err);
+                        this.showErrorModal('加载本地字体失败', '这是一个实验性的浏览器功能，可能因安全设置或浏览器版本而不稳定。如果持续失败，建议使用“上传字体”功能。');
+                    } finally {
+                        this.hideLoading();
+                    }
+                },
+                async handleFontUpload(event) {
+                    const file = event.target.files[0];
+                    if (!file) return;
+                    this.showLoading('正在上传并加载字体...');
+                    try {
+                        const fontData = await this.readFileAsArrayBuffer(file);
+                        const fontName = file.name.replace(/\.[^/.]+$/, "");
+                        if (this.uploadedFonts.some(f => f.family === fontName) || this.localFonts.some(f => f.family === fontName)) {
+                            this.showErrorModal('字体已存在', `字体 "${fontName}" 已存在!`);
+                            return;
+                        }
+                        const fontFace = new FontFace(fontName, fontData.slice(0));
+                        await fontFace.load();
+                        document.fonts.add(fontFace);
+                        
+                        const fontDataBase64 = await this.arrayBufferToBase64(fontData);
+                        this.uploadedFonts.push({ family: fontName, fullName: `${fontName} (上传)`, data: fontDataBase64, type: 'uploaded' });
+                        this.populateFontList();
+                        this.updateState('globalCardStyles.fontFamily', fontName, true);
+                        this.showToast(`字体 "${fontName}" 上传成功`, 'success');
+                    } catch (error) {
+                        console.error('字体上传失败:', error);
+                        this.showErrorModal('字体上传失败', '字体文件无效或加载失败。');
+                    } finally {
+                        event.target.value = '';
+                        this.hideLoading();
+                    }
+                },
+                populateFontList(searchTerm = '') {
+                    const select = this.elements.fontFamilySelect;
+                    const currentFont = this.state.globalCardStyles.fontFamily;
+                    select.innerHTML = '';
+
+                    const allFonts = [...this.uploadedFonts, ...this.localFonts];
+                    const categories = { cjk: [], sans: [], serif: [], uploaded: [], other: [] };
+                    
+                    const filteredFonts = searchTerm
+                        ? allFonts.filter(font => 
+                            font.family.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                            font.fullName.toLowerCase().includes(searchTerm.toLowerCase()))
+                        : allFonts;
+
+                    filteredFonts.forEach(font => {
+                        const category = this.getFontCategory(font);
+                        if (!categories[category].some(f => f.family === font.family)) {
+                             categories[category].push(font);
+                        }
+                    });
+
+                    const requiredFonts = this.getAllRequiredFonts();
+                    requiredFonts.forEach(reqFont => {
+                        if (!allFonts.some(f => f.family === reqFont)) {
+                           const placeholderFont = { family: reqFont, fullName: `${reqFont} (需要重新上传)`, type: 'uploaded', missing: true };
+                           if (!categories.uploaded.some(f => f.family === reqFont)) {
+                               categories.uploaded.push(placeholderFont);
+                           }
+                        }
+                    });
+
+                    const createOptgroup = (label, fonts) => {
+                        if (fonts.length === 0) return '';
+                        const options = fonts
+                            .sort((a, b) => a.fullName.localeCompare(b.fullName))
+                            .map(f => `<option value="${this.escapeHTML(f.family)}" ${f.missing?'disabled':''}>${this.escapeHTML(f.fullName)}</option>`)
+                            .join('');
+                        return `<optgroup label="${label}">${options}</optgroup>`;
+                    };
+
+                    let html = '<option value="">系统默认</option>';
+                    html += createOptgroup('已上传字体', categories.uploaded);
+                    html += createOptgroup('中文 / CJK', categories.cjk);
+                    html += createOptgroup('无衬线 (Sans-serif)', categories.sans);
+                    html += createOptgroup('衬线 (Serif)', categories.serif);
+                    html += createOptgroup('其他', categories.other);
+
+                    select.innerHTML = html;
+                    select.value = currentFont;
+                },
+                getFontCategory(font) {
+                    if (font.type === 'uploaded') return 'uploaded';
+                    const name = (font.family + font.fullName).toLowerCase();
+                    if (/(hei|song|ming|gothic|kai|fang|yuan|deng|黑|宋|明|ゴシック|楷|圓)/.test(name) || /[\u4e00-\u9fa5]/.test(name)) {
+                        return 'cjk';
+                    }
+                    if (name.includes('serif')) return 'serif';
+                    if (name.includes('sans')) return 'sans';
+                    return 'other';
+                },
+                getAllRequiredFonts() {
+                    const fonts = new Set();
+                    if (this.state.globalCardStyles.fontFamily) {
+                        fonts.add(this.state.globalCardStyles.fontFamily);
+                    }
+                    return Array.from(fonts);
+                },
+                
+                applyPreset(preset) { 
+                    this.pushHistory(); 
+                    
+                    this.state.pageStyles.pageBgSolidColor = preset.pageBgSolidColor; 
+                    this.state.pageStyles.pageBgGradientStart = preset.pageBgGradientStart;
+                    this.state.pageStyles.pageBgGradientEnd = preset.pageBgGradientEnd;
+
+                    this.state.pageStyles.headerBgColor = preset.headerBgColor;
+                    this.state.pageStyles.headerBgGradientStart = preset.headerBgGradientStart;
+                    this.state.pageStyles.headerBgGradientEnd = preset.headerBgGradientEnd;
+                    this.state.pageStyles.headerTextColor = preset.headerTextColor; 
+                    
+                    this.state.globalCardStyles.bgColor = preset.gCardBgColor; 
+                    this.state.globalCardStyles.bgGradientStart = preset.gCardBgGradientStart;
+                    this.state.globalCardStyles.bgGradientEnd = preset.gCardBgGradientEnd;
+                    this.state.globalCardStyles.textColor = preset.gCardTextColor; 
+                    this.state.globalCardStyles.opacity = preset.gCardOpacity; 
+                    
+                    this.state.personalInfo.nicknameColor = preset.pNicknameColor;
+                    this.state.personalInfo.subtitleColor = preset.pSubtitleColor;
+                    this.state.personalInfo.bioColor = preset.pBioColor;
+                    this.state.personalInfo.tagBgColor = preset.pTagBgColor;
+                    this.state.personalInfo.tagTextColor = preset.pTagTextColor;
+                    
+                    this.state.pageStyles.pageBgMode = 'gradient';
+                    this.state.pageStyles.headerBgMode = 'gradient';
+                    this.state.globalCardStyles.bgMode = 'solid';
+
+                    this.renderAll(); 
+                    this.syncAllControls();
+                    this.showToast('预设已应用', 'success');
+                },
+                readFileAsDataURL: (file) => new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                }),
+                readFileAsArrayBuffer: (file) => new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = reject;
+                    reader.readAsArrayBuffer(file);
+                }),
+                compressImage: (dataUrl, quality = 0.8, maxWidth = 1024) => new Promise(resolve => {
+                    const img = new Image();
+                    img.onload = () => {
+                        let { width, height } = img;
+                        if (width > maxWidth) {
+                            height = (maxWidth / width) * height;
+                            width = maxWidth;
+                        }
+                        const canvas = document.createElement('canvas');
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        resolve(canvas.toDataURL('image/jpeg', quality));
+                    };
+                    img.src = dataUrl;
+                }),
+                toggleTheme() { 
+                    const isDark = document.documentElement.classList.toggle('dark-mode'); 
+                    localStorage.setItem('genV75Theme', isDark ? 'dark' : 'light'); 
+                    this.elements.themeLabel.textContent = isDark ? '暗黑模式' : '明亮模式'; 
+                },
+                loadPreferences() { 
+                    if (localStorage.getItem('genV75Theme') === 'dark') { 
+                        this.elements.themeLabel.textContent = '暗黑模式'; 
+                    } 
+                },
+                saveToLocal() { 
+                    try { 
+                        const stateToSave = this.deepClone(this.state);
+                        stateToSave.uploadedFonts = this.uploadedFonts;
+                        localStorage.setItem('genV75State', JSON.stringify(stateToSave)); 
+                    } catch (e) {
+                        console.error("Save to localStorage failed:", e);
+                        if (e.name === 'QuotaExceededError') {
+                            this.showErrorModal('自动保存失败', '浏览器存储空间已满！您添加的图片或字体文件过大。请立即“导出配置”来备份您的工作，然后尝试移除一些图片或字体以恢复自动保存功能。');
+                        }
+                    } 
+                },
+                loadFromLocal() { 
+                    const json = localStorage.getItem('genV75State'); 
+                    if (!json) {
+                        this.showToast('欢迎使用！已为您加载默认模板。', 'info');
+                        return;
+                    };
+                    try { 
+                        const saved = JSON.parse(json);
+                        if (saved && saved.personalInfo) {
+                            const defaultState = this.getDefaultState();
+                            this.state = this.mergeDeep(defaultState, saved);
+
+                            if (saved.uploadedFonts) {
+                                this.uploadedFonts = saved.uploadedFonts;
+                                this.uploadedFonts.forEach(font => {
+                                    if (font.data) {
+                                        const fontFace = new FontFace(font.family, this.base64ToArrayBuffer(font.data));
+                                        fontFace.load().then(f => document.fonts.add(f)).catch(console.error);
+                                    }
+                                });
+                            }
+                        }
+                    } catch (e) { 
+                        localStorage.removeItem('genV75State'); 
+                        console.error("Failed to load state from localStorage:", e);
+                    } 
+                },
+                generateFilename(type) {
+                    const nickname = this.state.personalInfo.nickname.replace(/[^a-z0-9\u4e00-\u9fa5]/gi, '_').substring(0, 15) || 'SelfIntro';
+                    const date = new Date();
+                    const dateString = `${date.getFullYear()}${(date.getMonth() + 1).toString().padStart(2, '0')}${date.getDate().toString().padStart(2, '0')}`;
+                    const randomString = Math.random().toString(36).substring(2, 8);
+                    return `${nickname}-${dateString}-${type}-${randomString}`;
+                },
+                exportConfig() { 
+                    const stateToSave = this.deepClone(this.state);
+                    stateToSave.uploadedFonts = this.uploadedFonts;
+                    const blob = new Blob([JSON.stringify(stateToSave, null, 2)], { type: 'application/json' }); 
+                    const filename = this.generateFilename('Config') + '.json';
+                    this.showDownloadModal(URL.createObjectURL(blob), filename, '配置已生成');
+                    this.showToast('配置已导出', 'success');
+                },
+                async handleConfigFile(e) { 
+                    const file = e.target.files[0]; 
+                    if (!file) return;
+
+                    if (!window.confirm('导入配置将覆盖当前所有内容，确定要继续吗？')) {
+                        e.target.value = '';
+                        return;
+                    }
+
+                    this.showLoading('正在导入配置...');
+                    await this.sleep(100); 
+                    
+                    const reader = new FileReader(); 
+                    reader.onload = async (re) => { 
+                        try { 
+                            const importedState = JSON.parse(re.target.result); 
+                            if (!importedState || !importedState.personalInfo || !importedState.blocks) throw new Error('Invalid file format'); 
+                            
+                            this.state = this.mergeDeep(this.getDefaultState(), importedState);
+                            
+                            this.uploadedFonts = [];
+                            
+                            if (importedState.uploadedFonts) {
+                                this.uploadedFonts = importedState.uploadedFonts;
+                                const fontLoadPromises = this.uploadedFonts.map(font => {
+                                    if (font.data) {
+                                        try {
+                                           const fontFace = new FontFace(font.family, this.base64ToArrayBuffer(font.data));
+                                           return fontFace.load().then(f => document.fonts.add(f));
+                                        } catch (fontError) {
+                                            console.error(`Failed to load font ${font.family} from config:`, fontError);
+                                            return Promise.resolve();
+                                        }
+                                    }
+                                    return Promise.resolve();
+                                });
+                                await Promise.all(fontLoadPromises);
+                            }
+
+                            this.history = [this.deepClone(this.state)];
+                            this.historyIndex = 0;
+                            this.renderAll(true); 
+                            this.syncAllControls(); 
+                            this.populateFontList();
+                            this.initAllSortables();
+                            this.updateExportSizePreview();
+                            this.showToast('配置导入成功', 'success');
+                        } catch(err) { 
+                            this.showErrorModal('导入失败', '配置文件格式不正确或已损坏。请确保您导入的是由本工具生成的 .json 文件。');
+                            console.error(err);
+                        } finally {
+                            this.hideLoading();
+                        }
+                    }; 
+                    reader.readAsText(file); 
+                    e.target.value = ''; 
+                },
+                
+                async bakeOverlaysForExport(clone) {
+                    const style = document.createElement('style');
+                    clone.appendChild(style);
+
+                    // Bake main page overlay
+                    const pageOverlay = clone.querySelector('#preview-overlay');
+                    const pageComputed = getComputedStyle(pageOverlay);
+                    if (parseFloat(pageComputed.opacity) > 0) {
+                        const overlayColor = pageComputed.backgroundColor;
+                        const currentBg = getComputedStyle(clone).backgroundImage;
+                        clone.style.backgroundImage = `linear-gradient(${overlayColor}, ${overlayColor}), ${currentBg}`;
+                        pageOverlay.style.display = 'none';
+                    }
+
+                    // Bake card overlays, which use pseudo-elements
+                    clone.querySelectorAll('.preview-card-inner').forEach(cardInner => {
+                        const before = getComputedStyle(cardInner, '::before');
+                        const after = getComputedStyle(cardInner, '::after');
+                        
+                        const bg = before.getPropertyValue('background');
+                        const overlayColor = after.getPropertyValue('background-color');
+                        const overlayOpacity = parseFloat(after.getPropertyValue('opacity'));
+
+                        if (overlayOpacity > 0 && overlayColor !== 'rgba(0, 0, 0, 0)') {
+                            cardInner.style.background = `linear-gradient(${overlayColor}, ${overlayColor}), ${bg}`;
+                        } else {
+                            cardInner.style.background = bg;
+                        }
+                    });
+                    
+                    // Add styles to the clone to disable pseudo-elements for cards, preventing double rendering
+                    style.innerHTML += `
+                        #${clone.id} .preview-card-inner::before, #${clone.id} .preview-card-inner::after {
+                            content: none !important;
+                            background: none !important;
+                        }
+                    `;
+                },
+
+                async exportPNG() {
+                    this.showLoading('正在准备导出...');
+                    const scale = this.elements.hdExportToggle.checked ? 3 : 2;
+                    const originalElement = this.elements.previewWrapper;
+                    let clone = null;
+                    
+                    try {
+                        // Create a clone for rendering
+                        clone = originalElement.cloneNode(true);
+                        clone.id = `export-clone-${Date.now()}`;
+                        
+                        // General clone styling for clean export
+                        const style = document.createElement('style');
+                        style.innerHTML = `
+                            #${clone.id}, #${clone.id} * { transition: none !important; animation: none !important; }
+                            #${clone.id} .preview-card:hover .preview-card-inner { transform: none !important; box-shadow: var(--active-card-shadow, none) !important; }
+                        `;
+                        clone.appendChild(style);
+
+                        clone.style.position = 'absolute';
+                        clone.style.left = '-9999px';
+                        clone.style.top = '0px';
+                        clone.style.width = `${originalElement.offsetWidth}px`;
+
+                        document.body.appendChild(clone);
+                        await this.sleep(100);
+
+                        // "Bake" complex CSS overlays into simple backgrounds for html2canvas
+                        this.showLoading('正在处理样式 (烘焙)...');
+                        await this.bakeOverlaysForExport(clone);
+                        await this.sleep(100);
+
+                        this.showLoading('正在渲染图片...');
+                        const canvas = await html2canvas(clone, {
+                            scale: scale,
+                            useCORS: true,
+                            backgroundColor: getComputedStyle(originalElement).backgroundColor,
+                            logging: false
+                        });
+
+                        const dataUrl = canvas.toDataURL('image/png');
+                        const filename = this.generateFilename('Image') + '.png';
+                        this.showDownloadModal(dataUrl, filename, '图片已生成');
+
+                    } catch (err) {
+                        console.error("PNG export failed:", err);
+                        this.showErrorModal('导出失败', `生成图片时发生错误: ${err.message}.`);
+                    } finally {
+                        if (clone && clone.parentNode) {
+                            clone.parentNode.removeChild(clone);
+                        }
+                        this.hideLoading();
+                    }
+                },
+                updateExportSizePreview() {
+                    const el = this.elements.previewWrapper;
+                    if (!el) return;
+                    const width = el.clientWidth;
+                    const height = el.clientHeight;
+                    const isHD = this.elements.hdExportToggle.checked;
+                    let text = `标准 (x2): ${width*2}x${height*2}px`;
+                    if(isHD) {
+                        text = `超清 (x3): ${width*3}x${height*3}px`;
+                    }
+                    this.elements.exportSizePreview.textContent = text;
+                },
+                arrayBufferToBase64(buffer) {
+                    return new Promise((resolve, reject) => {
+                        const blob = new Blob([buffer], {type: 'application/octet-stream'});
+                        const reader = new FileReader();
+                        reader.onload = e => resolve(e.target.result);
+                        reader.onerror = e => reject(e);
+                        reader.readAsDataURL(blob);
+                    });
+                },
+                base64ToArrayBuffer(base64) {
+                    const binaryString = atob(base64.split(',')[1]);
+                    const len = binaryString.length;
+                    const bytes = new Uint8Array(len);
+                    for (let i = 0; i < len; i++) {
+                        bytes[i] = binaryString.charCodeAt(i);
+                    }
+                    return bytes.buffer;
+                },
+                showDownloadModal(url, filename, title) { 
+                    this.elements.downloadModalTitle.textContent = title; 
+                    const content = this.elements.downloadModalContent; 
+                    content.innerHTML = `<a href="${url}" download="${filename}">点击下载: ${filename}</a>`; 
+                    if (url.startsWith('data:image')) content.insertAdjacentHTML('afterbegin', `<img src="${url}">`); 
+                    this.elements.downloadModal.classList.add('visible'); 
+                },
+                hideDownloadModal() { this.elements.downloadModal.classList.remove('visible'); },
+                showErrorModal(title, message) {
+                    const existingModal = document.querySelector('.error-modal');
+                    if (existingModal) existingModal.remove();
+                    const modal = document.createElement('div');
+                    modal.className = 'error-modal';
+                    modal.innerHTML = `<h3>${title}</h3><p>${message}</p><button class="btn btn-primary" onclick="this.closest('.error-modal').remove()">确定</button>`;
+                    document.body.appendChild(modal);
+                },
+                showLoading(text = '正在处理...') {
+                    this.elements.loadingText.textContent = text;
+                    this.elements.loadingOverlay.classList.add('visible');
+                },
+                hideLoading() {
+                    this.elements.loadingOverlay.classList.remove('visible');
+                },
+                showToast(message, type = 'info') {
+                    const toast = document.createElement('div');
+                    toast.className = `toast-notification ${type}`;
+                    toast.textContent = message;
+                    this.elements.toastContainer.appendChild(toast);
+                    setTimeout(() => {
+                        toast.remove();
+                    }, 5000);
+                },
+                updateGlobalCardStyleVars() { 
+                    const g = this.state.globalCardStyles;
+                    const r = document.documentElement.style; 
+                    
+                    r.setProperty('--g-card-bg-color', g.bgColor);
+                    r.setProperty('--g-card-text-color',g.textColor); 
+                    r.setProperty('--g-card-opacity',g.opacity); 
+                    r.setProperty('--g-card-border-radius',`${g.radius}px`); 
+                    r.setProperty('--g-card-text-align',g.textAlign); 
+                    r.setProperty('--g-card-line-height',g.lineHeight); 
+                    r.setProperty('--active-card-shadow', g.shadowEnabled ? 'var(--g-card-shadow)' : 'none'); 
+                    r.setProperty('--active-card-border', 'none');
+                    r.setProperty('--active-card-font-family',g.fontFamily?`"${g.fontFamily}",sans-serif`:''); 
+                    r.setProperty('--active-card-font-size',g.fontSize);
+                    r.setProperty('--g-card-text-stroke', g.textStrokeWidth > 0 ? `${g.textStrokeWidth}px ${g.textStrokeColor}` : '0px transparent');
+                },
+                initAllSortables() {
+                    this.initSortableBlocksEditor();
+                    this.initSortableBlocksPreview();
+                    this.state.blocks.forEach(b => this.initSortablesForBlock(b.id));
+                },
+                initSortablesForBlock(blockId) {
+                    const block = this.findBlock(blockId);
+                    if (!block) return;
+                    if (block.type === 'text') this.initSortableCards(blockId);
+                    if (block.type === 'image') this.initSortableImages(blockId);
+                },
+                initSortableBlocksEditor() { 
+                    if(this.sortableBlocksEditor) this.sortableBlocksEditor.destroy(); 
+                    this.sortableBlocksEditor = new Sortable(this.elements.editorBlocksList, { handle: '.block-drag-handle', animation: 150, ghostClass: 'sortable-ghost', onEnd: e => { this.pushHistory(); const [m] = this.state.blocks.splice(e.oldIndex, 1); this.state.blocks.splice(e.newIndex, 0, m); this.renderPreviewBlocks(); } }); 
+                },
+                initSortableBlocksPreview() {
+                    if(this.sortableBlocksPreview) this.sortableBlocksPreview.destroy(); 
+                    this.sortableBlocksPreview = new Sortable(this.elements.previewBlocksContainer, { animation: 150, ghostClass: 'sortable-ghost', onEnd: e => { this.pushHistory(); const [m] = this.state.blocks.splice(e.oldIndex, 1); this.state.blocks.splice(e.newIndex, 0, m); this.renderEditorBlocks(); } });
+                },
+                initSortableCards(blockId) { 
+                    const list = this.elements.editorBlocksList.querySelector(`[data-block-id="${blockId}"] .card-editors-list`); 
+                    if (list) { if(this.cardSortables[blockId]) this.cardSortables[blockId].destroy(); this.cardSortables[blockId] = new Sortable(list, { handle: '.card-drag-handle', animation: 150, ghostClass: 'sortable-ghost', onEnd: e => { const b = this.findBlock(blockId); if (b) { this.pushHistory(); const [m] = b.cards.splice(e.oldIndex, 1); b.cards.splice(e.newIndex, 0, m); this.renderPreviewBlockById(blockId); } } }); } 
+                },
+                initSortableImages(blockId) {
+                    const container = this.elements.editorBlocksList.querySelector(`[data-block-id="${blockId}"] .image-thumbnails-grid`);
+                    if (container) { if (this.imageSortables[blockId]) this.imageSortables[blockId].destroy(); this.imageSortables[blockId] = new Sortable(container, { animation: 150, ghostClass: 'sortable-ghost', onEnd: e => { const block = this.findBlock(blockId); if (block) { this.pushHistory(); const [moved] = block.images.splice(e.oldIndex, 1); block.images.splice(e.newIndex, 0, moved); this.renderEditorBlockById(blockId); this.renderPreviewBlockById(blockId); } } }); }
+                },
+                hexToRgba: (hex, alpha=1) => { 
+                    if(!hex || parseFloat(alpha) === 0) return 'transparent';
+                    // Allow parsing of rgba strings directly
+                    if (hex.startsWith('rgba')) {
+                        return hex.replace(/, ?\d?\.?\d+\)$/, `, ${alpha})`);
+                    }
+                    const match = hex.match(/\w\w/g);
+                    if (!match) return `rgba(0,0,0,${alpha})`;
+                    const [r, g, b] = match.map(x => parseInt(x, 16)); 
+                    return `rgba(${r},${g},${b},${alpha})`;
+                },
+                debounce: (func, wait) => { 
+                    let timeout; 
+                    return (...args) => { clearTimeout(timeout); timeout = setTimeout(() => func.apply(this, args), wait); }; 
+                },
+                generateId: p => `${p}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                deepClone: obj => JSON.parse(JSON.stringify(obj)),
+                escapeHTML: str => (str || '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'})[m]),
+                sleep: ms => new Promise(resolve => setTimeout(resolve, ms)),
+                mergeDeep(target, source) {
+                    const isObject = (obj) => obj && typeof obj === 'object' && !Array.isArray(obj);
+                    const output = { ...target };
+                    if (isObject(target) && isObject(source)) {
+                        Object.keys(source).forEach(key => {
+                            if (isObject(source[key]) && key in target) {
+                                output[key] = this.mergeDeep(target[key], source[key]);
+                            } else {
+                                Object.assign(output, { [key]: source[key] });
+                            }
+                        });
+                    }
+                    return output;
+                }
+            };
+            App.init();
+        });
+    </script>
+</body>
+
+</html>
