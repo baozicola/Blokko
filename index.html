@@ -484,80 +484,84 @@
                 presets: {},
                 icons: [], 
 
-                init() {
-                    console.log("App 初始化 v1.1.1 ...");
-                    this.elements = this.queryElements();
-                    this.presets = this.getPresets();
-                    this.state = this.getDefaultState();
-                    this.debouncedSaveToLocal = this.debounce(this.saveToLocal, 500);
-                    
-                    this.bindCoreEvents();
-                    this.bindEditorEvents();
-                    this.bindPreviewEvents();
-                    this.initResizer();
-                    
-                    this.loadPreferences();
-                    this.loadFromLocal();
-                    
-                    this.history = [this.deepClone(this.state)];
-                    this.historyIndex = 0;
-                    this.updateUndoRedoButtons();
-                    
-                    this.syncAllControls();
-                    this.renderAll(true); 
-                    this.populateFontList(); 
-                    this.initAllSortables();
-                    this.updateExportSizePreview();
-                    this.loadIcons(); 
-                    
-                    document.getElementById('personal-info-section').classList.remove('collapsed');
-                },
+init() {
+    console.log("App 初始化 v1.1.1 ...");
+    this.elements = this.queryElements();
+	
+    const presets = this.getPresets();
+    this.presets = presets; // 仍然需要保存到 this.presets
+    this.state = this.getDefaultState(presets); // 将 presets作为参数传递进去
+    
 
-                getDefaultState() {
-                    const lightTheme = this.getPresets().light;
-                    return {
-                        personalInfo: { 
-                            nickname: "你的昵称", nicknameColor: lightTheme.pNicknameColor,
-                            subtitle: "这是副标题，双击可编辑", subtitleColor: lightTheme.pSubtitleColor,
-                            bio: "这是简介，双击可编辑", bioColor: lightTheme.pBioColor,
-                            avatarDataUrl: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23cccccc'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E", 
-                            avatarShape: '50%', avatarBorderSize: 4, avatarBorderColor: '#ffffff',
-                            tags: "标签1, 标签2", tagBgColor: lightTheme.pTagBgColor, tagTextColor: lightTheme.pTagTextColor
-                        },
-                        pageStyles: {
-                            pageBgMode: 'gradient',
-                            pageBgSolidColor: lightTheme.pageBgSolidColor, pageBgImageDataUrl: null, 
-                            pageBgGradientStart: lightTheme.pageBgGradientStart, pageBgGradientEnd: lightTheme.pageBgGradientEnd,
-                            pageBgGradientAngle: 135,
-                            pageOverlayColor: "#000000", pageOverlayOpacity: 0.3,
-                            headerBgMode: 'gradient',
-                            headerBgColor: lightTheme.headerBgColor, headerTextColor: lightTheme.headerTextColor, headerOpacity: 1.0, 
-                            headerBgGradientStart: lightTheme.headerBgGradientStart, headerBgGradientEnd: lightTheme.headerBgGradientEnd,
-                            headerBgGradientAngle: 135,
-                        },
-                        blocks: [
-                            { id: this.generateId('b'), type: 'text', title: "单排卡片区块", settings: { layout: 'single' }, cards: [
-                                { id: this.generateId('c'), icon: 'bi-star-fill', title: "这是单排卡片", content: "双击这里进行编辑", opacity: 1.0, followGlobalOpacity: true }
-                            ]},
-                            { id: this.generateId('b'), type: 'text', title: "双排卡片区块", settings: { layout: 'dual' }, cards: [
-                                { id: this.generateId('c'), icon: '', title: "这是双排卡片 1", content: "双击这里进行编辑", opacity: 1.0, followGlobalOpacity: true },
-                                { id: this.generateId('c'), icon: '', title: "这是双排卡片 2", content: "双击这里进行编辑", opacity: 1.0, followGlobalOpacity: true }
-                            ]},
-                            { id: this.generateId('b'), type: 'separator', title: "分割线", settings: { style: 'solid', color: '#dddddd', thickness: 1, margin: 20 }},
-                            { id: this.generateId('b'), type: 'image', title: "图片区块", settings: { layout: '2', useGlobalStyle: true, followGlobalOpacity: true, bgOpacity: 1.0, bgColor: '#ffffff' }, images: [] }
-                        ],
-                        globalCardStyles: { 
-                            bgMode: 'solid', 
-                            bgColor: lightTheme.gCardBgColor, textColor: lightTheme.gCardTextColor, opacity: 1.0,
-                            bgGradientStart: lightTheme.gCardBgGradientStart, bgGradientEnd: lightTheme.gCardBgGradientEnd,
-                            bgGradientAngle: 135,
-                            shadowEnabled: true, radius: 12, textAlign: "left", lineHeight: "1.5", 
-                            fontFamily: "", fontSize: "1rem",
-                            textStrokeWidth: 0, textStrokeColor: "#000000",
-                            borderWidth: 0, borderStyle: 'none', borderColor: '#cccccc',
-                        }
-                    };
-                },
+    this.debouncedSaveToLocal = this.debounce(this。saveToLocal， 500);
+    
+    this.bindCoreEvents();
+    this.bindEditorEvents();
+    this.bindPreviewEvents();
+    this.initResizer();
+    
+    this.loadPreferences();
+    this.loadFromLocal();
+    
+    this.history = [this.deepClone(this。state)];
+    this.historyIndex = 0;
+    this.updateUndoRedoButtons();
+    
+    this.syncAllControls();
+    this.renderAll(true); 
+    this.populateFontList(); 
+    this。initAllSortables();
+    this.updateExportSizePreview();
+    this.loadIcons(); 
+    
+    document.getElementById('personal-info-section').classList.remove('collapsed');
+},
+
+getDefaultState(presets) { // 接收 presets 参数
+    const lightTheme = presets.light; // 直接使用传入的 presets
+    return {
+        personalInfo: { 
+            nickname: "你的昵称", nicknameColor: lightTheme.pNicknameColor,
+            subtitle: "这是副标题，双击可编辑", subtitleColor: lightTheme.pSubtitleColor,
+            bio: "这是简介，双击可编辑", bioColor: lightTheme.pBioColor,
+            avatarDataUrl: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23cccccc'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E", 
+            avatarShape: '50%', avatarBorderSize: 4, avatarBorderColor: '#ffffff',
+            tags: "标签1, 标签2", tagBgColor: lightTheme.pTagBgColor, tagTextColor: lightTheme.pTagTextColor
+        },
+        pageStyles: {
+            pageBgMode: 'gradient',
+            pageBgSolidColor: lightTheme.pageBgSolidColor, pageBgImageDataUrl: null, 
+            pageBgGradientStart: lightTheme.pageBgGradientStart, pageBgGradientEnd: lightTheme.pageBgGradientEnd,
+            pageBgGradientAngle: 135,
+            pageOverlayColor: "#000000", pageOverlayOpacity: 0.3,
+            headerBgMode: 'gradient',
+            headerBgColor: lightTheme.headerBgColor, headerTextColor: lightTheme.headerTextColor, headerOpacity: 1.0, 
+            headerBgGradientStart: lightTheme.headerBgGradientStart, headerBgGradientEnd: lightTheme.headerBgGradientEnd,
+            headerBgGradientAngle: 135,
+        },
+        blocks: [
+            { id: this.generateId('b'), type: 'text', title: "单排卡片区块", settings: { layout: 'single' }, cards: [
+                { id: this.generateId('c'), icon: 'bi-star-fill', title: "这是单排卡片", content: "双击这里进行编辑", opacity: 1.0, followGlobalOpacity: true }
+            ]},
+            { id: this.generateId('b'), type: 'text', title: "双排卡片区块", settings: { layout: 'dual' }, cards: [
+                { id: this.generateId('c'), icon: '', title: "这是双排卡片 1", content: "双击这里进行编辑", opacity: 1.0, followGlobalOpacity: true },
+                { id: this.generateId('c'), icon: '', title: "这是双排卡片 2", content: "双击这里进行编辑", opacity: 1.0, followGlobalOpacity: true }
+            ]},
+            { id: this.generateId('b'), type: 'separator', title: "分割线", settings: { style: 'solid', color: '#dddddd', thickness: 1, margin: 20 }},
+            { id: this.generateId('b'), type: 'image', title: "图片区块", settings: { layout: '2', useGlobalStyle: true, followGlobalOpacity: true, bgOpacity: 1.0, bgColor: '#ffffff' }, images: [] }
+        ],
+        globalCardStyles: { 
+            bgMode: 'solid', 
+            bgColor: lightTheme.gCardBgColor, textColor: lightTheme.gCardTextColor, opacity: 1.0,
+            bgGradientStart: lightTheme.gCardBgGradientStart, bgGradientEnd: lightTheme.gCardBgGradientEnd,
+            bgGradientAngle: 135,
+            shadowEnabled: true, radius: 12, textAlign: "left", lineHeight: "1.5", 
+            fontFamily: "", fontSize: "1rem",
+            textStrokeWidth: 0, textStrokeColor: "#000000",
+            borderWidth: 0, borderStyle: 'none', borderColor: '#cccccc',
+        }
+    };
+}，
                 
                 getPresets() {
                     return {
@@ -2449,3 +2453,4 @@
     </script>
 </body>
 </html>
+
