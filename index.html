@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Blokko v1.3.1: -->
-    <title>Blokko-个人简介生成器！ (v1.3.1)</title>
+    <!-- Blokko v1.3.2: -->
+    <title>Blokko-个人简介生成器！ (v1.3.2)</title>
     
     <script>
         // Anti-FOUC (Flash of Unstyled Content) Script
@@ -151,7 +151,7 @@
         .block-settings label { font-size: 0.9rem; margin: 0; color: var(--text-secondary); cursor: pointer; }
         .block-delete-btn { width: auto; padding: 6px 10px; font-size: 0.9rem; flex-shrink: 0; }
         .editor-block-content { padding: 15px; overflow-x: hidden; /* Fix for mobile card overflow */ }
-        .card-editors-list .empty-placeholder { text-align: center; padding: 15px; color: var(--text-placeholder); font-size: 0.9rem; }
+        .card-editors-list .empty-placeholder, .image-card-editors-list .empty-placeholder { text-align: center; padding: 15px; color: var(--text-placeholder); font-size: 0.9rem; }
         .editor-card { background: var(--bg-section); border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 15px; position: relative; padding-left: 40px; opacity: 1; transform: scale(1); }
         .editor-card.sortable-chosen { box-shadow: 0 3px 8px var(--shadow-medium); transform: scale(1.01); }
         .card-drag-handle { position: absolute; top: 0; left: 0; bottom: 0; width: 40px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; color: var(--text-placeholder); cursor: grab; border-right: 1px solid var(--border-color); }
@@ -163,10 +163,9 @@
         .card-bg-control input[type="file"] { flex-grow: 1; }
         .card-overlay-controls { border: 1px solid var(--border-input); border-radius: 6px; padding: 10px; margin-top: 10px; background: var(--bg-input); }
         .card-style-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; }
-        .image-upload-area { background: var(--bg-input); border: 2px dashed var(--border-dashed); border-radius: 8px; padding: 25px; text-align: center; cursor: pointer; color: var(--text-secondary); margin-bottom: 15px; transition: all var(--transition-short) ease; }
-        .image-upload-area:hover { border-color: var(--color-primary); background: var(--bg-image-upload-hover); color: var(--text-action); }
-        .image-thumbnails-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 10px; }
-        .thumbnail-item { display: flex; flex-direction: column; gap: 5px; }
+        .image-card-editor-content { display: flex; gap: 15px; align-items: flex-start; }
+        .image-card-editor-thumb { flex-shrink: 0; width: 80px; }
+        .image-card-editor-fields { flex-grow: 1; }
         .thumbnail-wrapper { position: relative; width: 100%; padding-top: 100%; background: var(--bg-image-thumb); border-radius: 6px; overflow: hidden; transition: all var(--transition-short) ease; }
         .thumbnail-wrapper img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; transition: transform var(--transition-short) ease; }
         .thumbnail-wrapper:hover { transform: scale(1.05); box-shadow: 0 4px 12px var(--shadow-medium); }
@@ -175,36 +174,34 @@
         .thumbnail-wrapper:hover .thumbnail-actions { opacity: 1; }
         .thumbnail-actions .btn { width: 24px; height: 24px; padding: 0; font-size: 0.8rem; line-height: 24px; border-radius: 50%; background: rgba(0,0,0,0.6); color: white; border: none; }
         .thumbnail-actions .btn:hover { background: rgba(0,0,0,0.8); }
-        .thumbnail-item input[type="text"], .thumbnail-item textarea { font-size: 0.8rem; padding: 4px 6px; background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-primary); border-radius: 4px; }
-        .thumbnail-item textarea { resize: none; height: 40px; }
         .preview-blocks-container { margin-top: 20px; display: flex; flex-direction: column; gap: 20px; width: 100%; box-sizing: border-box; }
         .preview-blocks-container.locked-mode * { cursor: default !important; }
         #preview-blocks-container .empty-placeholder { text-align: center; padding: 50px 0; color: var(--text-placeholder); }
         .preview-block-wrapper.sortable-drag { opacity: 1 !important; }
         .preview-block-wrapper { cursor: grab; } .preview-block-wrapper:active { cursor: grabbing; }
-        .preview-cards-single { display: flex; flex-direction: column; gap: 15px; width: 100%; }
-        .preview-cards-dual { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; width: 100%; }
-        .preview-cards-triple { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; width: 100%; }
+        .preview-cards-container { width: 100%; }
+        .preview-cards-single { display: flex; flex-direction: column; gap: 15px; }
+        .preview-cards-dual { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+        .preview-cards-triple { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+        .masonry-active { display: block; position: relative; } /* Override grid */
+        .masonry-active.preview-cards-dual .preview-card, .masonry-active.preview-cards-dual figure { width: calc(50% - 7.5px); margin-bottom: 15px; }
+        .masonry-active.preview-cards-triple .preview-card, .masonry-active.preview-cards-triple figure { width: calc(33.333% - 10px); margin-bottom: 15px; }
         .preview-card { box-sizing: border-box; width: 100%; view-transition-name: var(--card-transition-name); }
         .preview-card-inner { width: 100%; height: 100%; box-sizing: border-box; position: relative; overflow: hidden; color: var(--card-text-color, var(--g-card-text-color)); border-radius: var(--g-card-border-radius); box-shadow: var(--active-card-shadow, none); border: var(--active-card-border, none); font-weight: var(--card-font-weight, normal); text-shadow: var(--active-card-text-shadow, none); padding: 15px; word-wrap: break-word; transition: all var(--transition-short) ease, transform var(--transition-short) ease; -webkit-text-stroke: var(--g-card-text-stroke); line-height: var(--g-card-line-height); background-clip: padding-box; }
         .preview-card-inner::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 0; background-size: cover; background-position: center; border-radius: inherit; background: var(--card-bg-final); transition: background var(--transition-speed) ease; }
         .preview-card-inner::after { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--card-overlay-color, transparent); opacity: var(--card-overlay-opacity, 0); border-radius: inherit; z-index: 1; pointer-events: none; transition: all var(--transition-short) ease; }
         .preview-card:hover .preview-card-inner { transform: scale(1.02); box-shadow: 0 6px 16px var(--shadow-medium); }
-        .preview-card.adding { animation: fadeInScale 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); }
-        .preview-card.removing { animation: fadeOutScale 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); }
+        .preview-card.adding, figure.adding { animation: fadeInScale 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); }
+        .preview-card.removing, figure.removing { animation: fadeOutScale 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); }
         .preview-card-title, .preview-card-content { position: relative; z-index: 2; margin: 0; word-wrap: break-word; overflow-wrap: break-word; color: inherit; }
         .preview-card-title { font-size: 1.1em; font-weight: inherit; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
         .preview-card-title .iconify, .tag-pill .iconify { font-size: 1.1em; line-height: 1; vertical-align: middle; }
         .preview-card-content { font-size: 0.95em; line-height: inherit; white-space: pre-wrap; }
-        .image-gallery { display: grid; gap: 15px; padding: 15px; border-radius: var(--g-card-border-radius); box-shadow: var(--active-card-shadow, none); border: var(--active-card-border, none); overflow: hidden; position: relative; background: var(--image-block-bg, var(--bg-card)); transition: all var(--transition-speed) ease; width: 100%; box-sizing: border-box; }
-        .image-gallery.layout-1 { grid-template-columns: 1fr; }
-        .image-gallery.layout-2 { grid-template-columns: 1fr 1fr; gap: 10px; }
-        .image-gallery.layout-3 { grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
-        .image-gallery figure { margin: 0; position: relative; z-index: 1; display: flex; flex-direction: column; transition: transform 0.3s ease; }
-        .image-gallery img { width: 100%; display: block; border-radius: 8px; height: auto; max-width: 100%; transition: transform 0.3s ease; }
-        .image-gallery img:hover { transform: scale(1.05); }
-        .image-gallery figcaption { text-align: center; margin-top: 8px; overflow-wrap: break-word; }
-        .image-gallery figcaption strong { display: block; font-weight: 600; margin-bottom: 3px; }
+        .preview-cards-container figure { margin: 0; display: flex; flex-direction: column; transition: transform 0.3s ease; }
+        .preview-cards-container figure img { width: 100%; display: block; border-radius: 8px; height: auto; max-width: 100%; transition: transform 0.3s ease; }
+        .preview-cards-container figure:hover img { transform: scale(1.05); }
+        .preview-cards-container figure figcaption { text-align: center; margin-top: 8px; padding: 5px; overflow-wrap: break-word; color: var(--g-card-text-color); border-radius: 8px; }
+        .preview-cards-container figure figcaption strong { display: block; font-weight: 600; margin-bottom: 3px; }
         .separator-preview { display: flex; align-items: center; justify-content: center; }
         .separator-preview-line { flex-grow: 1; height: 1px; }
         .spacer-preview { transition: height 0.3s ease; }
@@ -291,7 +288,8 @@
                 height: calc(100vh - var(--header-height)); background: rgba(0,0,0,0.4); z-index: 199;
                 opacity: 1; pointer-events: auto; transition: opacity 0.3s ease-in-out;
             }
-            .preview-cards-triple { grid-template-columns: 1fr; } /* On mobile, 3 columns become 1 */
+            .preview-cards-triple { grid-template-columns: 1fr; }
+            .masonry-active.preview-cards-triple .preview-card, .masonry-active.preview-cards-triple figure { width: 100%; }
         }
     </style>
 </head>
@@ -299,7 +297,7 @@
 
     <header class="app-header">
         <button id="mobile-edit-toggle" class="btn btn-default btn-icon" style="width: auto; padding: 6px 12px;"><span class="iconify" data-icon="mdi:pencil"></span> 编辑</button>
-        <div class="app-header-title">Blokko (v1.3.1)</div>
+        <div class="app-header-title">Blokko (v1.3.2)</div>
         <div class="header-actions-wrapper">
             <button id="lock-mode-toggle" class="btn btn-default" style="width: auto; padding: 6px 12px;" title="切换编辑/预览模式">编辑中</button>
             <button id="show-help-btn" class="btn btn-default btn-icon" style="width: auto; padding: 6px 12px;"><span class="iconify" data-icon="mdi:help-circle-outline"></span> 帮助</button>
@@ -476,6 +474,7 @@
                 <h4>欢迎使用 Blokko！</h4>
                 <p><strong><span class="iconify" data-icon="mdi:cursor-default-click-outline" style="vertical-align: -0.2em;"></span> 双击编辑：</strong> 预览区域的大部分文本内容（如昵称、简介、卡片标题和内容）都可以通过双击直接进行编辑。</p>
                 <p><strong><span class="iconify" data-icon="mdi:drag" style="vertical-align: -0.2em;"></span> 拖拽排序：</strong> 在编辑区，你可以拖动区块或卡片左侧的 ☰ 图标来对它们进行排序。</p>
+                <p><strong><span class="iconify" data-icon="mdi:view-dashboard-variant-outline" style="vertical-align: -0.2em;"></span> 瀑布流布局：</strong> 对于多列区块（双排/三排），可以在编辑区勾选“启用瀑布流”，使卡片/图片高度自适应，布局更紧凑。</p>
                 <p><strong><span class="iconify" data-icon="mdi:lock-open-variant-outline" style="vertical-align: -0.2em;"></span> 锁定模式：</strong> 点击右上角的 "编辑中" 按钮可切换到 "锁定中"，此模式下禁用拖拽，方便在手机上顺畅滑动浏览。</p>
                 <p><strong><span class="iconify" data-icon="mdi:import" style="vertical-align: -0.2em;"></span> 导入/导出：</strong> 使用“导出配置”按钮可以保存你所有的设计为一个 .json 文件，方便备份和分享。之后可以通过“导入配置”来恢复。</p>
                 <p><strong><span class="iconify" data-icon="mdi:content-save" style="vertical-align: -0.2em;"></span> 本地保存：</strong> 你的所有修改都会自动保存在当前浏览器中，刷新页面不会丢失进度（请勿使用无痕模式）。</p>
@@ -485,12 +484,21 @@
                 <p>因使用未授权素材而产生的任何版权问题，将需要由您自行承担，<strong>因此我鼓励您使用开源的无版权可商用字体/图片/图标文件。</strong></p>
 		   </div>
             <div id="help-changelog" class="tab-content">
-                <h4>v1.3.1 (当前版本)</h4>
+                <h4>v1.3.2 (当前版本)</h4>
+                <ul>
+                    <li><b>【新增】</b> 为多列文本区块（双排/三排）增加了瀑布流（Masonry）布局选项。启用后，卡片将根据内容自适应高度，并紧凑排列，解决了因卡片高度不一导致的布局空洞问题。</li>
+                    <li><b>【新增/重构】</b> 图片区块已完全重构，现在与文本区块拥有统一的卡片式管理逻辑。可以为图片区块启用瀑布流布局，实现完美的图片墙效果。</li>
+                    <li><b>【新增】</b> 在电脑端，点击或双击预览区的区块时，左侧编辑面板会自动定位并展开到该区块的设置区域，方便快速修改。</li>
+                    <li><b>【优化】</b> 优化了部分文本表述。</li>
+                    <li><b>【优化】</b> 导入旧版配置文件时，会自动将旧的图片区块数据结构无缝迁移到新的卡片式结构，保证兼容性。</li>
+                    <li><b>【优化】</b> 更新了“感谢信息”页面，加入了对 Masonry.js 开源库的感谢。</li>
+                </ul>
+                <hr class="separator">
+                <h4>v1.3.1</h4>
                 <ul>
                     <li><b>【新增】</b> 内置4款推荐字体（思源黑体、思源宋体、站酷快乐体、站酷小薇体），通过国内CDN加速，无需手动上传。</li>
                     <li><b>【优化】</b> 帮助弹窗重构为四个独立分页：使用说明、更新日志、感谢信息、关于。</li>
                     <li><b>【优化】</b> “感谢信息”页进行合规性增强，为每个开源项目提供独立的许可证原文（可折叠查看）。</li>
-                    <li><b>【优化】</b> 更新版本号至 v1.3.1。</li>
                 </ul>
                 <hr class="separator">
                 <h4>v1.3.0</h4>
@@ -566,6 +574,7 @@ THE FONT SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
                         <li><a href="https://html2canvas.hertzen.com/" target="_blank" rel="noopener noreferrer"><strong>html2canvas</strong></a> - 实现了将网页内容导出为图片的核心功能。</li>
                         <li><a href="https://fengyuanchen.github.io/cropperjs/" target="_blank" rel="noopener noreferrer"><strong>Cropper.js</strong></a> - 提供了强大的图片裁剪功能。</li>
                         <li><a href="https://sortablejs.github.io/Sortable/" target="_blank" rel="noopener noreferrer"><strong>SortableJS</strong></a> - 提供了流畅的拖拽排序体验。</li>
+                        <li><a href="https://masonry.desandro.com/" target="_blank" rel="noopener noreferrer"><strong>Masonry.js</strong></a> - 提供了强大的瀑布流/砌体布局功能。</li>
                     </ul>
                     <details>
                         <summary>查看 MIT License 许可证原文</summary>
@@ -635,6 +644,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
+    <script src="https://unpkg.com/masonry-layout@4/dist/masonry.pkgd.min.js"></script>
     <script src="https://code.iconify.design/3/3.1.1/iconify.min.js"></script>
     
     <script>
@@ -672,7 +682,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                 sortableBlocksEditor: null,
                 sortableBlocksPreview: null,
                 cardSortables: {},
-                imageSortables: {},
+                imageCardSortables: {},
+                masonryInstances: {},
                 debouncedSaveToLocal: null,
                 localFonts: [],
                 uploadedFonts: [],
@@ -680,7 +691,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                 icons: [], 
 
                 init() {
-                    console.log("Blokko 初始化 v1.3.1 ...");
+                    console.log("Blokko 初始化 v1.3.2 ...");
                     this.elements = this.queryElements();
                     this.presets = this.getPresets();
                     this.state = this.getDefaultState();
@@ -738,15 +749,15 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                             headerBgGradientAngle: 135,
                         },
                         blocks: [
-                            { id: this.generateId('b'), type: 'text', title: "单排卡片区块", settings: { layout: 'single' }, cards: [
+                            { id: this.generateId('b'), type: 'text', title: "单排卡片区块", settings: { layout: 'single', masonryEnabled: false }, cards: [
                                 { id: this.generateId('c'), icon: '', title: "这是单排卡片", content: "双击这里进行编辑", opacity: 1.0, followGlobalOpacity: true }
                             ]},
-                            { id: this.generateId('b'), type: 'text', title: "双排卡片区块", settings: { layout: 'dual' }, cards: [
+                            { id: this.generateId('b'), type: 'text', title: "双排卡片区块", settings: { layout: 'dual', masonryEnabled: false }, cards: [
                                 { id: this.generateId('c'), icon: '', title: "这是双排卡片 1", content: "双击这里进行编辑", opacity: 1.0, followGlobalOpacity: true },
                                 { id: this.generateId('c'), icon: '', title: "这是双排卡片 2", content: "双击这里进行编辑", opacity: 1.0, followGlobalOpacity: true }
                             ]},
                             { id: this.generateId('b'), type: 'separator', title: "分割线", settings: { style: 'solid', color: '#dddddd', thickness: 1, margin: 20 }},
-                            { id: this.generateId('b'), type: 'image', title: "图片区块", settings: { layout: '2', useGlobalStyle: true, followGlobalOpacity: true, bgOpacity: 1.0, bgColor: '#ffffff', titleColor: '', descriptionColor: '', fontSize: '' }, images: [] },
+                            { id: this.generateId('b'), type: 'image', title: "图片区块", settings: { layout: 'dual', masonryEnabled: false, textColor: '' }, cards: [] },
                             { id: this.generateId('b'), type: 'spacer', title: "留白块", settings: { height: 20 }},
                         ],
                         globalCardStyles: { 
@@ -1066,9 +1077,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                                  const cardEl = target.closest('.editor-card');
                                  const value = target.type === 'checkbox' ? target.checked : target.value;
                                  if (cardEl) this.updateCard(blockId, cardEl.dataset.cardId, target.dataset.cardKey, value, false);
-                             } else if (target.dataset.imageKey) {
-                                 const thumbItem = target.closest('.thumbnail-item');
-                                 if (thumbItem) this.updateImageData(blockId, parseInt(thumbItem.dataset.index), target.dataset.imageKey, target.value, false);
                              }
                         }
                     });
@@ -1119,14 +1127,13 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                             else if (target.closest('.block-up-btn')) this.moveBlockUp(blockId);
                             else if (target.closest('.block-down-btn')) this.moveBlockDown(blockId);
                             else if (target.closest('.add-card-btn')) this.addCard(blockId);
-                            else if (target.closest('.image-upload-area')) blockEl.querySelector('.image-upload-input')?.click();
+                            else if (target.closest('.add-image-btn')) this.addImageCard(blockId);
                             else if (target.closest('.card-delete-btn')) this.deleteCard(blockId, target.closest('.editor-card').dataset.cardId);
                             else if (target.closest('.card-clear-bg-btn')) {
                                 this.updateCard(blockId, target.closest('.editor-card').dataset.cardId, 'bgImageDataUrl', null, true);
                                 this.showToast('卡片背景图已清除', 'info');
                             }
-                            else if (target.closest('.delete-image-btn')) this.deleteImage(blockId, parseInt(target.closest('.thumbnail-item').dataset.index));
-                            else if (target.closest('.crop-image-btn')) this.cropImage(blockId, parseInt(target.closest('.thumbnail-item').dataset.index));
+                            else if (target.closest('.crop-image-btn')) this.cropImage(blockId, target.closest('.editor-card').dataset.cardId);
                             else if (target.closest('.select-icon-btn')) { 
                                 const cardId = target.closest('.editor-card').dataset.cardId;
                                 this.showIconPicker('card', blockId, cardId);
@@ -1143,11 +1150,11 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                                this.handleCardBgUpload(e, blockEl.dataset.blockId, cardEl.dataset.cardId);
                            }
                        } else if (target.classList.contains('image-upload-input')) {
-                           const blockEl = target.closest('.editor-block');
-                           if(blockEl) {
-                               this.handleImageGalleryUpload(blockEl.dataset.blockId, e.target.files);
-                               e.target.value = '';
-                           }
+                            const blockEl = target.closest('.editor-block');
+                            if (blockEl) {
+                                this.handleImageGalleryUpload(blockEl.dataset.blockId, e.target.files);
+                                e.target.value = '';
+                            }
                        } else if (target.type === 'checkbox' && target.dataset.settingKey) {
                             const blockEl = target.closest('.editor-block');
                             if(blockEl){
@@ -1156,7 +1163,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                             }
                        } else if (target.type === 'radio' && target.dataset.settingKey) {
                             const blockEl = target.closest('.editor-block');
-                            if(blockEl) this.updateBlockSettings(blockEl.dataset.blockId, target.dataset.settingKey, target.value, true);
+                            if(blockEl) {
+                                this.updateBlockSettings(blockEl.dataset.blockId, target.dataset.settingKey, target.value, true);
+                                this.renderEditorBlockById(blockEl.dataset.blockId); 
+                            }
                        } else if (target.type === 'checkbox' && target.dataset.cardKey) {
                             const blockEl = target.closest('.editor-block');
                             const cardEl = target.closest('.editor-card');
@@ -1172,10 +1182,23 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                 },
 
                 bindPreviewEvents(){
+                     this.elements.previewPanel.addEventListener('click', e => {
+                        if (this.isEditingText) return;
+                        const blockWrapper = e.target.closest('.preview-block-wrapper');
+                        if (blockWrapper && blockWrapper.dataset.blockId) {
+                            this.focusOnEditorBlock(blockWrapper.dataset.blockId);
+                        }
+                     });
+
                      this.elements.previewWrapper.addEventListener('dblclick', e => {
                         if (this.elements.previewBlocksContainer.classList.contains('locked-mode')) return;
                         const target = e.target.closest('[data-state-key], [data-card-key], [data-tag-id]');
                         if (target && !this.isEditingText) {
+                            const blockWrapper = target.closest('.preview-block-wrapper');
+                            if (blockWrapper && blockWrapper.dataset.blockId) {
+                                this.focusOnEditorBlock(blockWrapper.dataset.blockId);
+                            }
+
                             this.isEditingText = true;
                             target.contentEditable = true;
                             target.focus();
@@ -1195,11 +1218,15 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                                 if (stateKey) {
                                     this.updateState(stateKey, value, true);
                                 } else if (cardKey) {
-                                    const cardEl = target.closest('.preview-card');
+                                    const cardEl = target.closest('.preview-card, figure');
                                     const blockEl = target.closest('.preview-block-wrapper');
                                     if (cardEl && blockEl) {
-                                        this.updateCard(blockEl.dataset.blockId, cardEl.dataset.cardId, cardKey, value, true);
-                                        this.renderEditorCardById(blockEl.dataset.blockId, cardEl.dataset.cardId);
+                                        const blockId = blockEl.dataset.blockId;
+                                        this.updateCard(blockId, cardEl.dataset.cardId, cardKey, value, true);
+                                        this.renderEditorCardById(blockId, cardEl.dataset.cardId);
+                                        if (this.masonryInstances[blockId]) {
+                                            this.masonryInstances[blockId].layout();
+                                        }
                                     }
                                 } else if(tagId){
                                     const newText = value.trim();
@@ -1242,7 +1269,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                                 updateStateObject(stateKey, value);
                                 this.syncControl(stateKey);
                             } else if (cardKey) {
-                                const cardEl = target.closest('.preview-card');
+                                const cardEl = target.closest('.preview-card, figure');
                                 const blockEl = target.closest('.preview-block-wrapper');
                                 if (cardEl && blockEl) {
                                     const blockId = blockEl.dataset.blockId;
@@ -1400,56 +1427,44 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                     this.state.blocks.forEach(block => {
                         const blockEl = list.querySelector(`.editor-block[data-block-id="${block.id}"]`);
                         if (!blockEl) return;
-                        if (block.type === 'text') this.renderEditorCards(block.id, blockEl.querySelector('.card-editors-list'));
-                        else if (block.type === 'image') this.renderEditorImageThumbnails(block.id, blockEl.querySelector('.image-thumbnails-grid'));
+                        if (block.type === 'text') {
+                            this.renderEditorCards(block.id, blockEl.querySelector('.card-editors-list'));
+                        } else if (block.type === 'image') {
+                            this.renderEditorImageCards(block.id, blockEl.querySelector('.image-card-editors-list'));
+                        }
                     });
                 },
 
                 renderPreviewBlocks() {
                     this.elements.previewBlocksContainer.innerHTML = this.state.blocks.length ? this.state.blocks.map(b => `<div class="preview-block-wrapper" data-block-id="${b.id}">${this.createPreviewBlockHTML(b)}</div>`).join('') : '<div class="empty-placeholder">(预览区) 无区块</div>';
+                    this.state.blocks.forEach(b => this.initMasonryForBlock(b.id));
                 },
 
                 createEditorBlockHTML(block, isInitial = false) {
-                    let settings = '', content = '';
+                    let content = '';
                     const upDownBtns = `<div class="up-down-btns"><button class="btn btn-default block-up-btn">↑</button><button class="btn btn-default block-down-btn">↓</button></div>`;
                     
+                    const masonryCheckboxHTML = `
+                        <div class="masonry-toggle-container" style="${['dual', 'triple'].includes(block.settings.layout) ? 'display: block;' : 'display: none;'}">
+                            <div class="checkbox-group" style="margin-top: 10px;">
+                                <label><input type="checkbox" data-setting-key="masonryEnabled" ${block.settings.masonryEnabled ? 'checked' : ''}> 启用瀑布流</label>
+                            </div>
+                        </div>`;
+                    const layoutRadiosHTML = `
+                        <div class="radio-group">
+                            <label><input type="radio" data-setting-key="layout" name="block-layout-${block.id}" value="single" ${block.settings.layout === 'single' ? 'checked' : ''}> 单排</label>
+                            <label><input type="radio" data-setting-key="layout" name="block-layout-${block.id}" value="dual" ${block.settings.layout === 'dual' ? 'checked' : ''}> 双排</label>
+                            <label><input type="radio" data-setting-key="layout" name="block-layout-${block.id}" value="triple" ${block.settings.layout === 'triple' ? 'checked' : ''}> 三排</label>
+                        </div>`;
+
                     if (block.type === 'text') {
-                        content = `<div class="form-group">
-                                    <label>布局:</label>
-                                    <div class="radio-group">
-                                        <label><input type="radio" data-setting-key="layout" name="block-layout-${block.id}" value="single" ${block.settings.layout === 'single' ? 'checked' : ''}> 单排</label>
-                                        <label><input type="radio" data-setting-key="layout" name="block-layout-${block.id}" value="dual" ${block.settings.layout === 'dual' ? 'checked' : ''}> 双排</label>
-                                        <label><input type="radio" data-setting-key="layout" name="block-layout-${block.id}" value="triple" ${block.settings.layout === 'triple' ? 'checked' : ''}> 三排</label>
-                                    </div>
-                                   </div>
+                        content = `<div class="form-group"><label>布局:</label>${layoutRadiosHTML}${masonryCheckboxHTML}</div>
                                    <div class="card-editors-list"></div><button class="btn btn-default add-card-btn" style="margin-top: 15px;">➕ 添加卡片</button>`;
                     } else if (block.type === 'image') {
-                        const s = block.settings;
-                        const useGlobalStyle = s.useGlobalStyle !== false;
-                        const followGlobalOpacity = s.followGlobalOpacity !== false;
-                        settings = `<label>布局:</label><input data-setting-key="layout" type="radio" name="block-layout-${block.id}" value="1" ${s.layout === '1' ? 'checked' : ''}><label>1</label><input data-setting-key="layout" type="radio" name="block-layout-${block.id}" value="2" ${s.layout === '2' ? 'checked' : ''}><label>2</label><input data-setting-key="layout" type="radio" name="block-layout-${block.id}" value="3" ${s.layout === '3' ? 'checked' : ''}><label>3</label>`;
-                        content = `<div class="image-upload-area"><input type="file" class="image-upload-input" multiple accept="image/*" style="display: none;">点击上传图片</div>
-                                   <div class="image-thumbnails-grid"></div>
-                                   <hr class="separator">
-                                   <div class="form-group"><label>图片文字样式</label>
-                                       <div class="inset-controls">
-                                           <div class="color-control-row">
-                                               <div class="color-control-group"><label>标题颜色:</label><div class="input-group"><input type="color" data-setting-key="titleColor" value="${s.titleColor || ''}"><input type="text" class="color-hex-input" data-setting-key="titleColor" value="${s.titleColor || ''}" placeholder="全局默认"></div></div>
-                                               <div class="color-control-group"><label>描述颜色:</label><div class="input-group"><input type="color" data-setting-key="descriptionColor" value="${s.descriptionColor || ''}"><input type="text" class="color-hex-input" data-setting-key="descriptionColor" value="${s.descriptionColor || ''}" placeholder="全局默认"></div></div>
-                                           </div>
-                                           <div class="form-group" style="margin-top:10px;"><label>字号:</label><select data-setting-key="fontSize"><option value="" ${!s.fontSize ? 'selected' : ''}>默认</option><option value="0.75rem" ${s.fontSize === '0.75rem' ? 'selected' : ''}>小</option><option value="0.85rem" ${s.fontSize === '0.85rem' ? 'selected' : ''}>中</option><option value="1rem" ${s.fontSize === '1rem' ? 'selected' : ''}>大</option></select></div>
-                                       </div>
-                                   </div>
-                                   <hr class="separator">
-                                   <div class="checkbox-group form-group"><label><input type="checkbox" data-setting-key="useGlobalStyle" ${useGlobalStyle ? 'checked':''}>使用全局卡片背景</label></div>
-                                   <div class="image-block-style-override" style="${useGlobalStyle ? 'display:none;' : ''}">
-                                       <div class="color-control-row">
-                                           <div class="color-control-group"><label>背景色:</label><div class="input-group"><input type="color" data-setting-key="bgColor" value="${s.bgColor || ''}"><input type="text" class="color-hex-input" data-setting-key="bgColor" value="${s.bgColor || ''}"></div></div>
-                                       </div>
-                                   </div>
-                                    <div class="checkbox-group form-group"><label><input type="checkbox" data-setting-key="followGlobalOpacity" ${followGlobalOpacity ? 'checked' : ''}>跟随全局不透明度</label></div>
-                                    <div class="form-group" style="margin-top: 10px; ${followGlobalOpacity ? 'display:none;' : ''}"><label>独立不透明度:</label><input type="range" data-setting-key="bgOpacity" min="0" max="1" step="0.05" value="${s.bgOpacity || 1.0}"></div>
-                                   `;
+                        content = `<div class="form-group"><label>布局:</label>${layoutRadiosHTML}${masonryCheckboxHTML}</div>
+                                   <div class="form-group"><label>文字颜色:</label><div class="input-group"><input type="color" data-setting-key="textColor" value="${block.settings.textColor || ''}"><input type="text" class="color-hex-input" data-color-sync-key="textColor" value="${block.settings.textColor || ''}" placeholder="全局默认"></div></div>
+                                   <div class="image-card-editors-list"></div><button class="btn btn-default add-image-btn" style="margin-top: 15px;">➕ 添加图片</button>
+                                   <input type="file" class="image-upload-input" multiple accept="image/*" style="display: none;">`;
                     } else if (block.type === 'separator') {
                         const s = block.settings;
                         content = `<div class="form-group"><label>样式:</label><div class="radio-group"><label><input type="radio" name="sep-style-${block.id}" data-setting-key="style" value="solid" ${s.style==='solid'?'checked':''}>实线</label><label><input type="radio" name="sep-style-${block.id}" data-setting-key="style" value="dashed" ${s.style==='dashed'?'checked':''}>虚线</label></div></div><div class="color-control-row"><div class="color-control-group"><label>颜色:</label><div class="input-group"><input type="color" data-setting-key="color" value="${s.color}"><input type="text" class="color-hex-input" data-color-sync-key="color" value="${s.color}"></div></div><div class="color-control-group"><label>粗细(px):</label><input type="range" data-setting-key="thickness" min="1" max="10" value="${s.thickness}"></div></div><div class="form-group"><label>垂直间距(px):</label><input type="range" data-setting-key="margin" min="0" max="50" value="${s.margin}"></div>`;
@@ -1459,41 +1474,23 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                     }
 
                     const collapsedClass = isInitial ? 'collapsed' : '';
-                    return `<div class="editor-block ${collapsedClass}" data-block-id="${block.id}"><div class="editor-block-header"><span class="block-drag-handle">☰</span><input type="text" class="editor-block-title-input" value="${this.escapeHTML(block.title || '')}" placeholder="区块标题 (可编辑)"><div class="block-actions">${upDownBtns}<div class="block-settings">${settings}</div><button class="btn btn-danger btn-small block-delete-btn">删除</button></div></div><div class="editor-block-content">${content}</div></div>`;
+                    return `<div class="editor-block ${collapsedClass}" data-block-id="${block.id}"><div class="editor-block-header"><span class="block-drag-handle">☰</span><input type="text" class="editor-block-title-input" value="${this.escapeHTML(block.title || '')}" placeholder="区块标题 (可编辑)"><div class="block-actions">${upDownBtns}<button class="btn btn-danger btn-small block-delete-btn">删除</button></div></div><div class="editor-block-content">${content}</div></div>`;
                 },
 
                 createPreviewBlockHTML(block) {
+                    let layoutClass = 'preview-cards-single';
+                    if (block.settings.layout === 'dual') layoutClass = 'preview-cards-dual';
+                    if (block.settings.layout === 'triple') layoutClass = 'preview-cards-triple';
+                    
+                    let cardsHTML = '';
                     if (block.type === 'text') {
-                        let layoutClass = 'preview-cards-single';
-                        if (block.settings.layout === 'dual') layoutClass = 'preview-cards-dual';
-                        if (block.settings.layout === 'triple') layoutClass = 'preview-cards-triple';
-                        return `<div class="${layoutClass}">${(block.cards || []).map(card => this.createPreviewCardHTML(card)).join('')}</div>`;
+                        cardsHTML = (block.cards || []).map(card => this.createPreviewCardHTML(card)).join('');
                     } else if (block.type === 'image') {
-                        const s = block.settings;
-                        const galleryHTML = (block.images || []).map(img => {
-                           const titleStyle = s.titleColor ? `color: ${s.titleColor};` : '';
-                           const descStyle = s.descriptionColor ? `color: ${s.descriptionColor};` : 'color: var(--text-secondary);';
-                           const figcaptionStyle = s.fontSize ? `font-size: ${s.fontSize};` : '';
+                        cardsHTML = (block.cards || []).map(card => this.createPreviewImageCardHTML(card, block.settings)).join('');
+                    }
 
-                           const figcaptionContent = (img.title || img.description) ? 
-                                `<figcaption style="${figcaptionStyle}">
-                                    ${img.title ? `<strong style="${titleStyle}">${this.escapeHTML(img.title)}</strong>` : ''}
-                                    <span style="${descStyle}">${this.escapeHTML(img.description || '')}</span>
-                                </figcaption>` 
-                                : '';
-                           return `<figure><img src="${img.url}" alt="${this.escapeHTML(img.title || '')}" loading="lazy">${figcaptionContent}</figure>`;
-                        }).join('');
-
-                        const { bgStyle, finalOpacity } = this.getImageBlockBgStyle(block);
-                        const galleryEl = document.createElement('div');
-                        galleryEl.className = `image-gallery layout-${block.settings.layout || '2'}`;
-                        galleryEl.style.setProperty('--image-block-bg', bgStyle);
-                        if (parseFloat(finalOpacity) === 0) {
-                            galleryEl.style.boxShadow = 'none';
-                            galleryEl.style.border = 'none';
-                        }
-                        galleryEl.innerHTML = galleryHTML;
-                        return galleryEl.outerHTML;
+                    if (block.type === 'text' || block.type === 'image') {
+                        return `<div class="preview-cards-container ${layoutClass}">${cardsHTML}</div>`;
                     } else if (block.type === 'separator') {
                          const s = block.settings;
                          return `<div class="separator-preview" style="margin: ${s.margin}px 0;"><div class="separator-preview-line" style="border-top: ${s.thickness}px ${s.style} ${s.color};"></div></div>`;
@@ -1515,6 +1512,17 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                         </div>`;
                     this.applyCardStyles(cardEl, card);
                     return cardEl.outerHTML;
+                },
+
+                createPreviewImageCardHTML(card, blockSettings = {}) {
+                    const textColorStyle = blockSettings.textColor ? `style="color: ${blockSettings.textColor};"` : '';
+                    const figcaptionContent = (card.title || card.description) ? 
+                        `<figcaption ${textColorStyle}>
+                            ${card.title ? `<strong data-card-key="title">${this.escapeHTML(card.title)}</strong>` : ''}
+                            <span data-card-key="description">${this.escapeHTML(card.description || '')}</span>
+                        </figcaption>` 
+                        : '';
+                   return `<figure data-card-id="${card.id}"><img src="${card.url}" alt="${this.escapeHTML(card.title || '')}" loading="lazy">${figcaptionContent}</figure>`;
                 },
 
                 createEditorCardHTML(card) {
@@ -1543,6 +1551,27 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                         </div>`;
                 },
 
+                createEditorImageCardHTML(card) {
+                    return `<span class="card-drag-handle">☰</span>
+                        <div class="editor-card-header"><button class="btn btn-danger btn-small card-delete-btn">删</button></div>
+                        <div class="editor-card-content">
+                            <div class="image-card-editor-content">
+                                <div class="image-card-editor-thumb">
+                                    <div class="thumbnail-wrapper">
+                                        <img src="${card.url}" loading="lazy">
+                                        <div class="thumbnail-actions">
+                                            <button class="btn btn-icon crop-image-btn" title="裁剪"><span class="iconify" data-icon="mdi:crop"></span></button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="image-card-editor-fields">
+                                    <div class="form-group"><label>标题:</label><input type="text" data-card-key="title" value="${this.escapeHTML(card.title || '')}"></div>
+                                    <div class="form-group"><label>描述:</label><textarea data-card-key="description" rows="2">${this.escapeHTML(card.description || '')}</textarea></div>
+                                </div>
+                            </div>
+                        </div>`;
+                },
+                
                 applyCardStyles(cardEl, cardData) {
                     const g = this.state.globalCardStyles;
                     const use = (key, val) => (val === undefined || val === null || val === '') ? g[key] : val;
@@ -1620,14 +1649,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                         if (!block) return;
                         const blockId = block.id;
 
-                        if (block.type === 'image' && parts[2] === 'settings') {
-                            this.updateImageBlockStyles(blockId);
-                            if (['titleColor', 'descriptionColor', 'fontSize'].includes(parts[3])) {
-                                this.renderPreviewBlockById(blockId);
-                            }
-                            return;
-                        }
-
                         this.renderPreviewBlockById(blockId);
                         
                         if (parts[2] === 'cards') {
@@ -1635,7 +1656,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                             const cardId = this.state.blocks[blockIndex]?.cards[cardIndex]?.id;
                             if (cardId) {
                                 const cardProp = parts[4];
-                                if (cardProp === 'icon' || cardProp === 'followGlobalOpacity' || cardProp === 'bgImageDataUrl') {
+                                if (block.type === 'text' && (cardProp === 'icon' || cardProp === 'followGlobalOpacity' || cardProp === 'bgImageDataUrl')) {
                                     this.renderEditorCardById(blockId, cardId);
                                 }
                             }
@@ -1666,6 +1687,12 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                     const newCardEl = tempDiv.firstChild;
                     container.appendChild(newCardEl);
 
+                    const masonry = this.masonryInstances[blockId];
+                    if (masonry) {
+                        masonry.appended(newCardEl);
+                        masonry.layout();
+                    }
+
                     newCardEl.classList.add('adding');
                     newCardEl.addEventListener('animationend', () => {
                         newCardEl.classList.remove('adding');
@@ -1677,66 +1704,51 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                     }
                 },
 
+                addImageCard(blockId) {
+                    const blockEl = document.querySelector(`.editor-block[data-block-id="${blockId}"]`);
+                    if (blockEl) {
+                        blockEl.querySelector('.image-upload-input').click();
+                    }
+                },
+
                 deleteCard(blockId, cardId) {
                     const block = this.findBlock(blockId);
                     if (!block) return;
                     
-                    const cardEl = this.elements.previewBlocksContainer.querySelector(`.preview-card[data-card-id="${cardId}"]`);
+                    const cardEl = this.elements.previewBlocksContainer.querySelector(`[data-card-id="${cardId}"]`);
                     
                     const doDelete = () => {
                         this.pushHistory();
                         block.cards = block.cards.filter(c => c.id !== cardId);
                         this.debouncedSaveToLocal();
                         this.renderEditorBlockById(blockId);
-                        this.renderPreviewBlockById(blockId);
+                        
+                        const masonry = this.masonryInstances[blockId];
+                        if (!masonry) {
+                            this.renderPreviewBlockById(blockId);
+                        } else {
+                            masonry.layout();
+                        }
+
                         this.showToast('卡片已删除', 'info');
                     };
 
                     if (cardEl) {
+                        const masonry = this.masonryInstances[blockId];
+                        if (masonry) {
+                            masonry.remove(cardEl);
+                        }
+
                         cardEl.classList.add('removing');
-                        cardEl.addEventListener('animationend', doDelete, { once: true });
+                        cardEl.addEventListener('animationend', () => {
+                            if (!masonry) {
+                                cardEl.remove();
+                            }
+                            doDelete();
+                        }, { once: true });
+
                     } else {
                         doDelete();
-                    }
-                },
-
-                getImageBlockBgStyle(block) {
-                    const g = this.state.globalCardStyles;
-                    const s = block.settings;
-                    const useGlobalStyle = s.useGlobalStyle !== false;
-
-                    let finalOpacity, bgStyle;
-                    if (useGlobalStyle) {
-                        finalOpacity = g.opacity;
-                         if (g.bgMode === 'gradient') {
-                            bgStyle = `linear-gradient(${g.bgGradientAngle}deg, ${this.hexToRgba(g.bgGradientStart, finalOpacity)}, ${this.hexToRgba(g.bgGradientEnd, finalOpacity)})`;
-                        } else {
-                            bgStyle = this.hexToRgba(g.bgColor, finalOpacity);
-                        }
-                    } else {
-                        const followGlobalOpacity = s.followGlobalOpacity !== false;
-                        finalOpacity = followGlobalOpacity ? g.opacity : (s.bgOpacity ?? 1.0);
-                        bgStyle = this.hexToRgba(s.bgColor, finalOpacity);
-                    }
-                    
-                    if(parseFloat(finalOpacity) === 0) bgStyle = 'transparent';
-
-                    return { bgStyle, finalOpacity };
-                },
-
-                updateImageBlockStyles(blockId) {
-                    const block = this.findBlock(blockId);
-                    const galleryEl = document.querySelector(`.preview-block-wrapper[data-block-id="${blockId}"] .image-gallery`);
-                    if (block && galleryEl) {
-                        const { bgStyle, finalOpacity } = this.getImageBlockBgStyle(block);
-                        galleryEl.style.setProperty('--image-block-bg', bgStyle);
-                        if (parseFloat(finalOpacity) === 0) {
-                            galleryEl.style.boxShadow = 'none';
-                            galleryEl.style.border = 'none';
-                        } else {
-                            galleryEl.style.boxShadow = 'var(--active-card-shadow, none)';
-                            galleryEl.style.border = 'var(--active-card-border, none)';
-                        }
                     }
                 },
 
@@ -1755,6 +1767,19 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                                 this.showToast('旧版配置已加载，标签数据已自动转换。', 'info');
                             }
                             
+                            // Migration logic for image blocks
+                            let migrated = false;
+                            saved.blocks.forEach(block => {
+                                if (block.type === 'image' && block.images && !block.cards) {
+                                    block.cards = block.images.map(img => ({ ...img, id: this.generateId('ic') }));
+                                    delete block.images;
+                                    migrated = true;
+                                }
+                            });
+                            if (migrated) {
+                                this.showToast('旧版图片区块已自动升级', 'info');
+                            }
+
                             const defaultState = this.getDefaultState();
                             this.state = this.mergeDeep(defaultState, saved);
 
@@ -1884,14 +1909,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                         if (cardIndex > -1) this.updateState(`blocks.${blockIndex}.cards.${cardIndex}.${key}`, value, pushHistory);
                     }
                 },
-                updateImageData(blockId, index, key, value, pushHistory) {
-                    const blockIndex = this.findBlockIndex(blockId);
-                    if(blockIndex > -1) this.updateState(`blocks.${blockIndex}.images.${index}.${key}`, value, pushHistory);
-                },
+
                 renderPreviewBlockById(blockId) {
                     const wrapper = this.elements.previewBlocksContainer.querySelector(`.preview-block-wrapper[data-block-id="${blockId}"]`);
                     const block = this.findBlock(blockId);
-                    if (block && wrapper) wrapper.innerHTML = this.createPreviewBlockHTML(block);
+                    if (block && wrapper) {
+                        wrapper.innerHTML = this.createPreviewBlockHTML(block);
+                        this.initMasonryForBlock(blockId);
+                    }
                 },
                 renderEditorBlockById(blockId) { 
                     const el = this.elements.editorBlocksList.querySelector(`.editor-block[data-block-id="${blockId}"]`); 
@@ -1904,48 +1929,69 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                         if(isCollapsed) newEl.classList.add('collapsed'); 
                         else newEl.classList.remove('collapsed');
                         
-                        if(block.type === 'text') this.renderEditorCards(block.id, newEl.querySelector('.card-editors-list')); 
-                        else if (block.type === 'image') this.renderEditorImageThumbnails(block.id, newEl.querySelector('.image-thumbnails-grid')); 
+                        if (block.type === 'text') {
+                            this.renderEditorCards(block.id, newEl.querySelector('.card-editors-list'));
+                        } else if (block.type === 'image') {
+                            this.renderEditorImageCards(block.id, newEl.querySelector('.image-card-editors-list'));
+                        }
                         
                         this.initSortablesForBlock(blockId);
                     } 
                 },
                 renderPreviewCardById(blockId, cardId) { 
-                    const el = this.elements.previewBlocksContainer.querySelector(`.preview-card[data-card-id="${cardId}"]`); 
                     const block = this.findBlock(blockId); 
                     const card = block?.cards.find(c => c.id === cardId); 
-                    if (el && card) {
-                        this.applyCardStyles(el, card);
-                        const titleEl = el.querySelector('.preview-card-title');
-                        const contentEl = el.querySelector('.preview-card-content');
-                        const iconHTML = card.icon ? `<span class="iconify" data-icon="${card.icon}"></span>` : '';
-                        if(titleEl) titleEl.innerHTML = `${iconHTML}${this.escapeHTML(card.title || '')}`;
-                        if(contentEl) contentEl.innerHTML = this.escapeHTML(card.content || '');
-                    } 
+                    if (!card) return;
+
+                    if (block.type === 'text') {
+                        const el = this.elements.previewBlocksContainer.querySelector(`.preview-card[data-card-id="${cardId}"]`);
+                        if (el) {
+                            this.applyCardStyles(el, card);
+                            const titleEl = el.querySelector('.preview-card-title');
+                            const contentEl = el.querySelector('.preview-card-content');
+                            const iconHTML = card.icon ? `<span class="iconify" data-icon="${card.icon}"></span>` : '';
+                            if(titleEl) titleEl.innerHTML = `${iconHTML}${this.escapeHTML(card.title || '')}`;
+                            if(contentEl) contentEl.innerHTML = this.escapeHTML(card.content || '');
+                        }
+                    } else if (block.type === 'image') {
+                        const el = this.elements.previewBlocksContainer.querySelector(`figure[data-card-id="${cardId}"]`);
+                        if (el) {
+                           el.outerHTML = this.createPreviewImageCardHTML(card, block.settings);
+                        }
+                    }
                 },
                 renderEditorCardById(blockId, cardId) { 
-                    const cardEl = this.elements.editorBlocksList.querySelector(`.editor-card[data-card-id="${cardId}"]`); 
                     const block = this.findBlock(blockId); 
                     const card = block?.cards.find(c => c.id === cardId); 
-                    if(card && cardEl) { 
-                        const followGlobal = card.followGlobalOpacity !== false;
-                        cardEl.querySelector('.card-overlay-controls').style.display = card.bgImageDataUrl ? '' : 'none';
-                        cardEl.querySelector('[data-card-key="opacity"]').closest('.form-group').style.display = followGlobal ? 'none' : 'block';
-                        const iconBtn = cardEl.querySelector('.select-icon-btn');
-                        if (iconBtn) {
-                           iconBtn.innerHTML = card.icon ? `<span class="iconify" data-icon="${card.icon}" style="font-size: 1.2em; vertical-align: middle; margin-right: 5px;"></span> ${card.icon}` : '选择图标';
+                    if (!card) return;
+                    
+                    if (block.type === 'text') {
+                        const cardEl = this.elements.editorBlocksList.querySelector(`.editor-card[data-card-id="${cardId}"]`); 
+                        if (cardEl) {
+                            const followGlobal = card.followGlobalOpacity !== false;
+                            cardEl.querySelector('.card-overlay-controls').style.display = card.bgImageDataUrl ? '' : 'none';
+                            cardEl.querySelector('[data-card-key="opacity"]').closest('.form-group').style.display = followGlobal ? 'none' : 'block';
+                            const iconBtn = cardEl.querySelector('.select-icon-btn');
+                            if (iconBtn) {
+                               iconBtn.innerHTML = card.icon ? `<span class="iconify" data-icon="${card.icon}" style="font-size: 1.2em; vertical-align: middle; margin-right: 5px;"></span> ${card.icon}` : '选择图标';
+                            }
                         }
-                    } 
+                    } else if (block.type === 'image') {
+                        const cardEl = this.elements.editorBlocksList.querySelector(`.editor-card[data-card-id="${cardId}"]`);
+                        if (cardEl) {
+                            cardEl.outerHTML = `<div class="editor-card" data-card-id="${card.id}">${this.createEditorImageCardHTML(card)}</div>`;
+                        }
+                    }
                 },
                 renderEditorCards(blockId, container) { 
                     if(!container) return; 
                     const block = this.findBlock(blockId); 
                     container.innerHTML = !block.cards?.length ? '<div class="empty-placeholder">暂无卡片</div>' : block.cards.map(c => `<div class="editor-card" data-card-id="${c.id}">${this.createEditorCardHTML(c)}</div>`).join(''); 
                 },
-                renderEditorImageThumbnails(blockId, container) { 
+                renderEditorImageCards(blockId, container) {
                     if(!container) return; 
                     const block = this.findBlock(blockId); 
-                    container.innerHTML = !block.images?.length ? '<div class="empty-placeholder">暂无图片</div>' : block.images.map((img, i) => `<div class="thumbnail-item" data-index="${i}"><div class="thumbnail-wrapper"><img src="${img.url}" loading="lazy"><div class="thumbnail-actions"><button class="btn btn-icon crop-image-btn" title="裁剪"><span class="iconify" data-icon="mdi:crop"></span></button><button class="btn btn-icon btn-danger delete-image-btn" title="删除"><span class="iconify" data-icon="mdi:delete"></span></button></div></div><input type="text" data-image-key="title" placeholder="标题" value="${this.escapeHTML(img.title||'')}"><textarea data-image-key="description" placeholder="描述">${this.escapeHTML(img.description||'')}</textarea></div>`).join(''); 
+                    container.innerHTML = !block.cards?.length ? '<div class="empty-placeholder">暂无图片</div>' : block.cards.map(c => `<div class="editor-card" data-card-id="${c.id}">${this.createEditorImageCardHTML(c)}</div>`).join(''); 
                 },
                 
                 pushHistory() {
@@ -1993,7 +2039,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                             const reader = new FileReader(); 
                             reader.onload = async e => {
                                 const compressedUrl = await this.compressImage(e.target.result, 0.85, 1200);
-                                if (target === 'avatar' || target === 'pageBg' || target === 'cardBg') {
+                                if (['avatar', 'pageBg', 'cardBg', 'imageCard'].includes(target)) {
                                     this.showCropper(compressedUrl, { type: target, ...cardInfo }); 
                                 }
                                 this.hideLoading();
@@ -2015,7 +2061,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                         try {
                             this.pushHistory(); 
                             const newImages = await Promise.all(Array.from(files).map(f => this.readFileAsDataURL(f).then(this.compressImage)));
-                            block.images.push(...newImages.map(url => ({ url, title: '', description: '' })));
+                            const newCards = newImages.map(url => ({ id: this.generateId('ic'), url, title: '', description: '' }));
+                            block.cards.push(...newCards);
                             this.debouncedSaveToLocal();
                             this.renderEditorBlockById(blockId); 
                             this.renderPreviewBlockById(blockId); 
@@ -2025,17 +2072,12 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                             this.hideLoading();
                         }
                 },
-                deleteImage(blockId, index) { 
-                    this.pushHistory(); 
-                    const block = this.findBlock(blockId); 
-                    block.images.splice(index, 1);
-                    this.debouncedSaveToLocal();
-                    this.renderEditorBlockById(blockId); 
-                    this.renderPreviewBlockById(blockId); 
-                },
-                cropImage(blockId, index){
-                    const url = this.findBlock(blockId)?.images[index]?.url; 
-                    if (url) this.showCropper(url, { type: 'imageBlock', blockId, index }); 
+                cropImage(blockId, cardId){
+                    const block = this.findBlock(blockId);
+                    const card = block?.cards.find(c => c.id === cardId);
+                    if (card && card.url) {
+                        this.showCropper(card.url, { type: 'imageCard', blockId, cardId });
+                    }
                 },
                 
                 showCropper(imageSrc, target){
@@ -2062,7 +2104,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                                 return;
                             }
 
-                            const { type, blockId, index, cardId } = this.currentCropTarget;
+                            const { type, blockId, cardId } = this.currentCropTarget;
                             let maxWidth = 1024;
                             if (type === 'pageBg') maxWidth = 1920;
                             if (type === 'avatar' || type === 'cardBg') maxWidth = 400;
@@ -2074,8 +2116,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                                 this.updateState('personalInfo.avatarDataUrl', finalDataUrl, false);
                             } else if (type === 'pageBg') {
                                 this.updateState('pageStyles.pageBgImageDataUrl', finalDataUrl, false);
-                            } else if (type === 'imageBlock') {
-                                this.updateImageData(blockId, index, 'url', finalDataUrl, false);
+                            } else if (type === 'imageCard') {
+                                this.updateCard(blockId, cardId, 'url', finalDataUrl, false);
                             } else if (type === 'cardBg') {
                                 this.updateCard(blockId, cardId, 'bgImageDataUrl', finalDataUrl, false);
                             }
@@ -2325,16 +2367,16 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                             stateToSave.customIcons = [];
 
                             stateToSave.blocks.forEach(block => {
-                                if (block.type === 'text') {
-                                    block.title = "文本区块";
+                                if (block.type === 'text' || block.type === 'image') {
+                                    block.title = block.type === 'text' ? "文本区块" : "图片区块";
                                     block.cards.forEach(card => {
-                                        card.title = "卡片标题";
-                                        card.content = "卡片内容";
-                                        card.bgImageDataUrl = null;
+                                        if (block.type === 'text') {
+                                            card.title = "卡片标题";
+                                            card.content = "卡片内容";
+                                            card.bgImageDataUrl = null;
+                                        }
                                     });
-                                } else if (block.type === 'image') {
-                                    block.title = "图片区块";
-                                    block.images = [];
+                                    if(block.type === 'image') block.cards = [];
                                 }
                             });
                             this.showToast('模板已导出', 'success');
@@ -2370,6 +2412,18 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                                     importedState.personalInfo.tags = importedState.personalInfo.tags.split(/[,，、]/).map(t => t.trim()).filter(Boolean)
                                         .map(text => ({ id: this.generateId('t'), icon: null, text }));
                                     this.showToast('旧版配置已导入并自动升级。', 'info');
+                                }
+
+                                let migrated = false;
+                                importedState.blocks.forEach(block => {
+                                    if (block.type === 'image' && block.images && !block.cards) {
+                                        block.cards = block.images.map(img => ({ ...img, id: this.generateId('ic') }));
+                                        delete block.images;
+                                        migrated = true;
+                                    }
+                                });
+                                if (migrated) {
+                                    this.showToast('旧版图片区块已自动升级', 'info');
                                 }
 
                                 this.state = this.mergeDeep(this.getDefaultState(), importedState);
@@ -2454,7 +2508,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                     pageWrapper.style.backgroundColor = pageBgColor;
                     pageWrapper.style.backgroundImage = pageBgLayers.join(', ');
                     pageWrapper.style.backgroundSize = pageBgSizes.join(', ');
-                    pageWrapper.style.backgroundPosition = pageBgPositions.join(', ');
+                    pageWrapper.style.backgroundPosition = bgPositions.join(', ');
                     
                     clone.querySelectorAll('.preview-card-inner').forEach(cardInner => {
                         const computed = getComputedStyle(cardInner);
@@ -2690,7 +2744,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                      const block = this.findBlock(blockId);
                         if (!block) return;
                         if (block.type === 'text') this.initSortableCards(blockId);
-                        if (block.type === 'image') this.initSortableImages(blockId);
+                        if (block.type === 'image') this.initSortableImageCards(blockId);
                 },
                 initSortableBlocksEditor(){
                     if(this.sortableBlocksEditor) this.sortableBlocksEditor.destroy(); 
@@ -2704,9 +2758,35 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                     const list = this.elements.editorBlocksList.querySelector(`[data-block-id="${blockId}"] .card-editors-list`); 
                     if (list) { if(this.cardSortables[blockId]) this.cardSortables[blockId].destroy(); this.cardSortables[blockId] = new Sortable(list, { handle: '.card-drag-handle', animation: 150, ghostClass: 'sortable-ghost', onEnd: e => { const b = this.findBlock(blockId); if (b) { this.pushHistory(); const [m] = b.cards.splice(e.oldIndex, 1); b.cards.splice(e.newIndex, 0, m); this.debouncedSaveToLocal(); this.renderPreviewBlockById(blockId); } } }); } 
                 },
-                initSortableImages(blockId){
-                    const container = this.elements.editorBlocksList.querySelector(`[data-block-id="${blockId}"] .image-thumbnails-grid`);
-                    if (container) { if (this.imageSortables[blockId]) this.imageSortables[blockId].destroy(); this.imageSortables[blockId] = new Sortable(container, { animation: 150, ghostClass: 'sortable-ghost', onEnd: e => { const block = this.findBlock(blockId); if (block) { this.pushHistory(); const [moved] = block.images.splice(e.oldIndex, 1); block.images.splice(e.newIndex, 0, moved); this.debouncedSaveToLocal(); this.renderEditorBlockById(blockId); this.renderPreviewBlockById(blockId); } } }); }
+                initSortableImageCards(blockId){
+                    const container = this.elements.editorBlocksList.querySelector(`[data-block-id="${blockId}"] .image-card-editors-list`);
+                    if (container) { if (this.imageCardSortables[blockId]) this.imageCardSortables[blockId].destroy(); this.imageCardSortables[blockId] = new Sortable(container, { handle: '.card-drag-handle', animation: 150, ghostClass: 'sortable-ghost', onEnd: e => { const block = this.findBlock(blockId); if (block) { this.pushHistory(); const [moved] = block.cards.splice(e.oldIndex, 1); block.cards.splice(e.newIndex, 0, moved); this.debouncedSaveToLocal(); this.renderPreviewBlockById(blockId); } } }); }
+                },
+
+                initMasonryForBlock(blockId) {
+                    this.destroyMasonryForBlock(blockId); 
+                    const block = this.findBlock(blockId);
+                    if (block && (block.type === 'text' || block.type === 'image') && ['dual', 'triple'].includes(block.settings.layout) && block.settings.masonryEnabled) {
+                        const previewEl = this.elements.previewBlocksContainer.querySelector(`[data-block-id="${blockId}"] .preview-cards-container`);
+                        if (previewEl) {
+                            previewEl.classList.add('masonry-active');
+                            const itemSelector = block.type === 'text' ? '.preview-card' : 'figure';
+                            this.masonryInstances[blockId] = new Masonry(previewEl, {
+                                itemSelector: itemSelector,
+                                gutter: 15
+                            });
+                        }
+                    }
+                },
+                destroyMasonryForBlock(blockId) {
+                    if (this.masonryInstances[blockId]) {
+                        this.masonryInstances[blockId].destroy();
+                        delete this.masonryInstances[blockId];
+                        const previewEl = this.elements.previewBlocksContainer.querySelector(`[data-block-id="${blockId}"] .preview-cards-container`);
+                        if (previewEl) {
+                            previewEl.classList.remove('masonry-active');
+                        }
+                    }
                 },
                 
                 toggleEditorDrawer(forceState){
@@ -2904,6 +2984,29 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                     this.elements.texturePickerModal.classList.remove('visible');
                 },
 
+                focusOnEditorBlock(blockId) {
+                    if (window.innerWidth <= 768) return;
+
+                    const editorBlockEl = this.elements.editorBlocksList.querySelector(`.editor-block[data-block-id="${blockId}"]`);
+                    if (!editorBlockEl) return;
+
+                    const mainSection = editorBlockEl.closest('.editor-section');
+                    if (mainSection && mainSection.classList.contains('collapsed')) {
+                        mainSection.classList.remove('collapsed');
+                    }
+                    
+                    setTimeout(() => {
+                        editorBlockEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        editorBlockEl.style.transition = 'outline 0.1s ease-in-out, box-shadow 0.2s ease-in-out';
+                        editorBlockEl.style.outline = '2px solid var(--color-primary)';
+                        editorBlockEl.style.boxShadow = '0 0 12px rgba(0, 122, 255, 0.4)';
+                        setTimeout(() => {
+                            editorBlockEl.style.outline = '';
+                            editorBlockEl.style.boxShadow = '';
+                        }, 1500);
+                    }, 150);
+                },
+
                 hexToRgba(hex, alpha=1){
                     if(!hex || parseFloat(alpha) === 0) return 'transparent';
                     if (hex.startsWith('rgba')) {
@@ -2966,6 +3069,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                 async deleteBlock(blockId) {
                     this.pushHistory();
                     
+                    this.destroyMasonryForBlock(blockId);
+
                     const sortable = Sortable.get(this.elements.previewBlocksContainer);
                     const wasDisabled = sortable.options.disabled;
                     if (wasDisabled) sortable.option('disabled', false);
