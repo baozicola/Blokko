@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Blokko v1.3.2: -->
-    <title>Blokko-个人简介生成器！ (v1.3.2)</title>
+    <!-- Blokko v1.4.0: -->
+    <title>Blokko-个人简介生成器！ (v1.4.0)</title>
     
     <script>
         // Anti-FOUC (Flash of Unstyled Content) Script
@@ -94,7 +94,7 @@
         .btn:active:not(:disabled) { transform: scale(0.98); } .btn:disabled { background: #999; cursor: not-allowed; opacity: 0.6; }
         .btn-small { padding: 6px 10px; font-size: 0.9rem; }
         .btn-icon { width: auto; padding: 6px 10px; font-size: 0.9rem; display: flex; align-items: center; justify-content: center; }
-        .editor-section { width: 100%; background: var(--bg-section); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; margin-bottom: 25px; transition: background-color var(--transition-speed) ease, border-color var(--transition-speed) ease; box-shadow: 0 2px 8px var(--shadow-light); }
+        .editor-section { width: 100%; background: var(--bg-section); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; margin-bottom: 15px; transition: background-color var(--transition-speed) ease, border-color var(--transition-speed) ease; box-shadow: 0 2px 8px var(--shadow-light); }
         .editor-section legend { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid var(--border-color); width: 100%; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
         .editor-section legend::after { content: " ▼"; font-size: 0.8rem; }
         .editor-section.collapsed legend::after { content: " ▶"; }
@@ -280,6 +280,7 @@
                 height: calc(100vh - var(--header-height)); z-index: 200;
                 transform: translateX(-100%); transition: transform 0.3s ease-in-out;
                 box-shadow: 4px 0 15px rgba(0,0,0,0.1); border-right: 1px solid var(--border-color);
+                overflow-x: hidden; /* v1.4.0 fix horizontal scroll */
             }
             .editor-panel.is-open { transform: translateX(0); }
             .preview-panel { width: 100%; height: calc(100vh - var(--header-height)); padding: 20px 10px; }
@@ -290,6 +291,18 @@
             }
             .preview-cards-triple { grid-template-columns: 1fr; }
             .masonry-active.preview-cards-triple .preview-card, .masonry-active.preview-cards-triple figure { width: 100%; }
+            /* v1.4.0 mobile UI fixes */
+            .color-control-row, .gradient-controls {
+                flex-direction: column;
+                gap: 10px;
+            }
+            .gradient-controls {
+                grid-template-columns: 1fr;
+            }
+            .color-control-group {
+                width: 100%;
+                min-width: 0;
+            }
         }
     </style>
 </head>
@@ -297,7 +310,7 @@
 
     <header class="app-header">
         <button id="mobile-edit-toggle" class="btn btn-default btn-icon" style="width: auto; padding: 6px 12px;"><span class="iconify" data-icon="mdi:pencil"></span> 编辑</button>
-        <div class="app-header-title">Blokko (v1.3.2)</div>
+        <div class="app-header-title">Blokko (v1.4.0)</div>
         <div class="header-actions-wrapper">
             <button id="lock-mode-toggle" class="btn btn-default" style="width: auto; padding: 6px 12px;" title="切换编辑/预览模式">编辑中</button>
             <button id="show-help-btn" class="btn btn-default btn-icon" style="width: auto; padding: 6px 12px;"><span class="iconify" data-icon="mdi:help-circle-outline"></span> 帮助</button>
@@ -310,38 +323,7 @@
 
     <div class="app-container">
         <aside class="editor-panel" id="editor-panel">
-            <fieldset class="editor-section">
-                <legend>操作</legend>
-                <div class="section-content">
-                    <div class="form-group" style="display: flex; gap: 10px;"> <button id="undo-btn" class="btn btn-default" disabled>撤回</button> <button id="redo-btn" class="btn btn-default" disabled>重做</button> </div>
-                    <div class="form-group" style="display: flex; gap: 10px;"> <button id="import-btn" class="btn btn-secondary">导入配置</button> <button id="export-btn" class="btn btn-secondary">导出配置</button> <button id="export-template-btn" class="btn btn-secondary">存为模板</button></div>
-                    <div class="form-group">
-                        <div class="checkbox-group" style="margin-bottom: 10px;">
-                            <label><input type="checkbox" id="hd-export-toggle"> 超清导出 (1800px)</label>
-                        </div>
-                        <div class="checkbox-group" style="margin-bottom: 10px;">
-                            <label><input type="checkbox" id="custom-width-toggle"> 自定义宽度</label>
-                            <input type="number" id="custom-width-input" value="1200" style="width: 80px; padding: 4px 8px;" disabled>
-                        </div>
-                        <div class="checkbox-group" style="margin-bottom: 10px;">
-                            <label><input type="checkbox" id="export-rounded-corners-toggle"> 导出为圆角图片</label>
-                            <input type="number" id="export-corner-radius-input" value="20" style="width: 60px; padding: 4px 8px;" disabled>
-                        </div>
-                        <div id="export-size-preview" style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 5px;"></div>
-                        <button id="export-png-btn" class="btn btn-primary" style="margin-top:10px;">导出为图片 (1200px)</button>
-                    </div>
-                    <hr class="separator">
-                    <div class="form-group">
-                        <label>预设主题:</label>
-                        <div class="input-group simple"> <button data-preset="light" class="btn btn-default btn-small">明亮</button> <button data-preset="dark" class="btn btn-default btn-small">暗黑</button> <button data-preset="mint" class="btn btn-default btn-small">薄荷</button> <button data-preset="coffee" class="btn btn-default btn-small">咖啡</button> </div>
-                    </div>
-                    <div class="form-group">
-                        <button id="reset-btn" class="btn btn-danger">恢复默认模板</button>
-                    </div>
-                    <input type="file" id="config-file-input" accept=".json" style="display: none;">
-                </div>
-            </fieldset>
-
+            
             <fieldset class="editor-section" id="personal-info-section">
                 <legend>个人信息</legend>
                 <div class="section-content">
@@ -368,37 +350,54 @@
                 </div>
             </fieldset>
 
+            <fieldset class="editor-section">
+                <legend>内容区块</legend>
+                <div class="section-content">
+                    <div id="editor-blocks-list"></div>
+                    <div class="form-group" style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 20px;">
+                        <button id="add-text-block-btn" class="btn btn-default">➕ 文本区块</button>
+                        <button id="add-image-block-btn" class="btn btn-default">🖼️ 图片区块</button>
+                        <button id="add-separator-block-btn" class="btn btn-default">〰️ 分隔线</button>
+                        <button id="add-spacer-block-btn" class="btn btn-default">⎵ 留白块</button>
+                    </div>
+                </div>
+            </fieldset>
+
             <fieldset class="editor-section collapsed" id="page-styles-section">
                 <legend>页面与头部样式</legend>
                 <div class="section-content">
-                    <h4>页面背景</h4>
-                    <div class="tabs"><button class="tab-btn" data-tab="page-bg-solid">纯色/图片</button><button class="tab-btn active" data-tab="page-bg-gradient">渐变</button></div>
-                    <div id="page-bg-solid" class="tab-content"><div class="form-group"><label>页面背景颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.pageBgSolidColor"><input type="text" class="color-hex-input" data-color-sync-key="pageStyles.pageBgSolidColor"></div></div><div class="form-group"><label>背景图 (可选):</label><div class="input-group simple"><input type="file" id="page-bg-upload" accept="image/*" style="width:100%"><button id="clear-page-bg-btn" class="btn btn-default btn-small">清除</button></div></div>
-                    <div id="page-image-controls" style="display:none;"><div class="form-group"><label>图片遮罩颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.pageOverlayColor"><input type="text" class="color-hex-input" data-color-sync-key="pageStyles.pageOverlayColor"></div></div><div class="form-group"><label>图片遮罩不透明度:</label><input type="range" data-state-key="pageStyles.pageOverlayOpacity" min="0" max="1" step="0.05"></div></div></div>
-                    <div id="page-bg-gradient" class="tab-content active"><div class="gradient-controls"><div class="form-group"><label>起始颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.pageBgGradientStart"><input type="text" class="color-hex-input" data-color-sync-key="pageStyles.pageBgGradientStart"></div></div><div class="form-group"><label>结束颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.pageBgGradientEnd"><input type="text" class="color-hex-input" data-color-sync-key="pageStyles.pageBgGradientEnd"></div></div><div class="gradient-angle-control form-group"><label>角度 (<span class="angle-value">135</span>°):</label><input type="range" data-state-key="pageStyles.pageBgGradientAngle" min="0" max="360" step="1"></div></div></div>
-                    
-                    <div class="form-group" style="margin-top: 10px;">
-                        <button id="show-texture-picker-btn" class="btn btn-default">🎨 添加纹理</button>
-                    </div>
-                    <div id="page-texture-controls" class="inset-controls" style="display:none;">
-                        <div class="form-group">
-                            <label>当前纹理: <span id="current-texture-name">无</span></label>
-                             <button id="clear-texture-btn" class="btn btn-default btn-small">清除纹理</button>
+                    <div class="tab-group-wrapper">
+                        <h4>页面背景</h4>
+                        <div class="tabs"><button class="tab-btn" data-tab="page-bg-solid">纯色/图片</button><button class="tab-btn active" data-tab="page-bg-gradient">渐变</button></div>
+                        <div id="page-bg-solid" class="tab-content"><div class="form-group"><label>页面背景颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.pageBgSolidColor"><input type="text" class="color-hex-input" data-color-sync-key="pageStyles.pageBgSolidColor"></div></div><div class="form-group"><label>背景图 (可选):</label><div class="input-group simple"><input type="file" id="page-bg-upload" accept="image/*" style="width:100%"><button id="clear-page-bg-btn" class="btn btn-default btn-small">清除</button></div></div>
+                        <div id="page-image-controls" style="display:none;"><div class="form-group"><label>图片遮罩颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.pageOverlayColor"><input type="text" class="color-hex-input" data-color-sync-key="pageStyles.pageOverlayColor"></div></div><div class="form-group"><label>图片遮罩不透明度:</label><input type="range" data-state-key="pageStyles.pageOverlayOpacity" min="0" max="1" step="0.05"></div></div></div>
+                        <div id="page-bg-gradient" class="tab-content active"><div class="gradient-controls"><div class="form-group"><label>起始颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.pageBgGradientStart"><input type="text" class="color-hex-input" data-color-sync-key="pageStyles.pageBgGradientStart"></div></div><div class="form-group"><label>结束颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.pageBgGradientEnd"><input type="text" class="color-hex-input" data-color-sync-key="pageStyles.pageBgGradientEnd"></div></div><div class="gradient-angle-control form-group"><label>角度 (<span class="angle-value">135</span>°):</label><input type="range" data-state-key="pageStyles.pageBgGradientAngle" min="0" max="360" step="1"></div></div></div>
+                        
+                        <div class="form-group" style="margin-top: 10px;">
+                            <button id="show-texture-picker-btn" class="btn btn-default">🎨 添加纹理</button>
                         </div>
-                        <div class="color-control-row">
-                             <div class="color-control-group"><label>纹理颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.pageBgPatternColor"><input type="text" class="color-hex-input" data-color-sync-key="pageStyles.pageBgPatternColor"></div></div>
-                             <div class="color-control-group"><label>纹理不透明度:</label><input type="range" data-state-key="pageStyles.pageBgPatternOpacity" min="0" max="1" step="0.05"></div>
+                        <div id="page-texture-controls" class="inset-controls" style="display:none;">
+                            <div class="form-group">
+                                <label>当前纹理: <span id="current-texture-name">无</span></label>
+                                 <button id="clear-texture-btn" class="btn btn-default btn-small">清除纹理</button>
+                            </div>
+                            <div class="color-control-row">
+                                 <div class="color-control-group"><label>纹理颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.pageBgPatternColor"><input type="text" class="color-hex-input" data-color-sync-key="pageStyles.pageBgPatternColor"></div></div>
+                                 <div class="color-control-group"><label>纹理不透明度:</label><input type="range" data-state-key="pageStyles.pageBgPatternOpacity" min="0" max="1" step="0.05"></div>
+                            </div>
+                            <div class="form-group"><label>纹理密度:</label><input type="range" data-state-key="pageStyles.pageBgPatternDensity" min="10" max="100" step="2"></div>
                         </div>
-                        <div class="form-group"><label>纹理密度:</label><input type="range" data-state-key="pageStyles.pageBgPatternDensity" min="10" max="100" step="2"></div>
                     </div>
 
                     <hr class="separator">
-                    <h4>头部背景</h4>
-                    <div class="tabs"><button class="tab-btn" data-tab="header-bg-solid">纯色</button><button class="tab-btn active" data-tab="header-bg-gradient">渐变</button></div>
-                    <div id="header-bg-solid" class="tab-content"><div class="form-group"><label>头部背景颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.headerBgColor"><input type="text" class="color-hex-input" data-color-sync-key="pageStyles.headerBgColor"></div></div></div>
-                    <div id="header-bg-gradient" class="tab-content active"><div class="gradient-controls"><div class="form-group"><label>起始颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.headerBgGradientStart"><input type="text" class="color-hex-input" data-color-sync-key="pageStyles.headerBgGradientStart"></div></div><div class="form-group"><label>结束颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.headerBgGradientEnd"><input type="text" class="color-hex-input" data-color-sync-key="pageStyles.headerBgGradientEnd"></div></div><div class="gradient-angle-control form-group"><label>角度 (<span class="angle-value">135</span>°):</label><input type="range" data-state-key="pageStyles.headerBgGradientAngle" min="0" max="360" step="1"></div></div></div>
-                    <div class="form-group"><label>头部文字颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.headerTextColor"><input type="text" class="color-hex-input" data-color-sync-key="pageStyles.headerTextColor"></div></div>
-                    <div class="form-group"><label>头部不透明度:</label><input type="range" data-state-key="pageStyles.headerOpacity" min="0" max="1" step="0.05"></div>
+                    <div class="tab-group-wrapper">
+                        <h4>头部背景</h4>
+                        <div class="tabs"><button class="tab-btn" data-tab="header-bg-solid">纯色</button><button class="tab-btn active" data-tab="header-bg-gradient">渐变</button></div>
+                        <div id="header-bg-solid" class="tab-content"><div class="form-group"><label>头部背景颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.headerBgColor"><input type="text" class="color-hex-input" data-color-sync-key="pageStyles.headerBgColor"></div></div></div>
+                        <div id="header-bg-gradient" class="tab-content active"><div class="gradient-controls"><div class="form-group"><label>起始颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.headerBgGradientStart"><input type="text" class="color-hex-input" data-color-sync-key="pageStyles.headerBgGradientStart"></div></div><div class="form-group"><label>结束颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.headerBgGradientEnd"><input type="text" class="color-hex-input" data-color-sync-key="pageStyles.headerBgGradientEnd"></div></div><div class="gradient-angle-control form-group"><label>角度 (<span class="angle-value">135</span>°):</label><input type="range" data-state-key="pageStyles.headerBgGradientAngle" min="0" max="360" step="1"></div></div></div>
+                        <div class="form-group"><label>头部文字颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.headerTextColor"><input type="text" class="color-hex-input" data-color-sync-key="pageStyles.headerTextColor"></div></div>
+                        <div class="form-group"><label>头部不透明度:</label><input type="range" data-state-key="pageStyles.headerOpacity" min="0" max="1" step="0.05"></div>
+                    </div>
                 </div>
             </fieldset>
             
@@ -440,19 +439,39 @@
                     <div class="color-control-row"><div class="color-control-group"><label>文字描边(px):</label><input type="range" data-state-key="globalCardStyles.textStrokeWidth" min="0" max="5" step="0.5"></div><div class="color-control-group"><label>描边颜色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.textStrokeColor"><input type="text" class="color-hex-input" data-color-sync-key="globalCardStyles.textStrokeColor"></div></div></div>
                 </div>
             </fieldset>
-
+            
             <fieldset class="editor-section">
-                <legend>内容区块</legend>
+                <legend>操作</legend>
                 <div class="section-content">
-                    <div id="editor-blocks-list"></div>
-                    <div class="form-group" style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 20px;">
-                        <button id="add-text-block-btn" class="btn btn-default">➕ 文本区块</button>
-                        <button id="add-image-block-btn" class="btn btn-default">🖼️ 图片区块</button>
-                        <button id="add-separator-block-btn" class="btn btn-default">〰️ 分隔线</button>
-                        <button id="add-spacer-block-btn" class="btn btn-default">⎵ 留白块</button>
+                    <div class="form-group" style="display: flex; gap: 10px;"> <button id="undo-btn" class="btn btn-default" disabled>撤回</button> <button id="redo-btn" class="btn btn-default" disabled>重做</button> </div>
+                    <div class="form-group" style="display: flex; gap: 10px;"> <button id="import-btn" class="btn btn-secondary">导入配置</button> <button id="export-btn" class="btn btn-secondary">导出配置</button> <button id="export-template-btn" class="btn btn-secondary">存为模板</button></div>
+                    <div class="form-group">
+                        <div class="checkbox-group" style="margin-bottom: 10px;">
+                            <label><input type="checkbox" id="hd-export-toggle"> 超清导出 (1800px)</label>
+                        </div>
+                        <div class="checkbox-group" style="margin-bottom: 10px;">
+                            <label><input type="checkbox" id="custom-width-toggle"> 自定义宽度</label>
+                            <input type="number" id="custom-width-input" value="1200" style="width: 80px; padding: 4px 8px;" disabled>
+                        </div>
+                        <div class="checkbox-group" style="margin-bottom: 10px;">
+                            <label><input type="checkbox" id="export-rounded-corners-toggle"> 导出为圆角图片</label>
+                            <input type="number" id="export-corner-radius-input" value="20" style="width: 60px; padding: 4px 8px;" disabled>
+                        </div>
+                        <div id="export-size-preview" style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 5px;"></div>
+                        <button id="export-png-btn" class="btn btn-primary" style="margin-top:10px;">导出为图片 (1200px)</button>
                     </div>
+                    <hr class="separator">
+                    <div class="form-group">
+                        <label>预设主题:</label>
+                        <div class="input-group simple"> <button data-preset="light" class="btn btn-default btn-small">明亮</button> <button data-preset="dark" class="btn btn-default btn-small">暗黑</button> <button data-preset="mint" class="btn btn-default btn-small">薄荷</button> <button data-preset="coffee" class="btn btn-default btn-small">咖啡</button> </div>
+                    </div>
+                    <div class="form-group">
+                        <button id="reset-btn" class="btn btn-danger">恢复默认模板</button>
+                    </div>
+                    <input type="file" id="config-file-input" accept=".json" style="display: none;">
                 </div>
             </fieldset>
+
         </aside>
 
         <div class="resizer" id="resizer"></div>
@@ -465,10 +484,34 @@
     <div class="modal-overlay" id="help-modal">
         <div class="modal-container" style="max-width: 700px;">
             <div class="tabs">
+                <button class="tab-btn" data-tab="help-tutorial">新手教程</button>
                 <button class="tab-btn active" data-tab="help-instructions">使用说明</button>
                 <button class="tab-btn" data-tab="help-changelog">更新日志</button>
                 <button class="tab-btn" data-tab="help-thanks">感谢信息</button>
                 <button class="tab-btn" data-tab="help-about">关于</button>
+            </div>
+            <div id="help-tutorial" class="tab-content">
+                <h4>欢迎来到 Blokko！✨</h4>
+                <p>别担心，这个小教程将带你快速上手，整个过程只需一分钟！当然如果你有类似工具使用经验，或是已经熟练使用的话，划到最底下看完重要提示，就放心关掉吧!</p>
+                
+                <h4>写在正式开始前</h4>
+                <p>Blokko 是一个免费的工具，建议使用安卓端的Via浏览器，并打开全屏模式，PC端的Edge浏览器和Chrome浏览器来使用体验最佳。</p>
+                
+                <h4>第一步：核心技巧 - 双击编辑！</h4>
+                <p>Blokko 最便捷的操作就是“双击”。预览区域里你看到的所有文字（比如昵称、简介、卡片标题和内容），直接双击它们，就可以立刻开始编辑，非常方便！（需要把最上方按钮切换成“编辑中”状态哦）</p>
+                
+                <h4>第二步：调整你的个人信息</h4>
+                <p>在左侧的编辑面板，最上方的 “个人信息” 区域，你可以上传头像、修改昵称、添加标签，打造属于你的独特头部样式。</p>
+                
+                <h4>第三步：添加和管理内容</h4>
+                <p>在 “内容区块” 部分，你可以点击下方的“➕”按钮来添加不同类型的展示模块，比如文本卡片、图片墙等。每个区块和卡片都可以通过拖拽 ☰ 图标来排序。</p>
+                
+                <h4>第四步：美化与导出</h4>
+                <p>当你对内容满意后，可以探索 “页面样式” 和 “全局卡片样式”，调整颜色、字体和背景，让你的作品更具个性。全部完成后，点击 “操作” 区域的 “导出为图片” 按钮，就可以保存你的杰作啦！</p>
+                
+                <h4>⚠️ 关于版权的重要提示</h4>
+                <p><strong>Blokko 是一个完全免费的本地创作工具。当您使用“上传字体”、“上传图片/图标”功能时，您需要对这些素材负责。请确保您上传和使用的任何文件都已获得了原版权方的合法授权，或使用无版权可商用素材。</strong></p>
+                <p><strong>因使用未授权素材而产生的任何版权问题，将由您自行承担。换言之，自己上传素材，一定要注意版权信息哦！</strong></p>
             </div>
             <div id="help-instructions" class="tab-content active">
                 <h4>欢迎使用 Blokko！</h4>
@@ -484,9 +527,24 @@
                 <p>因使用未授权素材而产生的任何版权问题，将需要由您自行承担，<strong>因此我鼓励您使用开源的无版权可商用字体/图片/图标文件。</strong></p>
 		   </div>
             <div id="help-changelog" class="tab-content">
-                <h4>v1.3.2 (当前版本)</h4>
+                <h4>v1.4.0 (当前版本)</h4>
                 <ul>
-                    <li><b>【新增】</b> 为多列文本区块（双排/三排）增加了瀑布流（Masonry）布局选项。启用后，卡片将根据内容自适应高度，并紧凑排列，解决了因卡片高度不一导致的布局空洞问题。</li>
+                    <li><b>【新增】</b> <b>新手教程:</b> 首次访问的用户将自动弹出新手教程，帮助快速上手。后续可通过“帮助”按钮查看。</li>
+                    <li><b>【优化】</b> <b>编辑区布局:</b> 调整了左侧编辑区的模块顺序，将不常用的“操作”部分移至底部，更符合新用户的使用习惯。</li>
+                    <li><b>【优化】</b> <b>预览定位增强:</b> 在电脑端，点击预览区的任意卡片，左侧编辑区现在会精确滚动到该卡片的具体设置项，而不仅仅是其所属的区块。</li>
+                    <li><b>【优化】</b> <b>移动端UI:</b>
+                        <ul>
+                            <li>修复了在手机上编辑面板可能会出现水平滚动条的问题，优化了窄屏下的布局。</li>
+                            <li>减小了各编辑模块之间的垂直间距，使布局更紧凑。</li>
+                            <li>修复了“页面样式”设置中，“页面背景”和“头部背景”的Tab控件会互相干扰的BUG。</li>
+                        </ul>
+                    </li>
+                    <li><b>【修复】</b> <b>图片导出:</b> 修复了在特定情况下导出图片时可能因背景定位问题导致报错的BUG。</li>
+                </ul>
+                <hr class="separator">
+                <h4>v1.3.2</h4>
+                <ul>
+                    <li><b>【新增】</b> 为多列文本区块（双排/三排）增加了瀑布流（Masonry）布局选项。启用后，卡片将根据内容自适应高度，并紧凑排列，解决了因卡片高度不一导致的布局空洞问题(该功能在移动端存在问题，移动端不要勾选瀑布流，会导致区块挤压问题）。</li>
                     <li><b>【新增/重构】</b> 图片区块已完全重构，现在与文本区块拥有统一的卡片式管理逻辑。可以为图片区块启用瀑布流布局，实现完美的图片墙效果。</li>
                     <li><b>【新增】</b> 在电脑端，点击或双击预览区的区块时，左侧编辑面板会自动定位并展开到该区块的设置区域，方便快速修改。</li>
                     <li><b>【优化】</b> 优化了部分文本表述。</li>
@@ -691,7 +749,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                 icons: [], 
 
                 init() {
-                    console.log("Blokko 初始化 v1.3.2 ...");
+                    console.log("Blokko 初始化 v1.4.0 ...");
                     this.elements = this.queryElements();
                     this.presets = this.getPresets();
                     this.state = this.getDefaultState();
@@ -718,6 +776,26 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                     this.loadIcons(); 
                     
                     document.getElementById('personal-info-section').classList.remove('collapsed');
+                    
+                    // v1.4.0: Show tutorial on first visit
+                    const hasVisited = localStorage.getItem('blokkoFirstVisit');
+                    if (!hasVisited) {
+                        const helpModal = this.elements.helpModal;
+                        helpModal.classList.add('visible');
+
+                        // Switch to tutorial tab
+                        helpModal.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+                        helpModal.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+                        const tutorialTabBtn = helpModal.querySelector('[data-tab="help-tutorial"]');
+                        const tutorialContent = helpModal.querySelector('#help-tutorial');
+                        if (tutorialTabBtn && tutorialContent) {
+                            tutorialTabBtn.classList.add('active');
+                            tutorialContent.classList.add('active');
+                        }
+
+                        localStorage.setItem('blokkoFirstVisit', 'true');
+                    }
                 },
 
                 getDefaultState() {
@@ -918,11 +996,12 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
                     document.querySelectorAll('.tabs .tab-btn').forEach(button => {
                         button.addEventListener('click', (e) => {
-                            const parent = e.target.closest('.modal-container, .section-content, .editor-card-content');
+                            // v1.4.0 fix: Use a more specific parent to avoid interfering with other tab groups
+                            const parent = e.target.closest('.modal-container, .tab-group-wrapper, .editor-card-content, #global-card-styles-section > .section-content');
                             if (!parent) return;
                             parent.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
                             button.classList.add('active');
-                            parent.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                            parent.querySelectorAll(':scope > .tab-content').forEach(content => content.classList.remove('active'));
                             const targetTab = parent.querySelector(`#${button.dataset.tab}`);
                             if (targetTab) targetTab.classList.add('active');
                             
@@ -1186,7 +1265,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                         if (this.isEditingText) return;
                         const blockWrapper = e.target.closest('.preview-block-wrapper');
                         if (blockWrapper && blockWrapper.dataset.blockId) {
-                            this.focusOnEditorBlock(blockWrapper.dataset.blockId);
+                            // v1.4.0: Get cardId for precise focusing
+                            const cardWrapper = e.target.closest('.preview-card, figure');
+                            const cardId = cardWrapper ? cardWrapper.dataset.cardId : null;
+                            this.focusOnEditorElement(blockWrapper.dataset.blockId, cardId);
                         }
                      });
 
@@ -1196,7 +1278,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                         if (target && !this.isEditingText) {
                             const blockWrapper = target.closest('.preview-block-wrapper');
                             if (blockWrapper && blockWrapper.dataset.blockId) {
-                                this.focusOnEditorBlock(blockWrapper.dataset.blockId);
+                                const cardWrapper = target.closest('.preview-card, figure');
+                                const cardId = cardWrapper ? cardWrapper.dataset.cardId : null;
+                                this.focusOnEditorElement(blockWrapper.dataset.blockId, cardId);
                             }
 
                             this.isEditingText = true;
@@ -1878,7 +1962,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                     const gCardSection = document.getElementById('global-card-styles-section');
                     const gCardActiveTab = this.state.globalCardStyles.bgMode === 'gradient' ? 'card-bg-gradient' : 'card-bg-solid';
                     gCardSection.querySelectorAll('.tab-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === gCardActiveTab));
-                    gCardSection.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === gCardActiveTab));
+                    gCardSection.querySelectorAll(':scope > .section-content > .tab-content').forEach(c => c.classList.toggle('active', c.id === gCardActiveTab));
 
                     const pageSection = document.getElementById('page-styles-section');
                     const pageActiveTab = this.state.pageStyles.pageBgMode === 'gradient' ? 'page-bg-gradient' : 'page-bg-solid';
@@ -2474,6 +2558,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                     const styles = this.state.pageStyles;
                     let pageBgLayers = [];
                     let pageBgSizes = [];
+                    // v1.4.0 fix: define pageBgPositions
                     let pageBgPositions = [];
                     let pageBgColor = 'transparent';
 
@@ -2501,6 +2586,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                     }
                     if (styles.pageBgMode === 'gradient') {
                         pageBgLayers.push(`linear-gradient(${styles.pageBgGradientAngle}deg, ${styles.pageBgGradientStart}, ${styles.pageBgGradientEnd})`);
+                        pageBgSizes.push('auto');
+                        pageBgPositions.push('initial');
                     } else {
                         pageBgColor = styles.pageBgSolidColor;
                     }
@@ -2508,7 +2595,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                     pageWrapper.style.backgroundColor = pageBgColor;
                     pageWrapper.style.backgroundImage = pageBgLayers.join(', ');
                     pageWrapper.style.backgroundSize = pageBgSizes.join(', ');
-                    pageWrapper.style.backgroundPosition = bgPositions.join(', ');
+                    pageWrapper.style.backgroundPosition = pageBgPositions.join(', ');
                     
                     clone.querySelectorAll('.preview-card-inner').forEach(cardInner => {
                         const computed = getComputedStyle(cardInner);
@@ -2984,7 +3071,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                     this.elements.texturePickerModal.classList.remove('visible');
                 },
 
-                focusOnEditorBlock(blockId) {
+                // v1.4.0: Enhanced focus function
+                focusOnEditorElement(blockId, cardId = null) {
                     if (window.innerWidth <= 768) return;
 
                     const editorBlockEl = this.elements.editorBlocksList.querySelector(`.editor-block[data-block-id="${blockId}"]`);
@@ -2995,14 +3083,23 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                         mainSection.classList.remove('collapsed');
                     }
                     
+                    // Determine the final element to focus on
+                    let targetEl = editorBlockEl;
+                    if (cardId) {
+                        const cardEl = editorBlockEl.querySelector(`.editor-card[data-card-id="${cardId}"]`);
+                        if (cardEl) {
+                            targetEl = cardEl;
+                        }
+                    }
+
                     setTimeout(() => {
-                        editorBlockEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        editorBlockEl.style.transition = 'outline 0.1s ease-in-out, box-shadow 0.2s ease-in-out';
-                        editorBlockEl.style.outline = '2px solid var(--color-primary)';
-                        editorBlockEl.style.boxShadow = '0 0 12px rgba(0, 122, 255, 0.4)';
+                        targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        targetEl.style.transition = 'outline 0.1s ease-in-out, box-shadow 0.2s ease-in-out';
+                        targetEl.style.outline = '2px solid var(--color-primary)';
+                        targetEl.style.boxShadow = '0 0 12px rgba(0, 122, 255, 0.4)';
                         setTimeout(() => {
-                            editorBlockEl.style.outline = '';
-                            editorBlockEl.style.boxShadow = '';
+                            targetEl.style.outline = '';
+                            targetEl.style.boxShadow = '';
                         }, 1500);
                     }, 150);
                 },
@@ -3091,3 +3188,4 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
     </script>
 </body>
 </html>
+
