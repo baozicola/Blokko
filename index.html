@@ -159,7 +159,7 @@
             font-size: 1.1em;
             color: var(--text-secondary);
         }
-        .layer-list .layer-item .layer-name {
+        。layer-list .layer-item .layer-name {
             flex-grow: 1;
             white-space: nowrap;
             overflow: hidden;
@@ -370,6 +370,7 @@
         #color-context-menu ul { list-style: none; margin: 0; padding: 0; }
         #color-context-menu li { padding: 8px 12px; cursor: pointer; border-radius: 4px; font-size: 0.9rem; }
         #color-context-menu li:hover { background: var(--bg-input); }
+        #color-context-menu hr { border: none; border-top: 1px solid var(--border-color); margin: 4px 0; }
         
         @keyframes toast-in { to { opacity: 1; transform: translateX(0); } }
         @keyframes toast-out { to { opacity: 0; transform: translateX(100%); } }
@@ -791,9 +792,17 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     <div id="color-context-menu">
         <ul>
             <li data-action="apply-page-bg-solid">应用到页面背景色</li>
+            <li data-action="apply-page-bg-gradient-start">&rarr; 页面背景渐变 (起始色)</li>
+            <li data-action="apply-page-bg-gradient-end">&rarr; 页面背景渐变 (结束色)</li>
+            <hr />
             <li data-action="apply-header-bg-solid">应用到头部背景色</li>
+            <li data-action="apply-header-bg-gradient-start">&rarr; 头部背景渐变 (起始色)</li>
+            <li data-action="apply-header-bg-gradient-end">&rarr; 头部背景渐变 (结束色)</li>
             <li data-action="apply-header-text">应用到头部文字颜色</li>
+            <hr />
             <li data-action="apply-gcard-bg">应用到全局卡片背景色</li>
+            <li data-action="apply-gcard-bg-gradient-start">&rarr; 全局卡片渐变 (起始色)</li>
+            <li data-action="apply-gcard-bg-gradient-end">&rarr; 全局卡片渐变 (结束色)</li>
             <li data-action="apply-gcard-text">应用到全局卡片文字色</li>
         </ul>
     </div>
@@ -1145,7 +1154,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                         layerNameEl.addEventListener('keydown', handleKeydown);
                     });
                     
-                    // BUGFIX: Move color context menu listener here to prevent multiple bindings
+                    // MODIFICATION: Bind color context menu listener
                     this.elements.colorContextMenu.addEventListener('click', e => {
                         const action = e.target.dataset.action;
                         const color = this.elements.colorContextMenu.dataset.color;
@@ -1162,6 +1171,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                 bindEditorEvents() {
                     const panel = this.elements.inspectorPanel;
 
+                    // Function: Handle all live input changes
                     panel.addEventListener('input', e => {
                         if (this.isRestoringState) return;
                         const target = e.target;
@@ -1178,7 +1188,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 
                         let value = target.type === 'checkbox' ? target.checked : (target.type === 'number' || target.type === 'range') ? parseFloat(target.value) : target.value;
 
-                        // Handle color picker and HEX input sync
+                        // Logic: Synchronize color picker and HEX input
                         if (target.type === 'color') {
                             const hexInput = target.nextElementSibling;
                              if(hexInput && hexInput.matches('.color-hex-input')) {
@@ -1191,7 +1201,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                                     colorInput.value = value;
                                 }
                              } else {
-                                // If hex is invalid, don't update the color picker
+                                // If hex is invalid, do not update the color picker
                                 return;
                              }
                         }
@@ -1209,8 +1219,17 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                             const tagItem = target.closest('.tag-manager-item');
                             if (tagItem) this.updateTag(tagItem.dataset.tagId, 'text', target.value, false);
                         }
+
+                        // MODIFICATION: Real-time updates for range slider value displays
+                        if (target.type === 'range') {
+                            const valueDisplay = target.previousElementSibling?.querySelector('.angle-value, .spacer-height-value, #gCardRadiusValue');
+                            if (valueDisplay) {
+                                valueDisplay.textContent = value;
+                            }
+                        }
                     });
 
+                    // Function: Handle changes that should be saved or trigger re-renders
                     panel.addEventListener('change', e => {
                         if (this.isRestoringState) return;
                         const target = e.target;
@@ -1219,6 +1238,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                             this.pushHistory();
                         }
 
+                        // Logic: Handle all file inputs
                         const fileInputs = {
                             '#avatar-upload': 'avatar',
                             '#page-bg-upload': 'pageBg',
@@ -1241,28 +1261,67 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                                 e.target.value = '';
                             }
                         }
+                        
+                        // MODIFICATION: Handle UI changes for export settings
+                        if (target.matches('#hd-export-toggle, #custom-width-toggle, #custom-width-input, #export-rounded-corners-toggle, #export-corner-radius-input')) {
+                            const customWidthToggle = panel.querySelector('#custom-width-toggle');
+                            const customWidthInput = panel.querySelector('#custom-width-input');
+                            const hdExportToggle = panel.querySelector('#hd-export-toggle');
+                            const exportRoundedToggle = panel.querySelector('#export-rounded-corners-toggle');
+                            const cornerRadiusInput = panel.querySelector('#export-corner-radius-input');
 
-                        if (target.matches('[data-setting-key="masonryEnabled"]') || target.matches('[name^="block-layout"]')) {
-                            this.renderInspector();
+                            if (target.id === 'custom-width-toggle') {
+                                customWidthInput.disabled = !target.checked;
+                                if (target.checked) hdExportToggle.checked = false;
+                            }
+                            
+                            if (target.id === 'hd-export-toggle' && target.checked) {
+                                customWidthToggle.checked = false;
+                                customWidthInput.disabled = true;
+                            }
+    
+                            if (target.id === 'export-rounded-corners-toggle') {
+                                cornerRadiusInput.disabled = !target.checked;
+                            }
+    
+                            this.updateExportSizePreview();
                         }
+
+                        // MODIFICATION: Handle UI changes for block layout and card opacity settings
+                        if (target.matches('[name^="block-layout"]')) {
+                            const blockEl = target.closest('.editor-block');
+                            if (blockEl) {
+                                const masonryToggle = blockEl.querySelector('.masonry-toggle-container');
+                                if (masonryToggle) {
+                                    masonryToggle.style.display = ['dual', 'triple'].includes(target.value) ? 'block' : 'none';
+                                }
+                            }
+                            this.renderInspector(); // Re-render for masonry changes to take effect
+                        }
+
                         if (target.matches('[data-card-key="followGlobalOpacity"]')) {
-                            this.renderInspector();
+                            const opacitySliderGroup = target.closest('.editor-card-content').querySelector('.form-group:has([data-card-key="opacity"])');
+                            if (opacitySliderGroup) {
+                                opacitySliderGroup.style.display = target.checked ? 'none' : 'block';
+                            }
                         }
                     });
-
+                    
+                    // Function: Handle all button clicks within the inspector
                     panel.addEventListener('click', e => {
                         const target = e.target;
 
-                        // BUGFIX: Handle collapsible sections first
+                        // Logic: Handle collapsible sections first to prevent other actions
                         const legend = target.closest('.editor-section > legend');
                         if (legend) {
                             legend.parentElement.classList.toggle('collapsed');
-                            return; // Prevent other actions when toggling a section
+                            return; 
                         }
 
                         const actionButton = target.closest('button, .back-to-global-btn');
                         if (!actionButton) return;
                         
+                        // Logic: Map buttons to their respective functions
                         const actions = {
                             '#undo-btn': () => this.undo(),
                             '#redo-btn': () => this.redo(),
@@ -1290,6 +1349,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                             }
                         }
 
+                        // Logic: Handle preset and color reset buttons
                         if (actionButton.dataset.preset) this.applyPreset(this.presets[actionButton.dataset.preset]);
                         if (actionButton.dataset.resetKey) {
                             let basePreset = this.presets.light;
@@ -1300,12 +1360,14 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                             this.showToast('颜色已重置', 'info');
                         }
                         
+                        // Logic: Handle tag management buttons
                         const tagItem = target.closest('.tag-manager-item');
                         if (tagItem) {
                             if (target.closest('.tag-icon-btn')) { this.initIconPicker(); this.showIconPicker('tag', tagItem.dataset.tagId); }
                             if (target.closest('.tag-delete-btn')) this.deleteTag(tagItem.dataset.tagId);
                         }
-
+                        
+                        // Logic: Handle buttons within a block editor
                         const blockEl = target.closest('.editor-block');
                         if (blockEl) {
                             const blockId = blockEl.dataset.blockId;
@@ -1328,6 +1390,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                             }
                         }
                         
+                        // Logic: Handle tab switching
                         const tabBtn = target.closest('.tabs .tab-btn');
                         if (tabBtn) {
                             const parent = tabBtn.closest('.tab-group-wrapper, #global-card-styles-section > .section-content');
@@ -1634,7 +1697,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                     if (this.selection.type === 'global') {
                         this.populateFontList();
                         this.bindColorThiefEvents();
-                        // BUGFIX: Re-render palette if it exists
+                        // MODIFICATION: Re-render palette if it exists
                         if (this.lastPalette && this.lastPalette.length > 0) {
                             this.renderPalette(this.lastPalette);
                         }
@@ -2138,8 +2201,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                             const hexInput = input.nextElementSibling;
                             if(hexInput && hexInput.matches('.color-hex-input')) hexInput.value = value || '';
                         }
-                        if (input.type === 'range' && (stateKey.endsWith('Angle') || input.dataset.settingKey === 'height')) {
-                            const valueDisplay = input.previousElementSibling.querySelector('.angle-value, .spacer-height-value');
+                        if (input.type === 'range' && (stateKey.endsWith('Angle') || input.dataset.settingKey === 'height' || stateKey.endsWith('radius'))) {
+                            const valueDisplay = input.previousElementSibling.querySelector('.angle-value, .spacer-height-value, #gCardRadiusValue');
                             if (valueDisplay) valueDisplay.textContent = value;
                         }
                     } catch (e) {
@@ -2181,17 +2244,14 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                                         hexInput.value = value || (input.placeholder || '');
                                     }
                                 }
-                                if (input.type === 'range' && (stateKey?.endsWith('Angle') || settingKey === 'height')) {
-                                     const valueDisplay = input.previousElementSibling.querySelector('.angle-value, .spacer-height-value');
+                                if (input.type === 'range' && (stateKey?.endsWith('Angle') || settingKey === 'height' || stateKey?.endsWith('radius'))) {
+                                     const valueDisplay = input.previousElementSibling.querySelector('.angle-value, .spacer-height-value, #gCardRadiusValue');
                                      if(valueDisplay) valueDisplay.textContent = value;
                                 }
                             }
                         } catch (e) {}
                     });
                      
-                    const gCardRadiusValue = document.getElementById('gCardRadiusValue');
-                    if(gCardRadiusValue) gCardRadiusValue.textContent = this.state.globalCardStyles.radius;
-                    
                     const gCardSection = document.getElementById('global-card-styles-section');
                     if (gCardSection) {
                         const gCardActiveTab = this.state.globalCardStyles.bgMode === 'gradient' ? 'card-bg-gradient' : 'card-bg-solid';
@@ -3429,17 +3489,69 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                 hideColorContextMenu() {
                     this.elements.colorContextMenu.style.display = 'none';
                 },
+                
+                // MODIFICATION: Added helper function to switch tabs programmatically
+                switchTab(sectionSelector, desiredTabId) {
+                    const section = this.elements.inspectorPanel.querySelector(sectionSelector);
+                    if (!section) return;
+
+                    const tabButton = section.querySelector(`.tab-btn[data-tab="${desiredTabId}"]`);
+                    if (!tabButton) return;
+
+                    section.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+                    tabButton.classList.add('active');
+
+                    section.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                    const tabContent = section.querySelector(`#${desiredTabId}`);
+                    if (tabContent) {
+                        tabContent.classList.add('active');
+                    }
+                },
+
+                // MODIFICATION: Enhanced function to apply colors and switch tabs
                 applyQuickColor(action, color) {
                     const actionMap = {
                         'apply-page-bg-solid': 'pageStyles.pageBgSolidColor',
+                        'apply-page-bg-gradient-start': 'pageStyles.pageBgGradientStart',
+                        'apply-page-bg-gradient-end': 'pageStyles.pageBgGradientEnd',
                         'apply-header-bg-solid': 'pageStyles.headerBgColor',
+                        'apply-header-bg-gradient-start': 'pageStyles.headerBgGradientStart',
+                        'apply-header-bg-gradient-end': 'pageStyles.headerBgGradientEnd',
                         'apply-header-text': 'pageStyles.headerTextColor',
                         'apply-gcard-bg': 'globalCardStyles.bgColor',
+                        'apply-gcard-bg-gradient-start': 'globalCardStyles.bgGradientStart',
+                        'apply-gcard-bg-gradient-end': 'globalCardStyles.bgGradientEnd',
                         'apply-gcard-text': 'globalCardStyles.textColor',
                     };
-                    if(actionMap[action]) {
+
+                    if (actionMap[action]) {
                         this.updateState(actionMap[action], color, true);
                         this.showToast('颜色已应用', 'info');
+
+                        // Logic: Automatically switch tabs based on the applied color type
+                        if (action.includes('gradient')) {
+                            if (action.startsWith('apply-page-bg')) {
+                                this.updateState('pageStyles.pageBgMode', 'gradient', false);
+                                this.switchTab('#page-styles-section .tab-group-wrapper:first-child', 'page-bg-gradient');
+                            } else if (action.startsWith('apply-header-bg')) {
+                                this.updateState('pageStyles.headerBgMode', 'gradient', false);
+                                this.switchTab('#page-styles-section .tab-group-wrapper:last-child', 'header-bg-gradient');
+                            } else if (action.startsWith('apply-gcard-bg')) {
+                                this.updateState('globalCardStyles.bgMode', 'gradient', false);
+                                this.switchTab('#global-card-styles-section', 'card-bg-gradient');
+                            }
+                        } else if (action.includes('solid')) {
+                             if (action.startsWith('apply-page-bg')) {
+                                this.updateState('pageStyles.pageBgMode', 'solid', false);
+                                this.switchTab('#page-styles-section .tab-group-wrapper:first-child', 'page-bg-solid');
+                            } else if (action.startsWith('apply-header-bg')) {
+                                this.updateState('pageStyles.headerBgMode', 'solid', false);
+                                this.switchTab('#page-styles-section .tab-group-wrapper:last-child', 'header-bg-solid');
+                            } else if (action.startsWith('apply-gcard-bg')) {
+                                this.updateState('globalCardStyles.bgMode', 'solid', false);
+                                this.switchTab('#global-card-styles-section', 'card-bg-solid');
+                            }
+                        }
                     }
                 },
 
@@ -3569,4 +3681,4 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         });
     </script>
 </body>
-</html>
+			</html>
