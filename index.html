@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Blokko v1.5.0 (Internal): -->
-    <title>Blokko-个人简介生成器！ (v1.5.0)-来玩2077吧！</title>
+    <!-- Blokko v1.5.1 (Internal): -->
+    <title>Blokko-个人简介生成器！ (v1.5.1)-来玩2077吧！</title>
     
     <script>
         // Anti-FOUC (Flash of Unstyled Content) Script
@@ -182,7 +182,7 @@
         .preview-wrapper::before { content: none; } /* FIX: Layering - remove pseudo element for background image */
         .preview-overlay { display: none; } /* FIX: Layering - overlay is now baked into the background-image property */
         .preview-header, .preview-blocks-container { position: relative; z-index: 2; word-wrap: break-word; overflow-wrap: break-word; width: 100%; box-sizing: border-box; }
-        [data-state-key]:hover, [data-card-key]:hover, .tag-pill:hover { outline: 1px dashed var(--color-primary); cursor: text; }
+        [data-state-key]:hover, [data-card-key]:hover, [data-separator-text-key]:hover, .tag-pill:hover { outline: 1px dashed var(--color-primary); cursor: text; }
         [contenteditable="true"] { outline: 2px solid var(--color-primary); box-shadow: 0 0 8px rgba(0, 122, 255, 0.5); background-color: rgba(0, 122, 255, 0.1); border-radius: 4px; }
         .btn { display: inline-block; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; transition: background-color var(--transition-short) ease, transform var(--transition-short) ease, box-shadow var(--transition-short) ease; text-align: center; width: 100%; color: var(--text-on-primary); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .btn-primary { background: var(--color-primary); } .btn-primary:hover:not(:disabled) { background: var(--color-primary-hover); box-shadow: 0 4px 8px rgba(0,122,255,0.3); }
@@ -272,7 +272,7 @@
         .thumbnail-actions .btn { width: 24px; height: 24px; padding: 0; font-size: 0.8rem; line-height: 24px; border-radius: 50%; background: rgba(0,0,0,0.6); color: white; border: none; }
         .thumbnail-actions .btn:hover { background: rgba(0,0,0,0.8); }
         .preview-blocks-container { margin-top: 20px; display: flex; flex-direction: column; gap: 20px; width: 100%; box-sizing: border-box; }
-        .preview-blocks-container.locked-mode * { cursor: default !important; }
+        .preview-blocks-container.locked-mode * { cursor: default !important; pointer-events: none !important; }
         #preview-blocks-container .empty-placeholder { text-align: center; padding: 50px 0; color: var(--text-placeholder); }
         .preview-block-wrapper.sortable-drag { opacity: 1 !important; }
         .preview-block-wrapper { cursor: pointer; }
@@ -359,6 +359,18 @@
         #help-thanks details { margin-top: 10px; }
         #help-thanks summary { cursor: pointer; font-weight: 600; color: var(--text-action); }
         #help-thanks pre { white-space: pre-wrap; word-wrap: break-word; background: var(--bg-input); padding: 10px; border-radius: 6px; font-size: 0.8rem; max-height: 200px; overflow-y: auto; border: 1px solid var(--border-color); }
+        
+        /* v1.5.1: Color Thief & Context Menu styles */
+        .palette-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(40px, 1fr)); gap: 10px; margin-top: 10px; }
+        .palette-color { width: 100%; padding-top: 100%; border-radius: 8px; cursor: pointer; border: 2px solid var(--border-color); transition: transform var(--transition-short); position: relative; }
+        .palette-color:hover { transform: scale(1.1); }
+        .color-tooltip { position: absolute; bottom: 110%; left: 50%; transform: translateX(-50%); background: var(--bg-card); color: var(--text-primary); padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; white-space: nowrap; box-shadow: var(--shadow-medium); opacity: 0; visibility: hidden; transition: opacity var(--transition-short); }
+        .palette-color:hover .color-tooltip { opacity: 1; visibility: visible; }
+        #color-context-menu { position: fixed; z-index: 10000; background: var(--bg-editor); border: 1px solid var(--border-color); border-radius: 8px; box-shadow: var(--shadow-medium); padding: 5px; display: none; min-width: 180px;}
+        #color-context-menu ul { list-style: none; margin: 0; padding: 0; }
+        #color-context-menu li { padding: 8px 12px; cursor: pointer; border-radius: 4px; font-size: 0.9rem; }
+        #color-context-menu li:hover { background: var(--bg-input); }
+        
         @keyframes toast-in { to { opacity: 1; transform: translateX(0); } }
         @keyframes toast-out { to { opacity: 0; transform: translateX(100%); } }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -391,8 +403,9 @@
                 height: calc(100vh - var(--header-height)); background: rgba(0,0,0,0.4); z-index: 199;
                 opacity: 1; pointer-events: auto; transition: opacity 0.3s ease-in-out;
             }
-            .preview-cards-triple { grid-template-columns: 1fr; }
-            .masonry-active.preview-cards-triple .preview-card, .masonry-active.preview-cards-triple figure { width: 100%; }
+            /* v1.5.1 Bug Fix: Allow triple layout on mobile */
+            /* .preview-cards-triple { grid-template-columns: 1fr; } */
+            /* .masonry-active.preview-cards-triple .preview-card, .masonry-active.preview-cards-triple figure { width: 100%; } */
             .color-control-row, .gradient-controls { flex-direction: column; gap: 10px; }
             .gradient-controls { grid-template-columns: 1fr; }
             .color-control-group { width: 100%; min-width: 0; }
@@ -403,7 +416,7 @@
 
     <header class="app-header">
         <button id="mobile-layer-toggle" class="btn btn-default btn-icon" style="width: auto; padding: 6px 12px;"><span class="iconify" data-icon="mdi:layers-outline"></span> 内容</button>
-        <div class="app-header-title">Blokko (v1.5.0)</div>
+        <div class="app-header-title">Blokko (v1.5.1)</div>
         <div class="header-actions-wrapper">
             <button id="lock-mode-toggle" class="btn btn-default" style="width: auto; padding: 6px 12px;" title="切换编辑/预览模式">编辑中</button>
             <button id="show-help-btn" class="btn btn-default btn-icon" style="width: auto; padding: 6px 12px;"><span class="iconify" data-icon="mdi:help-circle-outline"></span> 帮助</button>
@@ -453,6 +466,18 @@
 
     <div class="modal-overlay" id="cropper-modal"><div class="modal-container"><h3 id="cropper-title">裁剪图片</h3><div class="crop-ratios radio-group"><label><input type="radio" name="crop-ratio" value="NaN" checked> 自由</label><label><input type="radio" name="crop-ratio" value="1"> 1:1</label><label><input type="radio" name="crop-ratio" value="1.3333"> 4:3</label><label><input type="radio" name="crop-ratio" value="1.7777"> 16:9</label></div><div class="cropper-img-container"><img id="cropper-image" src=""></div><div class="modal-actions"><button id="cropper-cancel-btn" class="btn btn-default">取消</button><button id="cropper-save-btn" class="btn btn-primary">确认</button></div></div></div>
     <div class="modal-overlay" id="download-modal"><div class="modal-container"><h3 id="download-modal-title">下载已准备好</h3><div id="download-modal-content"></div><div class="modal-actions" style="justify-content: center;"><button id="download-modal-close-btn" class="btn btn-default">关闭</button></div></div></div>
+    
+    <!-- v1.5.1: New Confirm Modal -->
+    <div class="modal-overlay" id="confirm-modal">
+        <div class="modal-container">
+            <h3 id="confirm-modal-title">请确认</h3>
+            <p id="confirm-modal-message" style="margin: 15px 0;"></p>
+            <div class="modal-actions">
+                <button id="confirm-modal-cancel-btn" class="btn btn-default">取消</button>
+                <button id="confirm-modal-ok-btn" class="btn btn-primary">确认</button>
+            </div>
+        </div>
+    </div>
     
     <div class="modal-overlay" id="help-modal">
         <div class="modal-container" style="max-width: 700px;">
@@ -507,53 +532,106 @@
                 </ul>
 		   </div>
             <div id="help-changelog" class="tab-content">
-                <h4>v1.5.0</h4>
+                <h4>v1.5.1</h4>
                 <ul>
-                    <li><b>【重做】</b> <b>全新三栏式专业布局</b>: 为了从根本上解决编辑区拥挤的问题，v1.5.0 引入了全新的专业级三栏式界面布局，操作流程更清晰、更高效。
+                    <li><b>【新增】</b> <b>🎨 智能取色 & 调色板</b>:
                         <ul>
-                            <li><b>左侧 - 内容图层</b>: 清晰地展示所有内容区块的层级结构，专注于内容的增删、排序和重命名。</li>
-                            <li><b>中间 - 实时预览</b>: 保持所见即所得的画布体验，现在点击其中元素可以直接激活右侧的样式设置。</li>
-                            <li><b>右侧 - 样式检查器</b>: 一个强大的上下文关联面板。默认显示全局样式；当您选中任何元素时，它会自动切换，只显示该元素的专属设置选项。</li>
+                            <li>新增独立的“智能取色”面板，可上传任意图片，工具将自动分析并提取 8 种和谐的推荐色。</li>
+                            <li>实现快捷应用功能：在PC端右键或移动端长按调色板中的颜色，可快速将其应用到页面背景、文字等多个位置。</li>
+                        </ul>
+                    </li>
+                    <li><b>【新增】</b> <b>增强版分隔符</b>:
+                        <ul>
+                            <li>分隔符现在支持嵌入文字和图标，并可自定义文字颜色。</li>
+                            <li>新增“点状”线条样式。</li>
+                            <li>预览区的分隔符文字支持双击直接编辑。</li>
                         </ul>
                     </li>
                     <li><b>【功能与体验优化】</b>
                         <ul>
-                            <li><b>上下文关联编辑</b>: 现在，您可以通过点击预览区或左侧图层列表中的任意元素，来让右侧的“样式检查器”自动显示其相关设置。</li>
-                            <li><b>视觉联动高亮</b>: 当您选中一个元素进行编辑时，在预览区和图层列表中，该元素都会出现高亮边框提示，让您始终清楚当前正在编辑的对象。</li>
-                            <li><b>新手教程与帮助</b>: “新手教程”中的版权重要提示已被移至顶部；教程页的关闭按钮文案已改为 “我已了解，开始使用”。</li>
-                            <li><b>隐私与安全声明</b>: 在“帮助”的“使用说明”中，新增了 “🔒 隐私与数据安全” 章节。</li>
+                            <li><b>图层双击重命名</b>: 现在可以直接在左侧“内容图层”面板双击区块名称进行重命名。</li>
+                            <li><b>字体实时预览</b>: “全局卡片样式”中的字体选择下拉框，现在会以对应的字体样式显示选项。</li>
+                            <li><b>全新确认弹窗</b>: 使用体验更佳的自定义模态框替代了浏览器的原生`confirm`弹窗。</li>
+                            <li><b>初始加载优化</b>: 通过延迟初始化非核心模块（如图标选择器）和优化资源加载策略，提升了应用的初始打开速度。</li>
                         </ul>
                     </li>
                     <li><b>【问题修复】</b>
                         <ul>
-                            <li>修复了在“全局卡片样式”中将不透明度滑块拉到 0 时，会导致卡片边框样式也一并消失的 Bug。</li>
-                            <li>修复了在为多列区块启用瀑布流（Masonry）布局后，导出图片时可能发生的元素重叠或布局错乱问题。</li>
-                            <li>优化了暗黑模式下的样式变量，确保主题切换不影响用户设置的阴影开关状态，仅改变阴影的视觉外观以适应深色背景。</li>
+                            <li>修复了在检查器（右侧面板）中，部分可折叠区域（如“页面与头部样式”）无法正常展开/收起的问题。</li>
+                            <li>修复了在移动端视图下，设置为“三排”的区块无法正确显示为三列布局的BUG。</li>
+                            <li>修复了在“编辑/预览”模式之间切换后，会导致区块和卡片无法拖拽排序的BUG。</li>
+                            <li>修复了颜色选择器更新颜色后，其右侧的 HEX 颜色代码输入框内容不同步的BUG。</li>
                         </ul>
                     </li>
                 </ul>
                 <details>
                     <summary>查看过往版本更新日志</summary>
                     <hr class="separator">
-                    <h4>v1.4.0</h4>
+                    <h4>v1.5.0</h4>
                     <ul>
-                        <li><b>【新增】</b> <b>新手教程:</b> 首次访问的用户将自动弹出新手教程，帮助快速上手。后续可通过“帮助”按钮查看。</li>
-                        <li><b>【优化】</b> <b>编辑区布局:</b> 调整了左侧编辑区的模块顺序，将不常用的“操作”部分移至底部，更符合新用户的使用习惯。</li>
-                        <li><b>【优化】</b> <b>预览定位增强:</b> 在电脑端，点击预览区的任意卡片，左侧编辑区现在会精确滚动到该卡片的具体设置项，而不仅仅是其所属的区块。</li>
-                        <li><b>【优化】</b> <b>移动端UI:</b>
+                        <li><b>【重做】</b> <b>全新三栏式专业布局</b>: 为了从根本上解决编辑区拥挤的问题，v1.5.0 引入了全新的专业级三栏式界面布局，操作流程更清晰、更高效。
                             <ul>
-                                <li>修复了在手机上编辑面板可能会出现水平滚动条的问题，优化了窄屏下的布局。</li>
-                                <li>减小了各编辑模块之间的垂直间距，使布局更紧凑。</li>
-                                <li>修复了“页面样式”设置中，“页面背景”和“头部背景”的Tab控件会互相干扰的BUG。</li>
+                                <li><b>左侧 - 内容图层</b>: 清晰地展示所有内容区块的层级结构，专注于内容的增删、排序和重命名。</li>
+                                <li><b>中间 - 实时预览</b>: 保持所见即所得的画布体验，现在点击其中元素可以直接激活右侧的样式设置。</li>
+                                <li><b>右侧 - 样式检查器</b>: 一个强大的上下文关联面板。默认显示全局样式；当您选中任何元素时，它会自动切换，只显示该元素的专属设置选项。</li>
                             </ul>
                         </li>
-                        <li><b>【修复】</b> <b>图片导出:</b> 修复了在特定情况下导出图片时可能因背景定位问题导致报错的BUG。</li>
+                        <li><b>【功能与体验优化】</b>
+                            <ul>
+                                <li><b>上下文关联编辑</b>: 现在，您可以通过点击预览区或左侧图层列表中的任意元素，来让右侧的“样式检查器”自动显示其相关设置。</li>
+                                <li><b>视觉联动高亮</b>: 当您选中一个元素进行编辑时，在预览区和图层列表中，该元素都会出现高亮边框提示，让您始终清楚当前正在编辑的对象。</li>
+                                <li><b>新手教程与帮助</b>: “新手教程”中的版权重要提示已被移至顶部；教程页的关闭按钮文案已改为 “我已了解，开始使用”。</li>
+                                <li><b>隐私与安全声明</b>: 在“帮助”的“使用说明”中，新增了 “🔒 隐私与数据安全” 章节。</li>
+                            </ul>
+                        </li>
+                        <li><b>【问题修复】</b>
+                            <ul>
+                                <li>修复了在“全局卡片样式”中将不透明度滑块拉到 0 时，会导致卡片边框样式也一并消失的 Bug。</li>
+                                <li>修复了在为多列区块启用瀑布流（Masonry）布局后，导出图片时可能发生的元素重叠或布局错乱问题。</li>
+                                <li>优化了暗黑模式下的样式变量，确保主题切换不影响用户设置的阴影开关状态，仅改变阴影的视觉外观以适应深色背景。</li>
+                            </ul>
+                        </li>
                     </ul>
                 </details>
             </div>
             <div id="help-thanks" class="tab-content">
                 <p>本工具的实现离不开以下优秀的开源项目，在此表示诚挚的感谢：</p>
                 <div class="thanks-item">
+                    <h4>核心功能库</h4>
+                    <p>以下项目均基于 <strong>MIT License</strong> 协议，特此感谢。</p>
+                    <ul>
+                        <li><a href="https://github.com/lokesh/color-thief" target="_blank" rel="noopener noreferrer"><strong>Color Thief</strong></a> - 提供了从图片提取主色调和调色板的功能。</li>
+                        <li><a href="https://html2canvas.hertzen.com/" target="_blank" rel="noopener noreferrer"><strong>html2canvas</strong></a> - 实现了将网页内容导出为图片的核心功能。</li>
+                        <li><a href="https://fengyuanchen.github.io/cropperjs/" target="_blank" rel="noopener noreferrer"><strong>Cropper.js</strong></a> - 提供了强大的图片裁剪功能。</li>
+                        <li><a href="https://sortablejs.github.io/Sortable/" target="_blank" rel="noopener noreferrer"><strong>SortableJS</strong></a> - 提供了流畅的拖拽排序体验。</li>
+                        <li><a href="https://masonry.desandro.com/" target="_blank" rel="noopener noreferrer"><strong>Masonry.js</strong></a> - 提供了强大的瀑布流/砌体布局功能。</li>
+                    </ul>
+                    <details>
+                        <summary>查看 MIT 许可证原文</summary>
+                        <pre>
+Copyright (c) 2024
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+                        </pre>
+                    </details>
+                </div>
+                 <div class="thanks-item">
                     <h4>开源字体</h4>
                     <p>本项目集成的推荐字体均基于 <strong>SIL Open Font License 1.1</strong> 协议，可免费商用。</p>
                     <ul>
@@ -564,73 +642,98 @@
                     </ul>
                     <details>
                         <summary>查看 SIL Open Font License 1.1 许可证原文</summary>
-                        <pre><code>Copyright (c) 2005-2020, SIL International (http://www.sil.org/) with Reserved Font Names "SIL".
-
+                        <pre>
 This Font Software is licensed under the SIL Open Font License, Version 1.1.
-This license is copied below, and is also available with a FAQ at: http://scripts.sil.org/OFL
+This license is copied below, and is also available with a FAQ at:
+http://scripts.sil.org/OFL
 
 -----------------------------------------------------------
 SIL OPEN FONT LICENSE Version 1.1 - 26 February 2007
 -----------------------------------------------------------
 
 PREAMBLE
-The goals of the Open Font License (OFL) are to stimulate worldwide development of collaborative font projects, to support the font creation efforts of academic and linguistic communities, and to provide a framework in which fonts may be shared and improved in partnership with others.
+The goals of the Open Font License (OFL) are to stimulate worldwide
+development of collaborative font projects, to support the font creation
+efforts of academic and linguistic communities, and to provide a free and
+open framework in which fonts may be shared and improved in partnership
+with others.
 
-The OFL allows the licensed fonts to be used, studied, modified and redistributed freely as long as they are not sold by themselves. The fonts, including any derivative works, can be bundled, embedded, redistributed and/or sold with any software provided that any reserved names are not used by derivative works. The fonts and derivatives, however, cannot be released under any other type of license. The requirement for fonts to remain under this license does not apply to any document created using the fonts or their derivatives.
+The OFL allows the licensed fonts to be used, studied, modified and
+redistributed freely as long as they are not sold by themselves. The
+fonts, including any derivative works, can be bundled, embedded,
+redistributed and/or sold with any software provided that any reserved
+names are not used by derivative works. The fonts and derivatives,
+however, cannot be released under any other type of license. The
+requirement for fonts to remain under this license does not apply
+to any document created using the fonts or their derivatives.
 
 DEFINITIONS
-"Font Software" refers to the set of files released by the Copyright Holder(s) under this license and clearly marked as such. This may include source files, build scripts and documentation.
+"Font Software" refers to the set of files released by the Copyright
+Holder(s) under this license and clearly marked as such. This may
+include source files, build scripts and documentation.
 
-"Reserved Font Name" refers to any names specified as such after the copyright statement(s).
+"Reserved Font Name" refers to any names specified as such after the
+copyright statement(s).
 
-"Original Version" refers to the collection of Font Software components as distributed by the Copyright Holder(s).
+"Original Version" refers to the collection of Font Software components as
+distributed by the Copyright Holder(s).
 
-"Modified Version" refers to any derivative made by adding to, deleting, or substituting — in part or in whole — any of the components of the Original Version, by changing formats or by porting the Font Software to a new environment.
+"Modified Version" refers to any derivative made by adding to, deleting,
+or substituting — in part or in whole — any of the components of the
+Original Version, by changing formats or by porting the Font Software to a
+new environment.
 
-"Author" refers to any designer, engineer, programmer, technical writer or other person who contributed to the Font Software.
+"Author" refers to any designer, engineer, programmer, technical
+writer or other person who contributed to the Font Software.
 
 PERMISSION & CONDITIONS
-Permission is hereby granted, free of charge, to any person obtaining a copy of the Font Software, to use, study, copy, merge, embed, modify, redistribute, and sell modified and unmodified copies of the Font Software, subject to the following conditions:
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of the Font Software, to use, study, copy, merge, embed, modify,
+redistribute, and sell modified and unmodified copies of the Font
+Software, subject to the following conditions:
 
-1) Neither the Font Software nor any of its individual components, in Original or Modified Versions, may be sold by itself.
+1) Neither the Font Software nor any of its individual components,
+in Original or Modified Versions, may be sold by itself.
 
-2) Original or Modified Versions of the Font Software may be bundled, redistributed and/or sold with any software, provided that each copy contains the above copyright notice and this license. These can be included either as stand-alone text files, human-readable headers or in the appropriate machine-readable metadata fields within text or binary files as long as those fields can be easily viewed by the user.
+2) Original or Modified Versions of the Font Software may be bundled,
+redistributed and/or sold with any software, provided that each copy
+contains the above copyright notice and this license. These can be
+included either as stand-alone text files, human-readable headers or
+in the appropriate machine-readable metadata fields within text or
+binary files as long as those fields can be easily viewed by the user.
 
-3) No Modified Version of the Font Software may use the Reserved Font Name(s) unless explicit written permission is granted by the corresponding Copyright Holder. This restriction only applies to the primary font name as presented to the users.
+3) No Modified Version of the Font Software may use the Reserved Font
+Name(s) unless explicit written permission is granted by the corresponding
+Copyright Holder. This restriction only applies to the primary font name as
+presented to the users.
 
-4) The name(s) of the Copyright Holder(s) or the Author(s) of the Font Software shall not be used to promote, endorse or advertise any Modified Version, except to acknowledge the contribution(s) of the Copyright Holder(s) and the Author(s) or with their explicit written permission.
+4) The name(s) of the Copyright Holder(s) or the Author(s) of the Font
+Software shall not be used to promote, endorse or advertise any
+Modified Version, except to acknowledge the contribution(s) of the
+Copyright Holder(s) and the Author(s) or with their explicit written
+permission.
 
-5) The Font Software, modified or unmodified, in part or in whole, must be distributed entirely under this license, and must not be distributed under any other license. The requirement for fonts to remain under this license does not apply to any document created using the Font Software.
+5) The Font Software, modified or unmodified, in part or in whole,
+must be distributed entirely under this license, and must not be
+distributed under any other license. The requirement for fonts to
+remain under this license does not apply to any document created
+using the Font Software.
 
 TERMINATION
-This license becomes null and void if any of the above conditions are not met.
+This license becomes null and void if any of the above conditions are
+not met.
 
 DISCLAIMER
-THE FONT SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO ANY WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF COPYRIGHT, PATENT, TRADEMARK, OR OTHER RIGHT. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, INCLUDING ANY GENERAL, SPECIAL, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE FONT SOFTWARE OR THE USE OR OTHER DEALINGS IN THE FONT SOFTWARE.
-</code></pre>
-                    </details>
-                </div>
-                <div class="thanks-item">
-                    <h4>核心功能库</h4>
-                    <p>以下项目均基于 <strong>MIT License</strong> 协议，特此感谢。</p>
-                    <ul>
-                        <li><a href="https://html2canvas.hertzen.com/" target="_blank" rel="noopener noreferrer"><strong>html2canvas</strong></a> - 实现了将网页内容导出为图片的核心功能。</li>
-                        <li><a href="https://fengyuanchen.github.io/cropperjs/" target="_blank" rel="noopener noreferrer"><strong>Cropper.js</strong></a> - 提供了强大的图片裁剪功能。</li>
-                        <li><a href="https://sortablejs.github.io/Sortable/" target="_blank" rel="noopener noreferrer"><strong>SortableJS</strong></a> - 提供了流畅的拖拽排序体验。</li>
-                        <li><a href="https://masonry.desandro.com/" target="_blank" rel="noopener noreferrer"><strong>Masonry.js</strong></a> - 提供了强大的瀑布流/砌体布局功能。</li>
-                    </ul>
-                    <details>
-                        <summary>查看 MIT License 许可证原文</summary>
-                        <pre><code>The MIT License (MIT)
-
-Copyright (c) &lt;year&gt; &lt;copyright holders&gt;
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-</code></pre>
+THE FONT SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO ANY WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT
+OF COPYRIGHT, PATENT, TRADEMARK, OR OTHER RIGHT. IN NO EVENT SHALL THE
+COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+INCLUDING ANY GENERAL, SPECIAL, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL
+DAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM
+OTHER DEALINGS IN THE FONT SOFTWARE.
+                        </pre>
                     </details>
                 </div>
                 <div class="thanks-item">
@@ -683,12 +786,24 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
     <div id="loading-overlay"><div class="spinner"></div><span id="loading-text">正在处理...</span></div>
     <div class="toast-notification-container" id="toast-container"></div>
+    
+    <!-- v1.5.1: New Context Menu for Color Picker -->
+    <div id="color-context-menu">
+        <ul>
+            <li data-action="apply-page-bg-solid">应用到页面背景色</li>
+            <li data-action="apply-header-bg-solid">应用到头部背景色</li>
+            <li data-action="apply-header-text">应用到头部文字颜色</li>
+            <li data-action="apply-gcard-bg">应用到全局卡片背景色</li>
+            <li data-action="apply-gcard-text">应用到全局卡片文字色</li>
+        </ul>
+    </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
-    <script src="https://unpkg.com/masonry-layout@4/dist/masonry.pkgd.min.js"></script>
-    <script src="https://code.iconify.design/3/3.1.1/iconify.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.2/color-thief.umd.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js" defer></script>
+    <script src="https://unpkg.com/masonry-layout@4/dist/masonry.pkgd.min.js" defer></script>
+    <script src="https://code.iconify.design/3/3.1.1/iconify.min.js" defer></script>
     
     <script>
         // Hero Patterns data. Source: https://heropatterns.com/
@@ -724,6 +839,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                 currentCropTarget: null,
                 currentIconTarget: null, 
                 sortableLayers: null,
+                sortablePreview: null,
                 cardSortables: {},
                 imageCardSortables: {},
                 masonryInstances: {},
@@ -732,9 +848,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                 uploadedFonts: [],
                 presets: {},
                 icons: [], 
+                texturePickerInitialized: false,
+                iconPickerInitialized: false,
+                colorThief: null,
+                longPressTimer: null,
+                lastPalette: [], // BUGFIX: Store last generated palette
 
                 init() {
-                    console.log("Blokko 初始化 v1.5.0 ...");
+                    console.log("Blokko 初始化 v1.5.1 ...");
                     this.elements = this.queryElements();
                     this.presets = this.getPresets();
                     this.state = this.getDefaultState();
@@ -744,7 +865,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                     this.bindEditorEvents();
                     this.bindPreviewEvents();
                     this.initResizer();
-                    this.renderTexturePicker();
                     
                     this.loadPreferences();
                     this.loadFromLocal();
@@ -757,7 +877,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                     this.populateFontList(); 
                     this.initAllSortables();
                     this.updateExportSizePreview();
-                    this.loadIcons(); 
                     
                     this.setSelection({ type: 'global' });
                     this.updateUndoRedoButtons();
@@ -768,9 +887,12 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                         const helpModal = this.elements.helpModal;
                         const tutorialTabBtn = helpModal.querySelector('[data-tab="help-tutorial"]');
                         if (tutorialTabBtn) {
-                           tutorialTabBtn.click(); // Programmatically click to trigger tab change logic
+                           tutorialTabBtn.click();
                         }
                         localStorage.setItem('blokkoFirstVisit_v1_5', 'true');
+                    }
+                    if (window.ColorThief) {
+                        this.colorThief = new ColorThief();
                     }
                 },
 
@@ -784,6 +906,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                             bio: "这是简介，双击可编辑", bioColor: lightTheme.pBioColor,
                             avatarDataUrl: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23cccccc'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E", 
                             avatarShape: '50%', avatarBorderSize: 4, avatarBorderColor: '#ffffff',
+                            headerShadowEnabled: true,
                             tags: [
                                 { id: this.generateId('t'), icon: 'mdi:palette', text: '设计师' },
                                 { id: this.generateId('t'), icon: 'mdi:github', text: '代码爱好者' }
@@ -810,7 +933,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                                 { id: this.generateId('c'), icon: '', title: "这是双排卡片 1", content: "双击这里进行编辑", opacity: 1.0, followGlobalOpacity: true },
                                 { id: this.generateId('c'), icon: '', title: "这是双排卡片 2", content: "双击这里进行编辑", opacity: 1.0, followGlobalOpacity: true }
                             ]},
-                            { id: this.generateId('b'), type: 'separator', title: "分割线", settings: { style: 'solid', color: '#dddddd', thickness: 1, margin: 20 }},
+                            { id: this.generateId('b'), type: 'separator', title: "分割线", settings: { style: 'solid', color: '#dddddd', thickness: 1, margin: 20, text: '', icon: null, textColor: '#555555' }},
                             { id: this.generateId('b'), type: 'image', title: "图片区块", settings: { layout: 'dual', masonryEnabled: false, textColor: '' }, cards: [] },
                             { id: this.generateId('b'), type: 'spacer', title: "留白块", settings: { height: 20 }},
                         ],
@@ -907,6 +1030,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                         textureGrid: q('#texture-grid'),
                         removeTextureBtn: q('#remove-texture-btn'),
                         texturePickerCloseBtn: q('#texture-picker-close-btn'),
+                        confirmModal: q('#confirm-modal'),
+                        colorContextMenu: q('#color-context-menu'),
                     };
                 },
 
@@ -932,7 +1057,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                     this.elements.showHelpBtn.addEventListener('click', () => this.elements.helpModal.classList.add('visible'));
                     this.elements.helpModalCloseBtn.addEventListener('click', () => this.elements.helpModal.classList.remove('visible'));
                     
-                    // Event delegation for help modal tabs and debug mode
                     let aboutClickCount = 0;
                     let aboutClickTimer = null;
                     this.elements.helpModal.querySelector('.tabs').addEventListener('click', (e) => {
@@ -947,11 +1071,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
                             this.elements.helpModalCloseBtn.textContent = (tabBtn.dataset.tab === 'help-tutorial') ? "我已了解，开始使用" : "关闭";
 
-                            // Debug Mode Easter Egg
                             if (tabBtn.dataset.tab === 'help-about') {
                                 clearTimeout(aboutClickTimer);
                                 aboutClickCount++;
-                                aboutClickTimer = setTimeout(() => aboutClickCount = 0, 2000); // 2-second window
+                                aboutClickTimer = setTimeout(() => aboutClickCount = 0, 2000);
                                 if (aboutClickCount >= 5) {
                                     aboutClickCount = 0;
                                     clearTimeout(aboutClickTimer);
@@ -990,66 +1113,94 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                         const item = e.target.closest('.texture-grid-item');
                         if (item) this.selectTexture(item.dataset.textureName);
                     });
+
+                    this.elements.layerList.addEventListener('dblclick', e => {
+                        const layerNameEl = e.target.closest('.layer-name');
+                        const layerItem = e.target.closest('.layer-item');
+                        if (!layerNameEl || !layerItem || layerItem.dataset.type === 'personalInfo' || this.isEditingText) return;
+                        
+                        this.isEditingText = true;
+                        layerNameEl.contentEditable = true;
+                        layerNameEl.focus();
+                        document.execCommand('selectAll', false, null);
+
+                        const handleEditEnd = () => {
+                            this.isEditingText = false;
+                            layerNameEl.contentEditable = false;
+                            layerNameEl.removeEventListener('blur', handleEditEnd);
+                            layerNameEl.removeEventListener('keydown', handleKeydown);
+                            
+                            const blockId = layerItem.dataset.id;
+                            this.updateBlockTitle(blockId, layerNameEl.innerText, true);
+                            const inspectorTitleInput = this.elements.inspectorPanel.querySelector(`.editor-block[data-block-id="${blockId}"] .editor-block-title-input`);
+                            if (inspectorTitleInput) inspectorTitleInput.value = layerNameEl.innerText;
+                        };
+                        const handleKeydown = (ev) => {
+                            if (ev.key === 'Enter') {
+                                ev.preventDefault();
+                                layerNameEl.blur();
+                            }
+                        };
+                        layerNameEl.addEventListener('blur', handleEditEnd);
+                        layerNameEl.addEventListener('keydown', handleKeydown);
+                    });
+                    
+                    // BUGFIX: Move color context menu listener here to prevent multiple bindings
+                    this.elements.colorContextMenu.addEventListener('click', e => {
+                        const action = e.target.dataset.action;
+                        const color = this.elements.colorContextMenu.dataset.color;
+                        if(action && color) this.applyQuickColor(action, color);
+                        this.hideColorContextMenu();
+                    });
+                    document.addEventListener('click', (e) => {
+                        if (!e.target.closest('#color-context-menu')) {
+                            this.hideColorContextMenu();
+                        }
+                    });
                 },
                 
-                // Centralized event handler for the dynamic inspector panel
                 bindEditorEvents() {
                     const panel = this.elements.inspectorPanel;
 
                     panel.addEventListener('input', e => {
                         if (this.isRestoringState) return;
                         const target = e.target;
-
-                        // [FIXED] Handle font search with event delegation
+                        
                         if (target.matches('#font-search-input')) {
                             this.populateFontList(target.value);
-                            return; // Stop further processing
+                            return;
                         }
                         
                         const stateKey = target.dataset.stateKey;
                         const blockEl = target.closest('.editor-block');
+                        const settingKey = target.dataset.settingKey;
+                        const cardKey = target.dataset.cardKey;
 
-                        if (stateKey) {
-                            const value = target.type === 'checkbox' ? target.checked : (target.type === 'number' || target.type === 'range') ? parseFloat(target.value) : target.value;
-                            this.updateState(stateKey, value, false);
-                            if (target.type === 'color' && target.nextElementSibling?.dataset.colorSyncKey === stateKey) {
+                        let value = target.type === 'checkbox' ? target.checked : (target.type === 'number' || target.type === 'range') ? parseFloat(target.value) : target.value;
+
+                        // Handle color picker and HEX input sync
+                        if (target.type === 'color') {
+                            if (target.nextElementSibling?.matches('.color-hex-input')) {
                                 target.nextElementSibling.value = value;
                             }
-                            if (stateKey === 'globalCardStyles.radius') {
-                                document.getElementById('gCardRadiusValue').textContent = target.value;
-                            }
-                            if (target.type === 'range' && stateKey.endsWith('Angle')) {
-                                target.previousElementSibling.querySelector('.angle-value').textContent = value;
-                            }
-                            return;
-                        }
-
-                        if (target.matches('.color-hex-input[data-color-sync-key]')) {
-                            const hexSyncKey = target.dataset.colorSyncKey;
-                            if (/^#[0-9A-F]{6}$/i.test(target.value)) {
-                                target.previousElementSibling.value = target.value;
-                                this.updateState(hexSyncKey, target.value, false);
-                            }
-                        }
-
-                        if (blockEl) {
-                             const blockId = blockEl.dataset.blockId;
-                             if (target.matches('.editor-block-title-input')) {
-                                 this.updateBlockTitle(blockId, target.value, false);
-                                 this.renderLayerPanel(); // Update layer name in real-time
-                             } else if (target.dataset.settingKey) {
-                                 const value = target.type === 'checkbox' ? target.checked : (target.type === 'range' || target.type === 'number') ? parseFloat(target.value) : target.value;
-                                 this.updateBlockSettings(blockId, target.dataset.settingKey, value, false);
-                             } else if (target.dataset.cardKey) {
-                                 const cardEl = target.closest('.editor-card');
-                                 if (cardEl) {
-                                     const value = target.type === 'checkbox' ? target.checked : target.value;
-                                     this.updateCard(blockId, cardEl.dataset.cardId, target.dataset.cardKey, value, false);
-                                 }
+                        } else if (target.matches('.color-hex-input')) {
+                             if (/^#([0-9A-F]{3}){1,2}$/i.test(target.value)) {
+                                if (target.previousElementSibling?.type === 'color') {
+                                    target.previousElementSibling.value = value;
+                                }
                              }
                         }
-
-                        if (target.matches('.tag-manager-item .tag-text-input')) {
+                        
+                        if (stateKey) {
+                            this.updateState(stateKey, value, false);
+                        } else if (blockEl && settingKey) {
+                             this.updateBlockSettings(blockEl.dataset.blockId, settingKey, value, false);
+                        } else if (blockEl && cardKey) {
+                            const cardEl = target.closest('.editor-card');
+                            if (cardEl) {
+                                this.updateCard(blockEl.dataset.blockId, cardEl.dataset.cardId, cardKey, value, false);
+                            }
+                        } else if (target.matches('.tag-manager-item .tag-text-input')) {
                             const tagItem = target.closest('.tag-manager-item');
                             if (tagItem) this.updateTag(tagItem.dataset.tagId, 'text', target.value, false);
                         }
@@ -1059,19 +1210,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                         if (this.isRestoringState) return;
                         const target = e.target;
                         
-                        // Push history for any significant change
-                        if (target.dataset.stateKey || target.closest('.editor-block') || target.dataset.colorSyncKey) {
+                        if (target.dataset.stateKey || target.closest('.editor-block') || target.dataset.colorSyncKey || target.matches('.tag-manager-item .tag-text-input')) {
                             this.pushHistory();
                         }
 
-                        if (target.matches('.tag-manager-item .tag-text-input')) {
-                           this.pushHistory();
-                        }
-
-                        // Handle file inputs which only fire 'change'
                         const fileInputs = {
                             '#avatar-upload': 'avatar',
                             '#page-bg-upload': 'pageBg',
+                            '#color-thief-upload': 'colorThief'
                         };
                         for (const selector in fileInputs) {
                             if (target.matches(selector)) this.handleImageUpload(e, fileInputs[selector]);
@@ -1101,10 +1247,17 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
                     panel.addEventListener('click', e => {
                         const target = e.target;
+
+                        // BUGFIX: Handle collapsible sections first
+                        const legend = target.closest('.editor-section > legend');
+                        if (legend) {
+                            legend.parentElement.classList.toggle('collapsed');
+                            return; // Prevent other actions when toggling a section
+                        }
+
                         const actionButton = target.closest('button, .back-to-global-btn');
                         if (!actionButton) return;
                         
-                        // Handle simple button clicks
                         const actions = {
                             '#undo-btn': () => this.undo(),
                             '#redo-btn': () => this.redo(),
@@ -1115,14 +1268,15 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                             '#load-local-fonts-btn': () => this.loadLocalFonts(),
                             '#upload-font-btn': () => panel.querySelector('#font-upload-input')?.click(),
                             '#add-new-tag-btn': () => this.addNewTag(),
-                            '#show-texture-picker-btn': () => this.elements.texturePickerModal.classList.add('visible'),
+                            '#show-texture-picker-btn': () => this.initTexturePicker(),
                             '#clear-texture-btn': () => this.selectTexture(null),
                             '.back-to-global-btn': () => this.setSelection({type: 'global'}),
                             '#reset-btn': () => this.resetToDefault(),
                             '#clear-page-bg-btn': () => {
                                 this.updateState('pageStyles.pageBgImageDataUrl', null, true);
                                 this.showToast('背景图已清除', 'info');
-                            }
+                            },
+                            '#pick-color-btn': () => panel.querySelector('#color-thief-upload')?.click(),
                         };
                         for(const selector in actions) {
                             if (actionButton.matches(selector)) {
@@ -1131,9 +1285,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                             }
                         }
 
-                        // Handle buttons with data attributes
                         if (actionButton.dataset.preset) this.applyPreset(this.presets[actionButton.dataset.preset]);
-
                         if (actionButton.dataset.resetKey) {
                             let basePreset = this.presets.light;
                             const keyMap = { nicknameColor: 'pNicknameColor', subtitleColor: 'pSubtitleColor', bioColor: 'pBioColor', tagBgColor: 'pTagBgColor', tagTextColor: 'pTagTextColor', avatarBorderColor: '#ffffff' };
@@ -1142,18 +1294,17 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                             this.updateState(actionButton.dataset.resetKey, valueToReset, true);
                             this.showToast('颜色已重置', 'info');
                         }
-
-                        // Handle clicks within dynamic lists (blocks, cards, tags)
+                        
                         const tagItem = target.closest('.tag-manager-item');
                         if (tagItem) {
-                            if (target.closest('.tag-icon-btn')) this.showIconPicker('tag', tagItem.dataset.tagId);
+                            if (target.closest('.tag-icon-btn')) { this.initIconPicker(); this.showIconPicker('tag', tagItem.dataset.tagId); }
                             if (target.closest('.tag-delete-btn')) this.deleteTag(tagItem.dataset.tagId);
                         }
 
                         const blockEl = target.closest('.editor-block');
                         if (blockEl) {
                             const blockId = blockEl.dataset.blockId;
-                            if (target.closest('.block-delete-btn')) { if (window.confirm('确定要删除这个区块吗？')) this.deleteBlock(blockId); }
+                            if (target.closest('.block-delete-btn')) { this.deleteBlock(blockId); }
                             else if (target.closest('.add-card-btn')) this.addCard(blockId);
                             else if (target.closest('.add-image-btn')) this.addImageCard(blockId);
                             else if (target.closest('.card-delete-btn')) this.deleteCard(blockId, target.closest('.editor-card').dataset.cardId);
@@ -1163,17 +1314,15 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                             }
                             else if (target.closest('.crop-image-btn')) this.cropImage(blockId, target.closest('.editor-card').dataset.cardId);
                             else if (target.closest('.select-icon-btn')) { 
-                                this.showIconPicker('card', blockId, target.closest('.editor-card').dataset.cardId);
+                                this.initIconPicker();
+                                if (target.closest('[data-separator-icon-btn]')) {
+                                    this.showIconPicker('separator', blockId);
+                                } else {
+                                    this.showIconPicker('card', blockId, target.closest('.editor-card').dataset.cardId);
+                                }
                             }
                         }
-
-                        // Handle collapsible sections
-                        const legend = target.closest('.editor-section > legend');
-                        if (legend) {
-                            legend.parentElement.classList.toggle('collapsed');
-                        }
-
-                        // Handle tabs
+                        
                         const tabBtn = target.closest('.tabs .tab-btn');
                         if (tabBtn) {
                             const parent = tabBtn.closest('.tab-group-wrapper, #global-card-styles-section > .section-content');
@@ -1216,7 +1365,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                                 this.elements.inspectorPanel.querySelector(`.editor-card[data-card-id="${cardWrapper.dataset.cardId}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
                             }
                         } else {
-                            // Clicked on the background of the preview wrapper
                             if (e.target.closest('.preview-wrapper')) {
                                 this.setSelection({ type: 'global' });
                             }
@@ -1225,7 +1373,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
                      this.elements.previewWrapper.addEventListener('dblclick', e => {
                         if (this.elements.previewBlocksContainer.classList.contains('locked-mode')) return;
-                        const target = e.target.closest('[data-state-key], [data-card-key], [data-tag-id]');
+                        const target = e.target.closest('[data-state-key], [data-card-key], [data-tag-id], [data-separator-text-key]');
                         if (target && !this.isEditingText) {
                             this.isEditingText = true;
                             target.contentEditable = true;
@@ -1237,38 +1385,17 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                                 this.isEditingText = false;
                                 target.removeEventListener('blur', handleEditEnd);
                                 target.removeEventListener('keydown', handleKeydown);
+                                
+                                this.pushHistory();
 
-                                const value = target.innerText;
-                                const stateKey = target.dataset.stateKey;
-                                const cardKey = target.dataset.cardKey;
-                                const tagId = target.dataset.tagId;
-
-                                if (stateKey) {
-                                    this.updateState(stateKey, value, true);
-                                } else if (cardKey) {
-                                    const cardEl = target.closest('.preview-card, figure');
-                                    const blockEl = target.closest('.preview-block-wrapper');
-                                    if (cardEl && blockEl) {
-                                        const blockId = blockEl.dataset.blockId;
-                                        this.updateCard(blockId, cardEl.dataset.cardId, cardKey, value, true);
-                                        this.renderInspector(); // Re-render inspector to show updated value
-                                        if (this.masonryInstances[blockId]) {
-                                            this.masonryInstances[blockId].layout();
-                                        }
-                                    }
-                                } else if(tagId){
-                                    const newText = value.trim();
-                                    if (newText) {
-                                        this.updateTag(tagId, 'text', newText, true);
-                                    } else {
-                                        this.deleteTag(tagId);
-                                    }
-                                    this.renderInspector();
+                                const blockEl = target.closest('.preview-block-wrapper');
+                                if (blockEl && this.masonryInstances[blockEl.dataset.blockId]) {
+                                    this.masonryInstances[blockEl.dataset.blockId].layout();
                                 }
                             };
                             
                             const handleKeydown = (ev) => {
-                                if (ev.key === 'Enter' && !ev.shiftKey) { // Allow Shift+Enter for new lines
+                                if (ev.key === 'Enter' && !ev.shiftKey) {
                                     ev.preventDefault();
                                     target.blur();
                                 }
@@ -1284,6 +1411,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                         if (target.contentEditable === 'true') {
                             const stateKey = target.dataset.stateKey;
                             const cardKey = target.dataset.cardKey;
+                            const separatorKey = target.dataset.separatorTextKey;
                             const value = target.innerText;
 
                             const updateStateObject = (path, val) => {
@@ -1300,21 +1428,17 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                                 const cardEl = target.closest('.preview-card, figure');
                                 const blockEl = target.closest('.preview-block-wrapper');
                                 if (cardEl && blockEl) {
-                                    const blockId = blockEl.dataset.blockId;
-                                    const cardId = cardEl.dataset.cardId;
-                                    const blockIndex = this.findBlockIndex(blockId);
-                                    if (blockIndex > -1) {
-                                        const cardIndex = this.state.blocks[blockIndex].cards.findIndex(c => c.id === cardId);
-                                        if (cardIndex > -1) {
-                                            updateStateObject(`blocks.${blockIndex}.cards.${cardIndex}.${cardKey}`, value);
-                                            const editorCard = document.querySelector(`.editor-card[data-card-id="${cardId}"]`);
-                                            if (editorCard) {
-                                                const input = editorCard.querySelector(`[data-card-key="${cardKey}"]`);
-                                                if (input) input.value = value;
-                                            }
-                                        }
-                                    }
+                                    const block = this.findBlock(blockEl.dataset.blockId);
+                                    const card = block?.cards.find(c => c.id === cardEl.dataset.cardId);
+                                    if(card) card[cardKey] = value;
+                                    const editorInput = this.elements.inspectorPanel.querySelector(`.editor-card[data-card-id="${cardEl.dataset.cardId}"] [data-card-key="${cardKey}"]`);
+                                    if(editorInput) editorInput.value = value;
                                 }
+                            } else if (separatorKey) {
+                                const block = this.findBlock(separatorKey);
+                                if(block) block.settings.text = value;
+                                const editorInput = this.elements.inspectorPanel.querySelector(`.editor-block[data-block-id="${separatorKey}"] [data-setting-key="text"]`);
+                                if(editorInput) editorInput.value = value;
                             }
                         }
                     });
@@ -1339,7 +1463,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                             const newWidth = window.innerWidth - e.clientX;
                             if (newWidth > 350 && newWidth < window.innerWidth * 0.6) {
                                 inspectorPanel.style.width = `${newWidth}px`;
-                                this.updateExportSizePreview();
+                                this.relayoutAllMasonry();
                             }
                         };
                     
@@ -1351,6 +1475,11 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                             document.removeEventListener('mouseup', stopResize);
                             this.updateExportSizePreview();
                         };
+                },
+
+                relayoutAllMasonry() {
+                    Object.values(this.masonryInstances).forEach(m => m && m.layout());
+                    this.updateExportSizePreview();
                 },
 
                 renderAll(isInitial = false) {
@@ -1377,6 +1506,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                     this.elements.previewAvatar.style.borderWidth = `${info.avatarBorderSize}px`;
                     this.elements.previewAvatar.style.borderColor = info.avatarBorderColor;
                     
+                    this.elements.previewHeader.style.boxShadow = info.headerShadowEnabled ? 'var(--g-card-shadow)' : 'none';
+
                     this.elements.previewTagsContainer.innerHTML = (info.tags || [])
                         .map(tag => {
                             const iconHTML = tag.icon ? `<span class="iconify" data-icon="${tag.icon}"></span>` : '';
@@ -1489,15 +1620,19 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                             const block = this.findBlock(id);
                             if (block) html = this.createEditorBlockHTML(block);
                             break;
-                        default: // 'global' or fallback
+                        default:
                             html = this.createGlobalInspectorHTML();
                     }
 
                     panel.innerHTML = html;
                     
-                    // [FIXED] Ensure font list is populated after inspector is rendered
                     if (this.selection.type === 'global') {
                         this.populateFontList();
+                        this.bindColorThiefEvents();
+                        // BUGFIX: Re-render palette if it exists
+                        if (this.lastPalette && this.lastPalette.length > 0) {
+                            this.renderPalette(this.lastPalette);
+                        }
                     }
                     
                     this.syncAllControls();
@@ -1541,6 +1676,15 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                                         <div class="form-group"><label>头部文字颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.headerTextColor"><input type="text" class="color-hex-input" data-color-sync-key="pageStyles.headerTextColor"></div></div>
                                         <div class="form-group"><label>头部不透明度:</label><input type="range" data-state-key="pageStyles.headerOpacity" min="0" max="1" step="0.05"></div>
                                     </div>
+                                </div>
+                            </fieldset>
+                            <fieldset class="editor-section" id="color-thief-section">
+                                <legend>🎨 智能取色</legend>
+                                <div class="section-content">
+                                    <p style="font-size: 0.9rem; color: var(--text-secondary); margin-top: -10px; margin-bottom: 15px;">上传图片，自动提取调色板。右键 (PC) 或长按 (手机) 色块可快捷应用。</p>
+                                    <button id="pick-color-btn" class="btn btn-default">上传图片分析颜色</button>
+                                    <input type="file" id="color-thief-upload" accept="image/*" style="display: none;">
+                                    <div class="palette-container" id="color-thief-palette"></div>
                                 </div>
                             </fieldset>
                             <fieldset class="editor-section" id="global-card-styles-section"> 
@@ -1593,6 +1737,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                                     <div class="form-group"><label>标签管理器:</label><div id="tag-manager-list"></div><div class="input-group simple" style="margin-top: 10px;"><input type="text" id="new-tag-text-input" placeholder="输入新标签文字..."><button id="add-new-tag-btn" class="btn btn-default btn-small">添加标签</button></div></div>
                                     <div class="form-group"><label>标签样式:</label><div class="color-control-row"><div class="color-control-group"><label>背景</label><div class="input-group"><input type="color" data-state-key="personalInfo.tagBgColor"><input type="text" class="color-hex-input" data-color-sync-key="personalInfo.tagBgColor"><button class="btn btn-default btn-small" data-reset-key="personalInfo.tagBgColor">重置</button></div></div><div class="color-control-group"><label>文字</label><div class="input-group"><input type="color" data-state-key="personalInfo.tagTextColor"><input type="text" class="color-hex-input" data-color-sync-key="personalInfo.tagTextColor"><button class="btn btn-default btn-small" data-reset-key="personalInfo.tagTextColor">重置</button></div></div></div></div>
                                     <hr class="separator">
+                                    <div class="form-group checkbox-group"><label><input type="checkbox" data-state-key="personalInfo.headerShadowEnabled"> 显示头部卡片阴影</label></div>
                                     <div class="form-group"><label>头像上传:</label><input type="file" id="avatar-upload" accept="image/*"></div>
                                     <div class="form-group"><label>头像形状:</label><div class="radio-group"><label><input type="radio" name="avatarShape" value="50%" data-state-key="personalInfo.avatarShape">圆形</label><label><input type="radio" name="avatarShape" value="16px" data-state-key="personalInfo.avatarShape">圆角</label><label><input type="radio" name="avatarShape" value="0px" data-state-key="personalInfo.avatarShape">方形</label></div></div>
                                     <div class="color-control-row"><div class="color-control-group"><label>头像边框(px):</label><input type="range" data-state-key="personalInfo.avatarBorderSize" min="0" max="10" step="1"></div><div class="color-control-group"><label>边框颜色:</label><div class="input-group"><input type="color" data-state-key="personalInfo.avatarBorderColor"><input type="text" class="color-hex-input" data-color-sync-key="personalInfo.avatarBorderColor"><button class="btn btn-default btn-small" data-reset-key="personalInfo.avatarBorderColor">重置</button></div></div></div>
@@ -1631,12 +1776,13 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                     } else if (block.type === 'image') {
                         let imageCardsHTML = !block.cards?.length ? '<div class="empty-placeholder">暂无图片</div>' : block.cards.map(c => `<div class="editor-card" data-card-id="${c.id}">${this.createEditorImageCardHTML(c)}</div>`).join('');
                         content = `<div class="form-group"><label>布局:</label>${layoutRadiosHTML}${masonryCheckboxHTML}</div>
-                                   <div class="form-group"><label>文字颜色:</label><div class="input-group"><input type="color" data-setting-key="textColor" value="${block.settings.textColor || ''}"><input type="text" class="color-hex-input" data-color-sync-key="textColor" value="${block.settings.textColor || ''}" placeholder="全局默认"></div></div>
+                                   <div class="form-group"><label>文字颜色:</label><div class="input-group"><input type="color" data-setting-key="textColor" value="${block.settings.textColor || ''}"><input type="text" class="color-hex-input" data-setting-key="textColor" value="${block.settings.textColor || ''}" placeholder="全局默认"></div></div>
                                    <div class="image-card-editors-list">${imageCardsHTML}</div><button class="btn btn-default add-image-btn" style="margin-top: 15px;">➕ 添加图片</button>
                                    <input type="file" class="image-upload-input" multiple accept="image/*" style="display: none;">`;
                     } else if (block.type === 'separator') {
                         const s = block.settings;
-                        content = `<div class="form-group"><label>样式:</label><div class="radio-group"><label><input type="radio" name="sep-style-${block.id}" data-setting-key="style" value="solid" ${s.style==='solid'?'checked':''}>实线</label><label><input type="radio" name="sep-style-${block.id}" data-setting-key="style" value="dashed" ${s.style==='dashed'?'checked':''}>虚线</label></div></div><div class="color-control-row"><div class="color-control-group"><label>颜色:</label><div class="input-group"><input type="color" data-setting-key="color" value="${s.color}"><input type="text" class="color-hex-input" data-color-sync-key="color" value="${s.color}"></div></div><div class="color-control-group"><label>粗细(px):</label><input type="range" data-setting-key="thickness" min="1" max="10" value="${s.thickness}"></div></div><div class="form-group"><label>垂直间距(px):</label><input type="range" data-setting-key="margin" min="0" max="50" value="${s.margin}"></div>`;
+                        const iconHTML = s.icon ? `<span class="iconify" data-icon="${s.icon}"></span>` : '选择图标';
+                        content = `<div class="form-group"><label>样式:</label><div class="radio-group"><label><input type="radio" name="sep-style-${block.id}" data-setting-key="style" value="solid" ${s.style==='solid'?'checked':''}>实线</label><label><input type="radio" name="sep-style-${block.id}" data-setting-key="style" value="dashed" ${s.style==='dashed'?'checked':''}>虚线</label><label><input type="radio" name="sep-style-${block.id}" data-setting-key="style" value="dotted" ${s.style==='dotted'?'checked':''}>点状</label></div></div><div class="color-control-row"><div class="color-control-group"><label>线条颜色:</label><div class="input-group"><input type="color" data-setting-key="color" value="${s.color}"><input type="text" class="color-hex-input" data-setting-key="color" value="${s.color}"></div></div><div class="color-control-group"><label>粗细(px):</label><input type="range" data-setting-key="thickness" min="1" max="10" value="${s.thickness}"></div></div><div class="form-group"><label>垂直间距(px):</label><input type="range" data-setting-key="margin" min="0" max="50" value="${s.margin}"></div><hr class="separator"><div class="form-group"><label>嵌入文本 (可选):</label><div class="input-group"><input type="text" data-setting-key="text" value="${this.escapeHTML(s.text || '')}" style="border-right: none;"><button class="btn btn-default select-icon-btn" data-separator-icon-btn="true" style="width: auto; flex-shrink: 0; border-radius: 0 6px 6px 0;">${iconHTML}</button></div></div><div class="form-group"><label>文本颜色:</label><div class="input-group"><input type="color" data-setting-key="textColor" value="${s.textColor}"><input type="text" class="color-hex-input" data-setting-key="textColor" value="${s.textColor}"></div></div>`;
                     } else if (block.type === 'spacer') {
                         const s = block.settings;
                         content = `<div class="form-group"><label>高度 (px): <span class="spacer-height-value">${s.height}</span></label><input type="range" data-setting-key="height" min="1" max="200" value="${s.height}"></div>`;
@@ -1661,7 +1807,11 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                         return `<div class="preview-cards-container ${layoutClass}">${cardsHTML}</div>`;
                     } else if (block.type === 'separator') {
                          const s = block.settings;
-                         return `<div class="separator-preview" style="margin: ${s.margin}px 0;"><div class="separator-preview-line" style="border-top: ${s.thickness}px ${s.style} ${s.color};"></div></div>`;
+                         const hasTextOrIcon = s.text || s.icon;
+                         const iconHTML = s.icon ? `<span class="iconify" data-icon="${s.icon}" style="margin-right: 8px; vertical-align: -0.15em;"></span>` : '';
+                         const textHTML = `<span data-separator-text-key="${block.id}" style="color: ${s.textColor}; padding: 0 12px; flex-shrink: 0;">${iconHTML}${this.escapeHTML(s.text || '')}</span>`;
+                         const lineHTML = `<div class="separator-preview-line" style="flex-grow: 1; border-top: ${s.thickness}px ${s.style} ${s.color};"></div>`;
+                         return `<div class="separator-preview" style="margin: ${s.margin}px 0;">${lineHTML}${hasTextOrIcon ? textHTML + lineHTML : ''}</div>`;
                     } else if (block.type === 'spacer') {
                         return `<div class="spacer-preview" style="height: ${block.settings.height}px;"></div>`;
                     }
@@ -1750,11 +1900,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                     const innerEl = cardEl.querySelector('.preview-card-inner');
                     if (!innerEl) return;
                     
-                    // v1.5.0 Bug Fix: Opacity 0 should not hide border
                     if (parseFloat(finalOpacity) < 0.01) {
                         innerEl.style.setProperty('--card-bg-final', 'transparent');
                         innerEl.style.boxShadow = 'none';
-                        // Keep border style intact
                         innerEl.style.border = 'var(--active-card-border)'; 
                     } else {
                         const finalTextColor = cardData.textColor || g.textColor;
@@ -1795,30 +1943,20 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                     if(obj) obj[keys[keys.length - 1]] = value;
                     this.debouncedSaveToLocal();
                     this.triggerRender(keyPath);
+                    this.syncControl(keyPath);
                 },
 
                 triggerRender(keyPath) {
-                    const parts = keyPath.split('.');
-                    const mainKey = parts[0];
-
+                    const mainKey = keyPath.split('.')[0];
                     if (mainKey === 'personalInfo') {
                         this.renderPersonalInfo();
-                        // [FIXED] Do not re-render inspector on input
-                        // if (this.selection.type === 'personalInfo') this.renderInspector();
                     } else if (mainKey === 'pageStyles' || mainKey === 'globalCardStyles') {
                         if (mainKey === 'globalCardStyles') this.updateGlobalCardStyleVars();
                         this.renderPageStyles();
                         this.renderPreviewBlocks();
-                        // [FIXED] Do not re-render inspector on input
-                        // if (this.selection.type === 'global') this.renderInspector();
                     } else if (mainKey === 'blocks') {
-                        const blockIndex = parseInt(parts[1]);
-                        const block = this.state.blocks[blockIndex];
-                        if (!block) return;
-                        const blockId = block.id;
-                        this.renderPreviewBlockById(blockId);
-                        // [FIXED] Do not re-render inspector on input
-                        // if (this.selection.id === blockId) this.renderInspector();
+                        const blockId = this.state.blocks[parseInt(keyPath.split('.')[1])]?.id;
+                        if(blockId) this.renderPreviewBlockById(blockId);
                     }
                 },
 
@@ -1852,9 +1990,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                     }
 
                     newCardEl.classList.add('adding');
-                    newCardEl.addEventListener('animationend', () => {
-                        newCardEl.classList.remove('adding');
-                    }, { once: true });
+                    newCardEl.addEventListener('animationend', () => newCardEl.classList.remove('adding'), { once: true });
                     
                     const newCardEditorEl = this.elements.inspectorPanel.querySelector(`.editor-card[data-card-id="${newCard.id}"]`);
                     if (newCardEditorEl) {
@@ -1899,9 +2035,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
                         cardEl.classList.add('removing');
                         cardEl.addEventListener('animationend', () => {
-                            if (!masonry) {
-                                cardEl.remove();
-                            }
+                            if (!masonry) cardEl.remove();
                             doDelete();
                         }, { once: true });
 
@@ -1985,7 +2119,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                     try {
                         const input = this.elements.inspectorPanel.querySelector(`[data-state-key="${stateKey}"]`);
                         if (!input) return;
-                        const value = stateKey.split('.').reduce((o, k) => o[k], this.state);
+                        const value = keyPath.split('.').reduce((o, k) => o && o[k], this.state);
+                        
                         if (input.type === 'radio') {
                              this.elements.inspectorPanel.querySelectorAll(`input[name="${input.name}"]`).forEach(radio => {
                                 radio.checked = (radio.value == value);
@@ -1994,8 +2129,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                         else input.value = value ?? '';
                         
                         if (input.type === 'color') {
-                            const hexInput = this.elements.inspectorPanel.querySelector(`[data-color-sync-key="${stateKey}"]`);
-                            if(hexInput) hexInput.value = value || '';
+                            const hexInput = input.nextElementSibling;
+                            if(hexInput && hexInput.matches('.color-hex-input')) hexInput.value = value || '';
                         }
                         if (input.type === 'range' && stateKey.endsWith('Angle')) {
                             input.previousElementSibling.querySelector('.angle-value').textContent = value;
@@ -2014,7 +2149,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                             const stateKey = input.dataset.stateKey;
                             if (stateKey === 'personalInfo.tags') return;
                             
-                            const value = stateKey.split('.').reduce((o, k) => o[k], this.state);
+                            const value = stateKey.split('.').reduce((o, k) => o && o[k], this.state);
                             if (input.type === 'radio') {
                                 input.checked = (input.value == value);
                             }
@@ -2024,12 +2159,13 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                             if (input.type === 'range' && stateKey.endsWith('Angle')) {
                                 input.previousElementSibling.querySelector('.angle-value').textContent = value;
                             }
+                             if (input.type === 'color') {
+                                const hexInput = input.nextElementSibling;
+                                if(hexInput && hexInput.matches('.color-hex-input')) hexInput.value = value || '';
+                            }
                         } catch (e) {}
                     });
-                     this.elements.inspectorPanel.querySelectorAll('.color-hex-input[data-color-sync-key]').forEach(hexInput => {
-                        const colorInput = this.elements.inspectorPanel.querySelector(`[data-state-key="${hexInput.dataset.colorSyncKey}"]`);
-                        if(colorInput) hexInput.value = colorInput.value;
-                     });
+                     
                     const gCardRadiusValue = document.getElementById('gCardRadiusValue');
                     if(gCardRadiusValue) gCardRadiusValue.textContent = this.state.globalCardStyles.radius;
                     
@@ -2126,12 +2262,22 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                         try {
                             const reader = new FileReader(); 
                             reader.onload = async e => {
-                                const compressedUrl = await this.compressImage(e.target.result, 0.85, 1200);
+                                const dataUrl = e.target.result;
+                                if(target === 'colorThief') {
+                                    this.analyzeColorsFromImage(dataUrl);
+                                    this.hideLoading();
+                                    return;
+                                }
+                                const compressedUrl = await this.compressImage(dataUrl, 0.85, 1200);
                                 if (['avatar', 'pageBg', 'cardBg', 'imageCard'].includes(target)) {
                                     this.showCropper(compressedUrl, { type: target, ...cardInfo }); 
                                 }
                                 this.hideLoading();
                             }; 
+                            reader.onerror = (err) => {
+                                this.showErrorModal('图片读取失败', err.message);
+                                this.hideLoading();
+                            };
                             reader.readAsDataURL(file); 
                         } catch(err) {
                             this.showErrorModal('图片处理失败', err.message);
@@ -2291,7 +2437,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                             : allFonts;
 
                         filteredFonts.forEach(font => {
-                            if (recommendedFonts.some(rf => rf.family === font.family)) return; // Skip if it's a recommended font
+                            if (recommendedFonts.some(rf => rf.family === font.family)) return;
                             const category = this.getFontCategory(font);
                             if (!categories[category].some(f => f.family === font.family)) {
                                  categories[category].push(font);
@@ -2312,7 +2458,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                             if (fonts.length === 0) return '';
                             const options = fonts
                                 .sort((a, b) => a.fullName.localeCompare(b.fullName))
-                                .map(f => `<option value="${this.escapeHTML(f.family)}" ${f.missing?'disabled':''}>${this.escapeHTML(f.fullName)}</option>`)
+                                .map(f => `<option value="${this.escapeHTML(f.family)}" style="font-family: '${this.escapeHTML(f.family)}', sans-serif;" ${f.missing?'disabled':''}>${this.escapeHTML(f.fullName)}</option>`)
                                 .join('');
                             return `<optgroup label="${label}">${options}</optgroup>`;
                         };
@@ -2393,7 +2539,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                         reader.onerror = reject;
                         reader.readAsArrayBuffer(file);
                     })},
-                compressImage(dataUrl, quality = 0.8, maxWidth = 1024){return new Promise(resolve => {
+                compressImage(dataUrl, quality = 0.8, maxWidth = 1024){return new Promise((resolve, reject) => {
                         const img = new Image();
                         img.onload = () => {
                             let { width, height } = img;
@@ -2408,6 +2554,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                             ctx.drawImage(img, 0, 0, width, height);
                             resolve(canvas.toDataURL('image/jpeg', quality));
                         };
+                        img.onerror = (err) => reject(new Error('图片加载失败，请检查文件是否损坏。'));
                         img.src = dataUrl;
                     })},
                 
@@ -2442,7 +2589,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                     return `${nickname}-${dateString}-${type}-${randomString}`;
                 },
                 
-                exportConfig(isTemplate = false){
+                async exportConfig(isTemplate = false){
                      let stateToSave = this.deepClone(this.state);
                         
                         if (isTemplate) {
@@ -2483,7 +2630,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                     const file = e.target.files[0]; 
                         if (!file) return;
 
-                        if (!window.confirm('导入配置将覆盖当前所有内容，确定要继续吗？')) {
+                        const confirmed = await this.showConfirm('导入配置', '此操作将覆盖当前所有内容，确定要继续吗？');
+                        if (!confirmed) {
                             e.target.value = '';
                             return;
                         }
@@ -2598,9 +2746,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                     }
 
                     pageWrapper.style.backgroundColor = pageBgColor;
-                    pageWrapper.style.backgroundImage = pageBgLayers.join(', ');
+                    pageWrapper.style.backgroundImage = bgLayers.join(', ');
                     pageWrapper.style.backgroundSize = pageBgSizes.join(', ');
-                    pageWrapper.style.backgroundPosition = pageBgPositions.join(', ');
+                    pageWrapper.style.backgroundPosition = bgPositions.join(', ');
                     
                     clone.querySelectorAll('.preview-card-inner').forEach(cardInner => {
                         const computed = getComputedStyle(cardInner);
@@ -2620,7 +2768,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                         }
                         cardInner.style.background = backgroundStyle;
                         cardInner.style.border = computed.border;
-                        cardInner.style.boxShadow = computed.boxShadow;
                     });
                     
                     style.innerHTML += `#${clone.id} .preview-card-inner::before, #${clone.id} .preview-card-inner::after { content: none !important; background: none !important; display: none !important; }`;
@@ -2629,19 +2776,19 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                 async exportPNG(){
                     this.showLoading('正在准备导出...');
                     
-                    const isCustomWidth = this.elements.inspectorPanel.querySelector('#custom-width-toggle').checked;
-                    const isHD = this.elements.inspectorPanel.querySelector('#hd-export-toggle').checked;
+                    const isCustomWidth = document.getElementById('custom-width-toggle').checked;
+                    const isHD = document.getElementById('hd-export-toggle').checked;
                     let targetWidth = 1200;
                     if (isCustomWidth) {
-                        targetWidth = parseInt(this.elements.inspectorPanel.querySelector('#custom-width-input').value, 10) || 1200;
+                        targetWidth = parseInt(document.getElementById('custom-width-input').value, 10) || 1200;
                     } else if (isHD) {
                         targetWidth = 1800;
                     }
                     const sourceWidth = 600;
                     const scale = targetWidth / sourceWidth;
 
-                    const exportRounded = this.elements.inspectorPanel.querySelector('#export-rounded-corners-toggle').checked;
-                    const cornerRadius = parseInt(this.elements.inspectorPanel.querySelector('#export-corner-radius-input').value, 10) || 20;
+                    const exportRounded = document.getElementById('export-rounded-corners-toggle').checked;
+                    const cornerRadius = parseInt(document.getElementById('export-corner-radius-input').value, 10) || 20;
 
                     const originalElement = this.elements.previewWrapper;
                     let clone = null;
@@ -2672,7 +2819,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                         document.body.appendChild(clone);
                         await this.sleep(100);
 
-                        // v1.5.0 Bug Fix: Force re-layout for Masonry
                         this.showLoading('正在计算瀑布流布局...');
                         const masonryBlocks = this.state.blocks.filter(b => b.settings.masonryEnabled);
                         if (masonryBlocks.length > 0) {
@@ -2685,7 +2831,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                                     msnry.layout();
                                 }
                             }
-                            await this.sleep(200); // Give it a bit more time to settle
+                            await this.sleep(200);
                         }
                         
                         this.showLoading('正在处理样式 (烘焙)...');
@@ -2741,8 +2887,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                     const el = this.elements.previewWrapper;
                     if (!el || el.clientWidth === 0) return;
                     
-                    const customWidthToggle = this.elements.inspectorPanel.querySelector('#custom-width-toggle');
-                    const hdExportToggle = this.elements.inspectorPanel.querySelector('#hd-export-toggle');
+                    const customWidthToggle = document.getElementById('custom-width-toggle');
+                    const hdExportToggle = document.getElementById('hd-export-toggle');
                     if(!customWidthToggle || !hdExportToggle) return;
 
                     const isCustomWidth = customWidthToggle.checked;
@@ -2750,7 +2896,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                     let targetWidth = 1200;
 
                     if (isCustomWidth) {
-                        targetWidth = parseInt(this.elements.inspectorPanel.querySelector('#custom-width-input').value, 10) || 1200;
+                        targetWidth = parseInt(document.getElementById('custom-width-input').value, 10) || 1200;
                     } else if (isHD) {
                         targetWidth = 1800;
                     }
@@ -2758,7 +2904,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                     const aspectRatio = el.clientHeight / el.clientWidth;
                     const finalHeight = Math.round(targetWidth * aspectRatio);
 
-                    const previewEl = this.elements.inspectorPanel.querySelector('#export-size-preview');
+                    const previewEl = document.getElementById('export-size-preview');
                     if (previewEl) previewEl.textContent = `导出尺寸: ${targetWidth}x${finalHeight}px`;
                     
                     let buttonText = '导出为图片';
@@ -2767,7 +2913,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                     } else {
                         buttonText += isHD ? ' (1800px)' : ' (1200px)';
                     }
-                    const exportBtn = this.elements.inspectorPanel.querySelector('#export-png-btn');
+                    const exportBtn = document.getElementById('export-png-btn');
                     if (exportBtn) exportBtn.textContent = buttonText;
                 },
                 
@@ -2806,7 +2952,35 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                         modal.innerHTML = `<h3>${title}</h3><p>${message}</p><button class="btn btn-primary" onclick="this.closest('.error-modal').remove()">确定</button>`;
                         document.body.appendChild(modal);
                 },
-                
+                showConfirm(title, message) {
+                    return new Promise(resolve => {
+                        const modal = this.elements.confirmModal;
+                        modal.querySelector('#confirm-modal-title').textContent = title;
+                        modal.querySelector('#confirm-modal-message').textContent = message;
+
+                        const okBtn = modal.querySelector('#confirm-modal-ok-btn');
+                        const cancelBtn = modal.querySelector('#confirm-modal-cancel-btn');
+
+                        const cleanup = () => {
+                            modal.classList.remove('visible');
+                            okBtn.replaceWith(okBtn.cloneNode(true));
+                            cancelBtn.replaceWith(cancelBtn.cloneNode(true));
+                        };
+
+                        okBtn.addEventListener('click', () => {
+                            cleanup();
+                            resolve(true);
+                        }, { once: true });
+
+                        cancelBtn.addEventListener('click', () => {
+                            cleanup();
+                            resolve(false);
+                        }, { once: true });
+                        
+                        modal.classList.add('visible');
+                    });
+                },
+
                 showLoading(text = '正在处理...'){
                     this.elements.loadingText.textContent = text;
                         this.elements.loadingOverlay.classList.add('visible');
@@ -2851,7 +3025,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                 
                 initAllSortables(){
                     this.initSortableLayers();
-                    // Card sortables are now initialized dynamically when their block is selected
+                    this.initSortablePreviewBlocks();
                 },
 
                 initSortableLayers(){
@@ -2859,9 +3033,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                     this.sortableLayers = new Sortable(this.elements.layerList, {
                         animation: 150,
                         ghostClass: 'sortable-ghost',
-                        filter: 'hr, .layer-item[data-type="personalInfo"]', // Make personal info and hr un-draggable
+                        filter: 'hr, .layer-item[data-type="personalInfo"]',
                         onEnd: e => {
-                            const oldIndex = e.oldIndex - 2; // -2 to account for static personal info and hr
+                            const oldIndex = e.oldIndex - 2; // Adjust for "PersonalInfo" and <hr>
                             const newIndex = e.newIndex - 2;
                             if (oldIndex === newIndex) return;
 
@@ -2870,9 +3044,24 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                             this.state.blocks.splice(newIndex, 0, moved);
                             this.debouncedSaveToLocal();
                             
-                            // Re-render to reflect new order
-                            this.renderLayerPanel();
                             this.renderPreviewBlocks();
+                        }
+                    });
+                },
+                initSortablePreviewBlocks() {
+                    if (this.sortablePreview) this.sortablePreview.destroy();
+                    this.sortablePreview = new Sortable(this.elements.previewBlocksContainer, {
+                        animation: 150,
+                        ghostClass: 'sortable-ghost',
+                        onEnd: e => {
+                            if (e.oldIndex === e.newIndex) return;
+
+                            this.pushHistory();
+                            const [movedBlock] = this.state.blocks.splice(e.oldIndex, 1);
+                            this.state.blocks.splice(e.newIndex, 0, movedBlock);
+                            
+                            this.debouncedSaveToLocal();
+                            this.renderLayerPanel();
                         }
                     });
                 },
@@ -2912,7 +3101,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                 },
                 
                 togglePanelDrawer(panelId){
-                    if (panelId === false) { // Close all
+                    if (panelId === false) {
                         this.elements.layerPanel.classList.remove('is-open');
                         this.elements.inspectorPanel.classList.remove('is-open');
                         this.elements.body.classList.remove('panels-open');
@@ -2922,14 +3111,13 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                     const isOpen = panel.classList.toggle('is-open');
                     this.elements.body.classList.toggle('panels-open', isOpen || this.elements.layerPanel.classList.contains('is-open') || this.elements.inspectorPanel.classList.contains('is-open'));
                     
-                    // Close other panel if opening one
                     if(isOpen) {
                         if (panelId === 'layer-panel') this.elements.inspectorPanel.classList.remove('is-open');
                         if (panelId === 'inspector-panel') this.elements.layerPanel.classList.remove('is-open');
                     }
                 },
-                resetToDefault() {
-                    if (window.confirm('警告：此操作将清空您所有的内容和样式设置，并恢复到初始模板。此过程不可撤销，确定要继续吗？')) {
+                async resetToDefault() {
+                    if (await this.showConfirm('恢复默认模板', '警告：此操作将清空您所有的内容和样式设置，并恢复到初始模板。此过程不可撤销，确定要继续吗？')) {
                         localStorage.removeItem('blokkoState');
                         this.state = this.getDefaultState();
                         this.history = [this.deepClone(this.state)];
@@ -2946,13 +3134,24 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                     const isLocked = this.elements.previewBlocksContainer.classList.toggle('locked-mode');
                     const button = this.elements.lockModeToggle;
                     
-                    if (isLocked) {
-                        button.textContent = '预览中';
-                        button.title = '预览模式 (点击切换为编辑模式)';
-                    } else {
-                        button.textContent = '编辑中';
-                        button.title = '编辑模式 (点击切换为预览模式)';
+                    button.textContent = isLocked ? '预览中' : '编辑中';
+                    button.title = isLocked ? '预览模式 (点击切换为编辑模式)' : '编辑模式 (点击切换为预览模式)';
+                    
+                    const shouldDisable = isLocked;
+
+                    // Unified control for all sortable instances
+                    if (this.sortableLayers) {
+                        this.sortableLayers.option('disabled', shouldDisable);
                     }
+                    if (this.sortablePreview) {
+                        this.sortablePreview.option('disabled', shouldDisable);
+                    }
+                    Object.values(this.cardSortables).forEach(s => {
+                        if (s) s.option('disabled', shouldDisable);
+                    });
+                    Object.values(this.imageCardSortables).forEach(s => {
+                        if (s) s.option('disabled', shouldDisable);
+                    });
                 },
                 
                 renderTagManager() {
@@ -2978,6 +3177,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                     const text = textInput.value.trim();
                     if (!text) return;
                     this.pushHistory();
+                    if(!this.state.personalInfo.tags) this.state.personalInfo.tags = [];
                     this.state.personalInfo.tags.push({ id: this.generateId('t'), icon: null, text });
                     this.debouncedSaveToLocal();
                     this.renderPersonalInfo();
@@ -2997,6 +3197,17 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                     if (tagIndex > -1) this.updateState(`personalInfo.tags.${tagIndex}.${key}`, value, pushHistory);
                 },
 
+                initIconPicker() {
+                    if (this.iconPickerInitialized) return;
+                    this.loadIcons();
+                    this.iconPickerInitialized = true;
+                },
+                initTexturePicker() {
+                    if (this.texturePickerInitialized) return;
+                    this.renderTexturePicker();
+                    this.elements.texturePickerModal.classList.add('visible');
+                    this.texturePickerInitialized = true;
+                },
                 async loadIcons(){
                      this.showLoading('正在加载图标库...');
                      try {
@@ -3010,7 +3221,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                 },
                 async renderIconGrid(searchTerm = ''){
                      this.elements.iconGrid.innerHTML = `<div class="spinner" style="margin: 40px auto;"></div>`;
-
                      let customIconsHTML = '';
                      if (this.state.customIcons && this.state.customIcons.length > 0) {
                          customIconsHTML = this.state.customIcons.map(icon => 
@@ -3065,6 +3275,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                             this.updateCard(id, cardId, 'icon', iconClass, true);
                         } else if (type === 'tag') {
                             this.updateTag(id, 'icon', iconClass, true);
+                        } else if (type === 'separator') {
+                            this.updateBlockSettings(id, 'icon', iconClass, true);
                         }
                     }
                     this.hideIconPicker();
@@ -3075,12 +3287,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                         this.showToast('请上传一个.svg格式的图标文件', 'error');
                         return;
                     }
-
                     if (this.state.customIcons.some(icon => icon.name === file.name)) {
                         this.showToast(`已存在名为 "${file.name}" 的图标`, 'error');
                         return;
                     }
-
                     try {
                         const dataUrl = await this.readFileAsDataURL(file);
                         this.pushHistory();
@@ -3137,6 +3347,76 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                         document.querySelector(`.preview-block-wrapper[data-block-id="${id}"]`)?.classList.add('selected');
                     }
                 },
+                
+                analyzeColorsFromImage(dataUrl) {
+                    const img = new Image();
+                    img.onload = () => {
+                        try {
+                            const palette = this.colorThief.getPalette(img, 8);
+                            this.lastPalette = palette; // BUGFIX: Store palette
+                            this.renderPalette(palette);
+                            this.showToast('颜色提取成功！', 'success');
+                        } catch(e) {
+                            this.showErrorModal('颜色提取失败', e.message);
+                        }
+                    };
+                    img.onerror = () => this.showErrorModal('图片加载失败', '无法从该图片提取颜色。');
+                    img.src = dataUrl;
+                },
+                renderPalette(palette) {
+                    const container = document.getElementById('color-thief-palette');
+                    if (!container) return;
+                    container.innerHTML = palette.map(rgb => {
+                        const hex = `#${rgb[0].toString(16).padStart(2,'0')}${rgb[1].toString(16).padStart(2,'0')}${rgb[2].toString(16).padStart(2,'0')}`;
+                        return `<div class="palette-color" data-color="${hex}" style="background-color: ${hex};"><div class="color-tooltip">${hex}</div></div>`;
+                    }).join('');
+                },
+                bindColorThiefEvents() {
+                    const paletteContainer = document.getElementById('color-thief-palette');
+                    if (!paletteContainer) return;
+                    
+                    const handleInteraction = (e) => {
+                        const colorEl = e.target.closest('.palette-color');
+                        if (!colorEl) return;
+                        e.preventDefault();
+                        this.showColorContextMenu(e.clientX, e.clientY, colorEl.dataset.color);
+                    };
+
+                    paletteContainer.addEventListener('contextmenu', handleInteraction);
+                    paletteContainer.addEventListener('touchstart', e => {
+                        const colorEl = e.target.closest('.palette-color');
+                        if (!colorEl) return;
+                        this.longPressTimer = setTimeout(() => {
+                            const touch = e.touches[0];
+                            this.showColorContextMenu(touch.clientX, touch.clientY, colorEl.dataset.color);
+                        }, 500);
+                    });
+                    paletteContainer.addEventListener('touchend', () => clearTimeout(this.longPressTimer));
+                    paletteContainer.addEventListener('touchmove', () => clearTimeout(this.longPressTimer));
+                },
+                showColorContextMenu(x, y, color) {
+                    const menu = this.elements.colorContextMenu;
+                    menu.style.display = 'block';
+                    menu.style.left = `${x}px`;
+                    menu.style.top = `${y}px`;
+                    menu.dataset.color = color;
+                },
+                hideColorContextMenu() {
+                    this.elements.colorContextMenu.style.display = 'none';
+                },
+                applyQuickColor(action, color) {
+                    const actionMap = {
+                        'apply-page-bg-solid': 'pageStyles.pageBgSolidColor',
+                        'apply-header-bg-solid': 'pageStyles.headerBgColor',
+                        'apply-header-text': 'pageStyles.headerTextColor',
+                        'apply-gcard-bg': 'globalCardStyles.bgColor',
+                        'apply-gcard-text': 'globalCardStyles.textColor',
+                    };
+                    if(actionMap[action]) {
+                        this.updateState(actionMap[action], color, true);
+                        this.showToast('颜色已应用', 'info'); 
+                    }
+                },
 
                 hexToRgba(hex, alpha=1){
                     if(!hex || parseFloat(alpha) === 0) return 'transparent';
@@ -3160,29 +3440,15 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
                 async addBlock(type) {
                     this.pushHistory();
-                    
                     let newBlock;
                     const defaultState = this.getDefaultState();
-                    switch(type) {
-                        case 'text':
-                            newBlock = defaultState.blocks.find(b => b.type === 'text');
-                            newBlock.id = this.generateId('b');
-                            newBlock.cards[0].id = this.generateId('c');
-                            break;
-                        case 'image':
-                            newBlock = defaultState.blocks.find(b => b.type === 'image');
-                            newBlock.id = this.generateId('b');
-                            break;
-                        case 'separator':
-                            newBlock = defaultState.blocks.find(b => b.type === 'separator');
-                            newBlock.id = this.generateId('b');
-                            break;
-                        case 'spacer':
-                            newBlock = defaultState.blocks.find(b => b.type === 'spacer');
-                            newBlock.id = this.generateId('b');
-                            break;
+                    const blockTemplate = defaultState.blocks.find(b => b.type === type);
+                    newBlock = this.deepClone(blockTemplate);
+                    newBlock.id = this.generateId('b');
+                    if (newBlock.cards) {
+                        newBlock.cards.forEach(c => c.id = this.generateId('c'));
                     }
-                    this.state.blocks.push(this.deepClone(newBlock));
+                    this.state.blocks.push(newBlock);
                     this.debouncedSaveToLocal();
 
                     this.renderLayerPanel();
@@ -3191,25 +3457,25 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                     this.setSelection({ type: 'block', id: newBlock.id });
                 },
                 async deleteBlock(blockId) {
-                    this.pushHistory();
-                    this.destroyMasonryForBlock(blockId);
-                    this.state.blocks = this.state.blocks.filter(b => b.id !== blockId);
-                    this.debouncedSaveToLocal();
-                    
-                    if (this.selection.type === 'block' && this.selection.id === blockId) {
-                        this.setSelection({type: 'global'});
-                    } else {
-                        // Re-render layer panel if a different block was selected
-                        this.renderLayerPanel();
+                    if (await this.showConfirm('删除区块', '确定要删除这个区块吗？')) {
+                        this.pushHistory();
+                        this.destroyMasonryForBlock(blockId);
+                        this.state.blocks = this.state.blocks.filter(b => b.id !== blockId);
+                        this.debouncedSaveToLocal();
+                        
+                        if (this.selection.type === 'block' && this.selection.id === blockId) {
+                            this.setSelection({type: 'global'});
+                        } else {
+                            this.renderLayerPanel();
+                        }
+                        
+                        this.renderPreviewBlocks();
+                        this.showToast('区块已删除', 'info');
                     }
-                    
-                    this.renderPreviewBlocks();
-                    this.showToast('区块已删除', 'info');
                 },
-
-                // Debug Mode
-                activateDebugMode() {
-                    if (window.confirm('即将进入调试模式，这将随机化当前所有设置并替换内容，此操作不可撤销。是否继续？')) {
+                
+                async activateDebugMode() {
+                    if (await this.showConfirm('激活调试模式', '此操作将随机化当前所有设置并替换内容，此过程不可撤销。是否继续？')) {
                         this.showLoading('正在生成随机数据...');
                         this.state = this.generateRandomState();
                         this.history = [this.deepClone(this.state)];
@@ -3230,49 +3496,25 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                     const safeColors = ['#e63946', '#f1faee', '#a8dadc', '#457b9d', '#1d3557', '#000000', '#ffffff'];
                     const randColor = () => randChoice(safeColors);
 
-                    const defaultState = this.getDefaultState();
-                    let randomState = this.deepClone(defaultState);
+                    let randomState = this.deepClone(this.getDefaultState());
 
-                    // Randomize Personal Info
                     randomState.personalInfo.nickname = "调试昵称";
                     randomState.personalInfo.subtitle = `Debug Subtitle ${rand(100, 999)}`;
-                    randomState.personalInfo.bio = `这是随机生成的简介文本，用于测试。 The quick brown fox jumps over the lazy dog. ${Date.now()}`;
+                    randomState.personalInfo.bio = `这是随机生成的简介文本。 The quick brown fox jumps over the lazy dog.`;
                     randomState.personalInfo.nicknameColor = randColor();
                     randomState.personalInfo.subtitleColor = randColor();
                     randomState.personalInfo.bioColor = randColor();
                     randomState.personalInfo.avatarShape = randChoice(['50%', '16px', '0px']);
                     randomState.personalInfo.avatarBorderSize = rand(0, 10);
-                    randomState.personalInfo.avatarBorderColor = randColor();
+					randomState.personalInfo.avatarBorderColor = randColor();
                     randomState.personalInfo.tags = Array.from({length: rand(3, 5)}, (_, i) => ({ id: this.generateId('t'), icon: null, text: `标签${i+1}`}));
                     randomState.personalInfo.tagBgColor = randColor();
                     randomState.personalInfo.tagTextColor = randColor();
-
-                    // Randomize Page Styles
                     randomState.pageStyles.pageBgMode = randChoice(['solid', 'gradient']);
                     randomState.pageStyles.pageBgSolidColor = randColor();
-                    randomState.pageStyles.pageBgGradientStart = randColor();
-                    randomState.pageStyles.pageBgGradientEnd = randColor();
-                    randomState.pageStyles.pageBgGradientAngle = rand(0, 360);
-                    randomState.pageStyles.headerBgMode = randChoice(['solid', 'gradient']);
-                    randomState.pageStyles.headerBgColor = randColor();
-                    randomState.pageStyles.headerBgGradientStart = randColor();
-                    randomState.pageStyles.headerBgGradientEnd = randColor();
-                    randomState.pageStyles.headerBgGradientAngle = rand(0, 360);
-                    randomState.pageStyles.headerTextColor = randColor();
-                    randomState.pageStyles.headerOpacity = randFloat(0.5, 1).toFixed(2);
-
-                    // Randomize Global Card Styles
-                    randomState.globalCardStyles.bgMode = randChoice(['solid', 'gradient']);
                     randomState.globalCardStyles.bgColor = randColor();
                     randomState.globalCardStyles.textColor = randColor();
-                    randomState.globalCardStyles.opacity = randFloat(0.7, 1).toFixed(2);
                     randomState.globalCardStyles.shadowEnabled = randBool();
-                    randomState.globalCardStyles.radius = rand(0, 40);
-                    randomState.globalCardStyles.textAlign = randChoice(['left', 'center', 'right']);
-                    randomState.globalCardStyles.lineHeight = randChoice(['1.4', '1.5', '1.6']);
-                    randomState.globalCardStyles.fontSize = randChoice(['0.9rem', '1rem', '1.1rem']);
-
-                    // Randomize Blocks
                     randomState.blocks = [];
                     const blockTypes = ['text', 'image', 'separator', 'spacer'];
                     for (let i = 0; i < rand(5, 8); i++) {
@@ -3280,16 +3522,13 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                         let newBlock;
                         switch(type) {
                             case 'text':
-                                newBlock = { id: this.generateId('b'), type: 'text', title: `随机文本区块 ${i+1}`, settings: { layout: randChoice(['single', 'dual', 'triple']), masonryEnabled: randBool() }, cards: [] };
-                                for (let j = 0; j < rand(2, 5); j++) {
-                                    newBlock.cards.push({ id: this.generateId('c'), icon: '', title: `随机卡片 ${j+1}`, content: `随机内容 - ${Math.random().toString(36).substring(2)}`, opacity: 1.0, followGlobalOpacity: true });
-                                }
+                                newBlock = { id: this.generateId('b'), type: 'text', title: `随机文本区块 ${i+1}`, settings: { layout: randChoice(['single', 'dual', 'triple']), masonryEnabled: randBool() }, cards: Array.from({length: rand(2, 5)}, (_, j) => ({ id: this.generateId('c'), icon: '', title: `随机卡片 ${j+1}`, content: `随机内容 - ${Math.random().toString(36).substring(2)}`, opacity: 1.0, followGlobalOpacity: true })) };
                                 break;
                             case 'image':
-                                newBlock = { id: this.generateId('b'), type: 'image', title: `随机图片区块 ${i+1}`, settings: { layout: randChoice(['single', 'dual', 'triple']), masonryEnabled: randBool(), textColor: randColor() }, cards: [] }; // No images
+                                newBlock = { id: this.generateId('b'), type: 'image', title: `随机图片区块 ${i+1}`, settings: { layout: randChoice(['single', 'dual', 'triple']), masonryEnabled: randBool(), textColor: randColor() }, cards: [] };
                                 break;
                             case 'separator':
-                                newBlock = { id: this.generateId('b'), type: 'separator', title: `随机分割线 ${i+1}`, settings: { style: randChoice(['solid', 'dashed']), color: randColor(), thickness: rand(1, 5), margin: rand(10, 40) }};
+                                newBlock = { id: this.generateId('b'), type: 'separator', title: `随机分割线 ${i+1}`, settings: { style: randChoice(['solid', 'dashed', 'dotted']), color: randColor(), thickness: rand(1, 5), margin: rand(10, 40), text: 'Random Text', icon: null, textColor: randColor() }};
                                 break;
                             case 'spacer':
                                 newBlock = { id: this.generateId('b'), type: 'spacer', title: `随机留白 ${i+1}`, settings: { height: rand(20, 100) }};
@@ -3297,11 +3536,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                         }
                         randomState.blocks.push(newBlock);
                     }
-
                     return randomState;
                 }
             };
-
             App.init();
         });
     </script>
