@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Blokko v1.5.2 (Internal): -->
-    <title>Blokko-个人简介生成器！ (v1.5.2)-来玩2077吧！</title>
+    <title>Blokko-个人简介生成器！ (v1.5.2-fixed-2)-来玩2077吧！</title>
     
     <script>
         // Anti-FOUC (Flash of Unstyled Content) Script
@@ -70,14 +70,14 @@
         * { box-sizing: border-box; }
         html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; }
         body { font-family: var(--g-card-font-family, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif); background-color: var(--bg-preview-pane); color: var(--text-primary); transition: background-color var(--transition-speed) ease, color var(--transition-speed) ease; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
-        .app-header { width: 100%; height: var(--header-height); background: var(--bg-editor); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; position: fixed; top: 0; left: 0; z-index: 100; box-shadow: 0 2px 8px var(--shadow-light); transition: background-color var(--transition-speed) ease, border-color var(--transition-speed) ease; }
-        .header-actions-wrapper { display: flex; align-items: center; gap: 15px; }
-        .app-header-title { font-size: 1.25rem; font-weight: 700; }
-        .theme-switch-wrapper { display: flex; align-items: center; gap: 10px; }
-        .theme-switch-wrapper span { font-size: 0.9rem; color: var(--text-secondary); }
-        .app-container { display: flex; height: 100vh; padding-top: var(--header-height); }
+        。app-header { width: 100%; height: var(--header-height); background: var(--bg-editor); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; position: fixed; top: 0; left: 0; z-index: 100; box-shadow: 0 2px 8px var(--shadow-light); transition: background-color var(--transition-speed) ease, border-color var(--transition-speed) ease; }
+        。header-actions-wrapper { display: flex; align-items: center; gap: 15px; }
+        。app-header-title { font-size: 1.25rem; font-weight: 700; }
+        。theme-switch-wrapper { display: flex; align-items: center; gap: 10px; }
+        。theme-switch-wrapper span { font-size: 0.9rem; color: var(--text-secondary); }
+        。app-container { display: flex; height: 100vh; padding-top: var(--header-height); }
 
-        .layer-panel, .inspector-panel {
+        。layer-panel, .inspector-panel {
             background: var(--bg-editor);
             height: calc(100vh - var(--header-height));
             overflow-y: auto;
@@ -226,7 +226,7 @@
         .editor-section legend::after { content: " ▼"; font-size: 0.8rem; }
         .editor-section.collapsed legend::after { content: " ▶"; }
         .editor-section.collapsed .section-content { display: none; }
-        .section-content { padding-top: 15px; }
+        .section-content { /* padding-top: 15px; -- REMOVED FOR SPACING OPTIMIZATION */ }
 
         .advanced-toggle-label { font-size: 0.85rem; font-weight: normal; color: var(--text-action); }
         .advanced-setting { display: none; }
@@ -320,7 +320,7 @@
         .masonry-active { display: block; position: relative; } /* Override grid */
         .masonry-active.preview-cards-dual .preview-card, .masonry-active.preview-cards-dual figure { width: calc(50% - 7.5px); margin-bottom: 15px; }
         .masonry-active.preview-cards-triple .preview-card, .masonry-active.preview-cards-triple figure { width: calc(33.333% - 10px); margin-bottom: 15px; }
-        .preview-card { box-sizing: border-box; width: 100%; view-transition-name: var(--card-transition-name); }
+        .preview-card { box-sizing: box; width: 100%; view-transition-name: var(--card-transition-name); }
         .preview-card-inner { width: 100%; height: 100%; box-sizing: border-box; position: relative; overflow: hidden; color: var(--card-text-color, var(--g-card-text-color)); border-radius: var(--g-card-border-radius); box-shadow: var(--active-card-shadow, none); border: var(--active-card-border, none); font-weight: var(--card-font-weight, normal); text-shadow: var(--active-card-text-shadow, none); padding: 15px; word-wrap: break-word; transition: all var(--transition-short) ease; -webkit-text-stroke: var(--g-card-text-stroke); line-height: var(--g-card-line-height); background-clip: padding-box; }
         .preview-card-inner::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 0; background-size: cover; background-position: center; border-radius: inherit; background: var(--card-bg-final); transition: background var(--transition-speed) ease; }
         .preview-card-inner::after { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--card-overlay-color, transparent); opacity: var(--card-overlay-opacity, 0); border-radius: inherit; z-index: 1; pointer-events: none; transition: all var(--transition-short) ease; }
@@ -571,11 +571,15 @@
                     <li><b>【新增】</b> <b>标签拖拽排序</b>: 在个人信息设置的“标签管理器”中，现在可以通过拖拽来调整标签的显示顺序。</li>
                     <li><b>【优化】</b> <b>“基础/高级”样式分离</b>: 为了简化界面，右侧检查器中的复杂设置项（如描边、纹理、独立不透明度等）被默认隐藏，可通过“显示高级选项”开关来显示。</li>
                     <li><b>【优化】</b> <b>卡片颜色重置</b>: 为卡片独立的颜色设置项增加了“重置”按钮，可一键清除独立设置，使其回退至全局样式。</li>
-                    <li><b>【调整】</b> <b>移除所有阴影</b>: 根据设计反馈，完全移除了应用内所有的 `box-shadow` 阴影效果，使风格更统一。同时保留了旧配置文件的兼容性。</li>
+                    <li><b>【调整】</b> <b>移除所有阴影</b>: 根据设计反馈，以及频繁的渲染失败，暂时移除了应用内所有的 `box-shadow` 阴影效果。同时保留了旧配置文件的兼容性，未来会重做阴影效果。</li>
                     <li><b>【修复】</b> 修复了删除区块后，其在左侧图层面板中仍会残留显示的BUG。</li>
                     <li><b>【修复】</b> 修复了在检查器中手动输入HEX颜色代码无法生效的问题。</li>
                     <li><b>【修复】</b> 修复了使用智能取色或重置颜色后，检查器中对应的颜色选择器和HEX代码不会同步更新的问题。</li>
                     <li><b>【修复】</b> 修复了当卡片文字设为“居右”对齐时，卡片标题未同步居右的问题。</li>
+					<li><b>【修复】</b> 修复了在区块设置中为单个卡片选择“居左/中/右”对齐后，虽然预览生效，但设置面板里的单选框没有同步更新的问题。</li>
+                    <li><b>【修复】</b> 修复了编辑区块标题名无法保存的问题。</li>
+					<li><b>【修复】</b> 修复了文字区块导入图片，导出时无法正确渲染的问题。</li>
+                    <li><b>【修复】</b> 修复了独立区块异常显示“高级”的问题。</li>
                 </ul>
                 <hr class="separator">
                 <h4>v1.5.1</h4>
@@ -1275,14 +1279,12 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                             return;
                         }
 
-                        const updateSource = target.closest('[data-state-key], [data-setting-key], [data-card-key], [data-color-sync-key]');
+                        const updateSource = target.closest('[data-state-key], [data-setting-key], [data-card-key], [data-color-sync-key], [data-block-id-for-title]');
                         if (!updateSource) return;
 
                         let value = target.type === 'checkbox' ? target.checked : (target.type === 'number' || target.type === 'range') ? parseFloat(target.value) : target.value;
                         
-                        // ========== BUG FIX #2 START ==========
                         if (target.matches('.color-hex-input')) {
-                            // Only return if the value is not empty AND it's an invalid format
                             if (target.value !== '' && !/^#([0-9A-F]{3,8})$/i.test(target.value)) {
                                 return;
                             }
@@ -1291,7 +1293,6 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                                 colorInput.value = value;
                             }
                         } 
-                        // ========== BUG FIX #2 END ==========
                         else if (target.type === 'color') {
                             const hexInput = target.nextElementSibling;
                              if(hexInput && hexInput.matches('.color-hex-input')) hexInput.value = value;
@@ -1304,9 +1305,13 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                         const blockEl = keySource.closest('.editor-block');
                         const settingKey = keySource.dataset.settingKey;
                         const cardKey = keySource.dataset.cardKey;
+                        const blockIdForTitle = updateSource.dataset.blockIdForTitle;
                         
                         if (stateKey) {
                             this.updateState(stateKey, value, false);
+                        } else if (blockIdForTitle) {
+                            this.updateBlockTitle(blockIdForTitle, value, false);
+                            this.renderLayerPanel();
                         } else if (blockEl && settingKey) {
                              this.updateBlockSettings(blockEl.dataset.blockId, settingKey, value, false);
                         } else if (blockEl && cardKey) {
@@ -1841,12 +1846,12 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                     return `
                         <h3 class="panel-header">全局样式与导出 ${backBtn}</h3>
                         <div class="inspector-state active">
-                             <fieldset class="editor-section">
+                             <fieldset class="editor-section" id="page-styles-section">
                                 <legend>页面与头部样式</legend>
                                 <div class="section-content">
                                     <div class="tab-group-wrapper">
-                                        <div class="section-header">
-                                            <h4>页面背景</h4>
+                                        <div class="section-header" style="margin-bottom: 5px;">
+                                            <h4 style="margin: 0;">页面背景</h4>
                                             <label class="checkbox-group advanced-toggle-label"><input type="checkbox" class="advanced-toggle"> 高级</label>
                                         </div>
                                         <div class="tabs"><button class="tab-btn" data-tab="page-bg-solid">纯色/图片</button><button class="tab-btn" data-tab="page-bg-gradient">渐变</button></div>
@@ -1879,8 +1884,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                             <fieldset class="editor-section" id="global-card-styles-section"> 
                                 <legend>全局卡片样式</legend>
                                 <div class="section-content">
-                                    <div class="section-header">
-                                        <h4></h4>
+                                    <div style="text-align: right; margin-bottom: 10px;">
                                         <label class="checkbox-group advanced-toggle-label"><input type="checkbox" class="advanced-toggle"> 高级</label>
                                     </div>
                                     <div class="tabs"><button class="tab-btn" data-tab="card-bg-solid">纯色</button><button class="tab-btn" data-tab="card-bg-gradient">渐变</button></div>
@@ -1949,7 +1953,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                     const backBtn = this.selection.type !== 'global' ? `<button class="back-to-global-btn">← 返回全局</button>` : '';
                     const masonryCheckboxHTML = `
                         <div class="masonry-toggle-container" style="${['dual', 'triple'].includes(block.settings.layout) ? 'display: block;' : 'display: none;'}">
-                            <div class="checkbox-group advanced-setting" style="margin-top: 10px;">
+                            <div class="checkbox-group" style="margin-top: 10px;">
                                 <label><input type="checkbox" data-setting-key="masonryEnabled" ${block.settings.masonryEnabled ? 'checked' : ''}> 启用瀑布流</label>
                             </div>
                         </div>`;
@@ -1962,26 +1966,24 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 
                     if (block.type === 'text') {
                         let cardsHTML = !block.cards?.length ? '<div class="empty-placeholder">暂无卡片</div>' : block.cards.map(c => `<div class="editor-card ${this.selection.cardId === c.id ? 'is-active' : ''}" data-card-id="${c.id}">${this.createEditorCardHTML(c)}</div>`).join('');
-                        content = `<div class="form-group"><div class="section-header"><label>布局:</label><label class="checkbox-group advanced-toggle-label"><input type="checkbox" class="advanced-toggle"> 高级</label></div>${layoutRadiosHTML}${masonryCheckboxHTML}</div>
+                        content = `<div class="form-group"><label>布局:</label>${layoutRadiosHTML}${masonryCheckboxHTML}</div>
                                    <hr class="separator"><div class="card-editors-list">${cardsHTML}</div><button class="btn btn-default add-card-btn" style="margin-top: 15px;">➕ 添加卡片</button>`;
                     } else if (block.type === 'image') {
                         let imageCardsHTML = !block.cards?.length ? '<div class="empty-placeholder">暂无图片</div>' : block.cards.map(c => `<div class="editor-card ${this.selection.cardId === c.id ? 'is-active' : ''}" data-card-id="${c.id}">${this.createEditorImageCardHTML(c)}</div>`).join('');
-                        content = `<div class="form-group"><div class="section-header"><label>布局:</label><label class="checkbox-group advanced-toggle-label"><input type="checkbox" class="advanced-toggle"> 高级</label></div>${layoutRadiosHTML}${masonryCheckboxHTML}</div>
+                        content = `<div class="form-group"><label>布局:</label>${layoutRadiosHTML}${masonryCheckboxHTML}</div>
                                    <div class="form-group"><label>文字颜色:</label><div class="input-group"><input type="color" data-setting-key="textColor" value="${block.settings.textColor || ''}"><input type="text" class="color-hex-input" data-setting-key="textColor" value="${block.settings.textColor || ''}" placeholder="全局默认"><button class="btn btn-default btn-small" data-reset-block-key="textColor">重置</button></div></div>
                                    <hr class="separator"><div class="image-card-editors-list">${imageCardsHTML}</div><button class="btn btn-default add-image-btn" style="margin-top: 15px;">➕ 添加图片</button>
                                    <input type="file" class="image-upload-input" multiple accept="image/*" style="display: none;">`;
                     } else if (block.type === 'separator') {
                         const s = block.settings;
                         const iconHTML = s.icon ? `<span class="iconify" data-icon="${s.icon}"></span>` : '选择图标';
-                        // ========== BUG FIX #1 START ==========
                         content = `<div class="form-group"><label>样式:</label><div class="radio-group"><label><input type="radio" name="sep-style-${block.id}" data-setting-key="style" value="solid" ${s.style==='solid'?'checked':''}>实线</label><label><input type="radio" name="sep-style-${block.id}" data-setting-key="style" value="dashed" ${s.style==='dashed'?'checked':''}>虚线</label><label><input type="radio" name="sep-style-${block.id}" data-setting-key="style" value="dotted" ${s.style==='dotted'?'checked':''}>点状</label></div></div><div class="color-control-row"><div class="color-control-group"><label>线条颜色:</label><div class="input-group"><input type="color" data-setting-key="color" value="${s.color}"><input type="text" class="color-hex-input" data-setting-key="color" value="${s.color}"><button class="btn btn-default btn-small" data-reset-block-key="color">重置</button></div></div><div class="color-control-group"><label>粗细(px):</label><div class="input-group simple"><input type="range" data-setting-key="thickness" min="1" max="10" value="${s.thickness}"></div></div></div><div class="form-group"><label>垂直间距(px):</label><div class="input-group simple"><input type="range" data-setting-key="margin" min="0" max="50" value="${s.margin}"></div></div><hr class="separator"><div class="form-group"><label>嵌入文本 (可选):</label><div class="input-group"><input type="text" data-setting-key="text" value="${this.escapeHTML(s.text || '')}" style="border-right: none;"><button class="btn btn-default select-icon-btn" data-separator-icon-btn="true" style="width: auto; flex-shrink: 0; border-radius: 0 6px 6px 0;">${iconHTML}</button></div></div><div class="form-group"><label>文本颜色:</label><div class="input-group"><input type="color" data-setting-key="textColor" value="${s.textColor}"><input type="text" class="color-hex-input" data-setting-key="textColor" value="${s.textColor}"><button class="btn btn-default btn-small" data-reset-block-key="textColor">重置</button></div></div>`;
-                        // ========== BUG FIX #1 END ==========
                     } else if (block.type === 'spacer') {
                         const s = block.settings;
                         content = `<div class="form-group"><label>高度 (px): <span class="spacer-height-value">${s.height}</span></label><div class="input-group simple"><input type="range" data-setting-key="height" min="1" max="200" value="${s.height}"></div></div>`;
                     }
 
-                    return `<h3 class="panel-header">区块设置 ${backBtn}</h3><div class="editor-block" data-block-id="${block.id}"><div class="editor-block-header"><input type="text" class="editor-block-title-input" value="${this.escapeHTML(block.title || '')}" placeholder="区块标题 (可编辑)"><div class="block-actions"><button class="btn btn-danger btn-small block-delete-btn">删除</button></div></div><div class="editor-block-content">${content}</div></div>`;
+                    return `<h3 class="panel-header">区块设置 ${backBtn}</h3><div class="editor-block" data-block-id="${block.id}"><div class="editor-block-header"><input type="text" class="editor-block-title-input" data-block-id-for-title="${block.id}" value="${this.escapeHTML(block.title || '')}" placeholder="区块标题 (可编辑)"><div class="block-actions"><button class="btn btn-danger btn-small block-delete-btn">删除</button></div></div><div class="editor-block-content">${content}</div></div>`;
                 },
 
                 createPreviewBlockHTML(block) {
@@ -2018,7 +2020,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                     cardEl.style.setProperty('--card-transition-name', `card-${card.id}`);
                     const iconHTML = card.icon ? `<span class="iconify" data-icon="${card.icon}"></span>` : '';
                     
-                    const finalAlign = (card.textAlign === undefined || card.textAlign === '' || card.textAlign === null) ? this.state.globalCardStyles.textAlign : card.textAlign;
+                    const finalAlign = (card.textAlign === undefined || card.textAlign === null || card.textAlign === '') ? this.state.globalCardStyles.textAlign : card.textAlign;
                     const justifyContent = { left: 'flex-start', center: 'center', right: 'flex-end' }[finalAlign] || 'flex-start';
                     
                     cardEl.innerHTML = `<div class="preview-card-inner">
@@ -2041,25 +2043,28 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                 },
 
                 createEditorCardHTML(card) {
-                    const s = (val, def) => val ?? def;
-                    const followGlobalOpacity = card.followGlobalOpacity !== false;
                     const iconHTML = card.icon ? `<span class="iconify" data-icon="${card.icon}" style="font-size: 1.2em; vertical-align: middle; margin-right: 5px;"></span>` : '选择图标';
                     const g = this.state.globalCardStyles;
 
                     return `<span class="card-drag-handle">☰</span><div class="editor-card-header"><button class="btn btn-danger btn-small card-delete-btn">删</button></div>
                         <div class="editor-card-content">
                             <h4>基础设置</h4>
-                            <div class="form-group"><label>标题:</label><div class="input-group"><input type="text" data-card-key="title" value="${this.escapeHTML(s(card.title, ''))}" style="border-right: none;"><button class="btn btn-default select-icon-btn" style="width: auto; flex-shrink: 0; border-radius: 0 6px 6px 0; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${iconHTML}</button></div></div>
-                            <div class="form-group"><label>内容:</label><textarea data-card-key="content" rows="4">${this.escapeHTML(s(card.content, ''))}</textarea></div>
-                            <div class="form-group"><label>对齐:</label><div class="radio-group"><label><input type="radio" name="card-${card.id}-align" value="" data-card-key="textAlign" ${s(card.textAlign, '') === '' ? 'checked':''}>默认</label><label><input type="radio" name="card-${card.id}-align" value="left" data-card-key="textAlign" ${card.textAlign === 'left' ?'checked':''}>左</label><label><input type="radio" name="card-${card.id}-align" value="center" data-card-key="textAlign" ${card.textAlign === 'center' ?'checked':''}>中</label><label><input type="radio" name="card-${card.id}-align" value="right" data-card-key="textAlign" ${card.textAlign === 'right' ?'checked':''}>右</label></div></div>
+                            <div class="form-group"><label>标题:</label><div class="input-group"><input type="text" data-card-key="title" value="${this.escapeHTML(card.title || '')}" style="border-right: none;"><button class="btn btn-default select-icon-btn" style="width: auto; flex-shrink: 0; border-radius: 0 6px 6px 0; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${iconHTML}</button></div></div>
+                            <div class="form-group"><label>内容:</label><textarea data-card-key="content" rows="4">${this.escapeHTML(card.content || '')}</textarea></div>
+                            <div class="form-group"><label>对齐:</label><div class="radio-group">
+                                <label><input type="radio" name="card-${card.id}-align" value="" data-card-key="textAlign" ${!['left', 'center', 'right'].includes(card.textAlign) ? 'checked' : ''}>默认</label>
+                                <label><input type="radio" name="card-${card.id}-align" value="left" data-card-key="textAlign" ${card.textAlign === 'left' ? 'checked' : ''}>左</label>
+                                <label><input type="radio" name="card-${card.id}-align" value="center" data-card-key="textAlign" ${card.textAlign === 'center' ? 'checked' : ''}>中</label>
+                                <label><input type="radio" name="card-${card.id}-align" value="right" data-card-key="textAlign" ${card.textAlign === 'right' ? 'checked' : ''}>右</label>
+                            </div></div>
                             <hr class="separator">
                             <div class="color-control-row">
-                                <div class="color-control-group"><label>背景色:</label><div class="input-group"><input type="color" data-card-key="bgColor" value="${s(card.bgColor, '')}"><input class="color-hex-input" type="text" data-card-key="bgColor" value="${s(card.bgColor, '')}" placeholder="${g.bgColor} (全局)"><button class="btn btn-default btn-small" data-reset-card-key="bgColor">重置</button></div></div>
-                                <div class="color-control-group"><label>文字颜色:</label><div class="input-group"><input type="color" data-card-key="textColor" value="${s(card.textColor, '')}"><input class="color-hex-input" type="text" data-card-key="textColor" value="${s(card.textColor, '')}" placeholder="${g.textColor} (全局)"><button class="btn btn-default btn-small" data-reset-card-key="textColor">重置</button></div></div>
+                                <div class="color-control-group"><label>背景色:</label><div class="input-group"><input type="color" data-card-key="bgColor" value="${card.bgColor || ''}"><input class="color-hex-input" type="text" data-card-key="bgColor" value="${card.bgColor || ''}" placeholder="${g.bgColor} (全局)"><button class="btn btn-default btn-small" data-reset-card-key="bgColor">重置</button></div></div>
+                                <div class="color-control-group"><label>文字颜色:</label><div class="input-group"><input type="color" data-card-key="textColor" value="${card.textColor || ''}"><input class="color-hex-input" type="text" data-card-key="textColor" value="${card.textColor || ''}" placeholder="${g.textColor} (全局)"><button class="btn btn-default btn-small" data-reset-card-key="textColor">重置</button></div></div>
                             </div>
                             <hr class="separator">
                             <div class="form-group"><label>背景图:</label><div class="input-group simple"><input type="file" class="card-bg-upload" accept="image/*"><button class="btn btn-default btn-small card-clear-bg-btn">清除</button></div></div>
-                            <div class="card-overlay-controls" style="${card.bgImageDataUrl?'':'display:none;'}"><label>图片蒙版:</label><div class="color-control-row"><div class="color-control-group"><label>颜色:</label><div class="input-group"><input type="color" data-card-key="overlayColor" value="${s(card.overlayColor, '#ffffff')}"><input class="color-hex-input" type="text" data-card-key="overlayColor" value="${s(card.overlayColor, '#ffffff')}"></div></div><div class="color-control-group"><label>不透明度:</label><input type="range" data-card-key="overlayOpacity" min="0" max="1" step="0.05" value="${s(card.overlayOpacity,0.5)}"></div></div></div>
+                            <div class="card-overlay-controls" style="${card.bgImageDataUrl ? '' : 'display:none;'}"><label>图片蒙版:</label><div class="color-control-row"><div class="color-control-group"><label>颜色:</label><div class="input-group"><input type="color" data-card-key="overlayColor" value="${card.overlayColor || '#ffffff'}"><input class="color-hex-input" type="text" data-card-key="overlayColor" value="${card.overlayColor || '#ffffff'}"></div></div><div class="color-control-group"><label>不透明度:</label><input type="range" data-card-key="overlayOpacity" min="0" max="1" step="0.05" value="${card.overlayOpacity ?? 0.5}"></div></div></div>
                         </div>`;
                 },
 
@@ -2160,6 +2165,12 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                                 // Re-render layer panel if a card property (like title) changes
                                 this.renderLayerPanel();
                                 this.renderPreviewBlockById(blockId);
+                                // FIX: Re-render inspector if the currently selected block was affected, to sync UI controls like radio buttons.
+                                if (this.selection.type === 'block' && this.selection.id === blockId) {
+                                    const currentScroll = this.elements.inspectorPanel.scrollTop;
+                                    this.renderInspector();
+                                    this.elements.inspectorPanel.scrollTop = currentScroll;
+                                }
                             }
                             else {
                                 this.renderPreviewBlockById(blockId);
@@ -2979,23 +2990,47 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                     pageWrapper.style.backgroundPosition = pageBgPositions.join(', ');
                     
                     clone.querySelectorAll('.preview-card-inner').forEach(cardInner => {
-                        const computed = getComputedStyle(cardInner);
-                        const beforeComputed = getComputedStyle(cardInner, '::before');
-                        const afterComputed = getComputedStyle(cardInner, '::after');
-                        
-                        let backgroundStyle = beforeComputed.getPropertyValue('background');
-                        const overlayOpacity = parseFloat(afterComputed.getPropertyValue('opacity'));
-                        const bgImage = beforeComputed.getPropertyValue('background-image');
+                        const cardWrapper = cardInner.closest('.preview-card');
+                        if (cardWrapper) {
+                            const cardId = cardWrapper.dataset.cardId;
+                            // Find the block and card data associated with this element
+                            const block = this.state.blocks.find(b => b.cards && b.cards.some(c => c.id === cardId));
+                            const cardData = block ? block.cards.find(c => c.id === cardId) : null;
 
-                        if (overlayOpacity > 0 && bgImage !== 'none') {
-                            const overlayColor = afterComputed.getPropertyValue('background-color');
-                             if(overlayColor !== 'rgba(0, 0, 0, 0)') {
-                                const overlayGradient = `linear-gradient(${overlayColor}, ${overlayColor})`;
-                                backgroundStyle = `${overlayGradient}, ${backgroundStyle}`;
+                            // **FIX**: If the card has its own background image, bake it specifically
+                            if (cardData && cardData.bgImageDataUrl) {
+                                let cardBgLayers = [];
+                                const overlayOpacity = cardData.overlayOpacity ?? 0.5;
+                                if (overlayOpacity > 0) {
+                                    const finalOverlayColor = this.hexToRgba(cardData.overlayColor || '#FFFFFF', overlayOpacity);
+                                    cardBgLayers.push(`linear-gradient(${finalOverlayColor}, ${finalOverlayColor})`);
+                                }
+                                cardBgLayers.push(`url(${cardData.bgImageDataUrl})`);
+                                cardInner.style.backgroundImage = cardBgLayers.join(', ');
+                                cardInner.style.backgroundSize = 'cover';
+                                cardInner.style.backgroundPosition = 'center';
+                                cardInner.style.backgroundColor = 'transparent'; // Prevent base color from showing
+                            } else {
+                                // Original logic for cards using global or solid color styles
+                                const computed = getComputedStyle(cardInner);
+                                const beforeComputed = getComputedStyle(cardInner, '::before');
+                                const afterComputed = getComputedStyle(cardInner, '::after');
+                                
+                                let backgroundStyle = beforeComputed.getPropertyValue('background');
+                                const overlayOpacity = parseFloat(afterComputed.getPropertyValue('opacity'));
+                                const bgImage = beforeComputed.getPropertyValue('background-image');
+
+                                if (overlayOpacity > 0 && bgImage !== 'none') {
+                                    const overlayColor = afterComputed.getPropertyValue('background-color');
+                                     if(overlayColor !== 'rgba(0, 0, 0, 0)') {
+                                        const overlayGradient = `linear-gradient(${overlayColor}, ${overlayColor})`;
+                                        backgroundStyle = `${overlayGradient}, ${backgroundStyle}`;
+                                    }
+                                }
+                                cardInner.style.background = backgroundStyle;
+                                cardInner.style.border = computed.border;
                             }
                         }
-                        cardInner.style.background = backgroundStyle;
-                        cardInner.style.border = computed.border;
                     });
                     
                     style.innerHTML += `#${clone.id} .preview-card-inner::before, #${clone.id} .preview-card-inner::after { content: none !important; background: none !important; display: none !important; }`;
@@ -3302,7 +3337,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                 
                 initSortablePreviewBlocks() {
                     if (this.sortablePreview) this.sortablePreview.destroy();
-                    this.sortablePreview = new Sortable(this.elements.previewBlocksContainer, {
+					this.sortablePreview = new Sortable(this.elements.previewBlocksContainer, {
                         animation: 150,
                         ghostClass: 'sortable-ghost',
                         onEnd: e => {
@@ -3894,4 +3929,4 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         });
     </script>
 </body>
-</html>
+	</html>
