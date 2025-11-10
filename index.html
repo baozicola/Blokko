@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Blokko v1.5.1 (Internal): -->
-    <title>Blokko-个人简介生成器！ (v1.5.1)-来玩2077吧！</title>
+    <!-- Blokko v1.5.2 (Internal): -->
+    <title>Blokko-个人简介生成器！ (v1.5.2)-来玩2077吧！</title>
     
     <script>
         // Anti-FOUC (Flash of Unstyled Content) Script
@@ -35,15 +35,15 @@
             --text-primary: #1a1a1a; --text-secondary: #555555; --text-label: #333333;
             --text-placeholder: #999; --text-on-primary: #ffffff; --text-action: #007AFF;
             --border-color: #e8e8e8; --border-input: #d1d5db; --border-dashed: #cccccc;
-            --shadow-light: rgba(0, 0, 0, 0.05); --shadow-medium: rgba(0, 0, 0, 0.08);
-            --preset-text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+            --shadow-light: rgba(0, 0, 0, 0); --shadow-medium: rgba(0, 0, 0, 0);
+            --preset-text-shadow: none;
             --color-primary: #007AFF; --color-primary-hover: #0056CC; --color-danger: #ff4757;
             --color-danger-hover: #e03c48; --color-secondary: #8e8e93; --color-secondary-hover: #636366;
             --header-height: 55px; --transition-speed: 0.3s; --transition-short: 0.2s;
             --layer-panel-width: 280px; --inspector-panel-width: 380px;
             /* Global Card Styles */
             --g-card-bg-color: var(--bg-card); --g-card-text-color: var(--text-primary); --g-card-opacity: 1;
-            --g-card-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            --g-card-shadow: none;
             --g-card-border-radius: 12px; --g-card-text-align: left;
             --g-card-line-height: 1.5; --g-card-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             --g-card-font-size: 1rem;
@@ -62,10 +62,10 @@
             --text-primary: #f0f2f5; --text-secondary: #a0aec0; --text-label: #e2e8f0;
             --text-placeholder: #777; --text-on-primary: #ffffff; --text-action: #3498db;
             --border-color: #3e4451; --border-input: #4a5160; --border-dashed: #555;
-            --shadow-light: rgba(0, 0, 0, 0.2); --shadow-medium: rgba(0, 0, 0, 0.3);
-            --preset-text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+            --shadow-light: rgba(0, 0, 0, 0); --shadow-medium: rgba(0, 0, 0, 0);
+            --preset-text-shadow: none;
             --g-card-bg-color: var(--bg-card); --g-card-text-color: var(--text-primary);
-            --g-card-shadow: 0 4px 12px rgba(0,0,0,0.25);
+            --g-card-shadow: none;
         }
         * { box-sizing: border-box; }
         html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; }
@@ -77,7 +77,6 @@
         .theme-switch-wrapper span { font-size: 0.9rem; color: var(--text-secondary); }
         .app-container { display: flex; height: 100vh; padding-top: var(--header-height); }
 
-        /* v1.5.0: New Three-Pane Layout */
         .layer-panel, .inspector-panel {
             background: var(--bg-editor);
             height: calc(100vh - var(--header-height));
@@ -138,16 +137,16 @@
         }
         .back-to-global-btn:hover { text-decoration: underline; }
 
+        .layer-item-container { margin-bottom: 5px; }
         .layer-list .layer-item {
             display: flex;
             align-items: center;
-            gap: 8px;
-            padding: 10px;
+            gap: 4px;
+            padding: 8px 10px;
             border-radius: 6px;
             cursor: pointer;
             border: 1px solid transparent;
             transition: background-color var(--transition-short), border-color var(--transition-short);
-            margin-bottom: 5px;
         }
         .layer-list .layer-item:hover { background-color: var(--bg-input); }
         .layer-list .layer-item.selected {
@@ -155,16 +154,46 @@
             border-color: var(--color-primary);
             font-weight: 600;
         }
+        .layer-toggle {
+            background: none; border: none; cursor: pointer; color: var(--text-secondary);
+            width: 20px; height: 20px; padding: 0; font-size: 1.2rem;
+            flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+            transition: transform var(--transition-short);
+        }
+        .layer-item-container:not(.is-expandable) .layer-toggle { visibility: hidden; }
+        .layer-item-container.is-expanded .layer-toggle { transform: rotate(90deg); }
         .layer-list .layer-item .layer-icon {
             font-size: 1.1em;
             color: var(--text-secondary);
         }
-        。layer-list .layer-item .layer-name {
+        .layer-list .layer-item .layer-name {
             flex-grow: 1;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            padding-left: 4px;
         }
+        .layer-actions { display: flex; align-items: center; gap: 4px; }
+        .layer-actions .btn-icon {
+            width: 26px; height: 26px; padding: 0; font-size: 1.1rem;
+            background: none; border: none; color: var(--text-secondary);
+        }
+        .layer-actions .btn-icon:hover { background: var(--border-color); }
+        .layer-item.is-hidden .layer-name, .layer-item.is-hidden .layer-icon { opacity: 0.5; }
+        .layer-item.is-hidden .layer-name { text-decoration: line-through; }
+        
+        .card-layer-list {
+            list-style: none; padding-left: 30px; margin: 5px 0; display: none;
+        }
+        .layer-item-container.is-expanded .card-layer-list { display: block; }
+        .card-layer-item {
+            font-size: 0.9rem; padding: 6px 8px; border-radius: 4px;
+            color: var(--text-secondary); white-space: nowrap; overflow: hidden;
+            text-overflow: ellipsis; cursor: pointer; /* Changed to pointer */
+        }
+        .card-layer-item:hover, .card-layer-item.selected { background-color: var(--bg-input); }
+        .card-layer-item.sortable-ghost { background-color: var(--bg-image-upload-hover); }
+
         .layer-list hr { border: none; border-top: 1px solid var(--border-color); margin: 15px 0; }
         
         .inspector-state { display: none; }
@@ -174,13 +203,13 @@
 
         .preview-block-wrapper.selected, .preview-header.selected {
             outline: 2px solid var(--color-primary);
-            box-shadow: 0 0 12px rgba(0, 122, 255, 0.5);
         }
+        .preview-block-wrapper.is-hidden { display: none; }
         
         body.export-mode .preview-panel { justify-content: flex-start; }
         .preview-wrapper { width: 100%; max-width: 600px; min-height: fit-content; border-radius: 20px; box-shadow: 0 4px 16px var(--shadow-medium); padding: 20px; padding-bottom: 40px; transition: all var(--transition-speed) ease; position: relative; overflow: hidden; font-family: var(--active-card-font-family); font-size: var(--active-card-font-size); }
-        .preview-wrapper::before { content: none; } /* FIX: Layering - remove pseudo element for background image */
-        .preview-overlay { display: none; } /* FIX: Layering - overlay is now baked into the background-image property */
+        .preview-wrapper::before { content: none; }
+        .preview-overlay { display: none; }
         .preview-header, .preview-blocks-container { position: relative; z-index: 2; word-wrap: break-word; overflow-wrap: break-word; width: 100%; box-sizing: border-box; }
         [data-state-key]:hover, [data-card-key]:hover, [data-separator-text-key]:hover, .tag-pill:hover { outline: 1px dashed var(--color-primary); cursor: text; }
         [contenteditable="true"] { outline: 2px solid var(--color-primary); box-shadow: 0 0 8px rgba(0, 122, 255, 0.5); background-color: rgba(0, 122, 255, 0.1); border-radius: 4px; }
@@ -198,6 +227,13 @@
         .editor-section.collapsed legend::after { content: " ▶"; }
         .editor-section.collapsed .section-content { display: none; }
         .section-content { padding-top: 15px; }
+
+        .advanced-toggle-label { font-size: 0.85rem; font-weight: normal; color: var(--text-action); }
+        .advanced-setting { display: none; }
+        .show-advanced .advanced-setting { display: block; animation: fadeIn 0.3s; }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .section-header h4 { margin: 0; }
+
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; font-size: 0.9rem; font-weight: 600; color: var(--text-label); margin-bottom: 8px; }
         .form-group input[type="text"], .form-group input[type="number"], .form-group input[type="file"], .form-group select, .form-group textarea { width: 100%; padding: 10px; font-size: 14px; background: var(--bg-input); border: 1px solid var(--border-input); border-radius: 6px; color: var(--text-primary); transition: all var(--transition-short) ease; max-width: 100%; overflow-wrap: break-word; }
@@ -247,10 +283,11 @@
         .block-settings { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding-left: 10px; flex-shrink: 0; }
         .block-settings label { font-size: 0.9rem; margin: 0; color: var(--text-secondary); cursor: pointer; }
         .block-delete-btn { width: auto; padding: 6px 10px; font-size: 0.9rem; flex-shrink: 0; }
-        .editor-block-content { padding: 15px; overflow-x: hidden; /* Fix for mobile card overflow */ }
+        .editor-block-content { padding: 15px; overflow-x: hidden; }
         .card-editors-list .empty-placeholder, .image-card-editors-list .empty-placeholder { text-align: center; padding: 15px; color: var(--text-placeholder); font-size: 0.9rem; }
         .editor-card { background: var(--bg-section); border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 15px; position: relative; padding-left: 40px; opacity: 1; transform: scale(1); }
         .editor-card.sortable-chosen { box-shadow: 0 3px 8px var(--shadow-medium); transform: scale(1.01); }
+        .editor-card.is-active { border-color: var(--color-primary); background-color: var(--bg-image-upload-hover); }
         .card-drag-handle { position: absolute; top: 0; left: 0; bottom: 0; width: 40px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; color: var(--text-placeholder); cursor: grab; border-right: 1px solid var(--border-color); }
         .card-drag-handle:active { cursor: grabbing; }
         .editor-card-header { display: flex; justify-content: flex-end; padding: 8px 10px; border-bottom: 1px solid var(--border-color); }
@@ -265,7 +302,7 @@
         .image-card-editor-fields { flex-grow: 1; }
         .thumbnail-wrapper { position: relative; width: 100%; padding-top: 100%; background: var(--bg-image-thumb); border-radius: 6px; overflow: hidden; transition: all var(--transition-short) ease; }
         .thumbnail-wrapper img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; transition: transform var(--transition-short) ease; }
-        .thumbnail-wrapper:hover { transform: scale(1.05); box-shadow: 0 4px 12px var(--shadow-medium); }
+        .thumbnail-wrapper:hover { transform: scale(1.05); }
         .thumbnail-wrapper:hover img { transform: scale(1.05); }
         .thumbnail-actions { position: absolute; top: 3px; right: 3px; display: flex; gap: 4px; opacity: 0; transition: opacity var(--transition-short) ease; }
         .thumbnail-wrapper:hover .thumbnail-actions { opacity: 1; }
@@ -284,7 +321,7 @@
         .masonry-active.preview-cards-dual .preview-card, .masonry-active.preview-cards-dual figure { width: calc(50% - 7.5px); margin-bottom: 15px; }
         .masonry-active.preview-cards-triple .preview-card, .masonry-active.preview-cards-triple figure { width: calc(33.333% - 10px); margin-bottom: 15px; }
         .preview-card { box-sizing: border-box; width: 100%; view-transition-name: var(--card-transition-name); }
-        .preview-card-inner { width: 100%; height: 100%; box-sizing: border-box; position: relative; overflow: hidden; color: var(--card-text-color, var(--g-card-text-color)); border-radius: var(--g-card-border-radius); box-shadow: var(--active-card-shadow, none); border: var(--active-card-border, none); font-weight: var(--card-font-weight, normal); text-shadow: var(--active-card-text-shadow, none); padding: 15px; word-wrap: break-word; transition: all var(--transition-short) ease, transform var(--transition-short) ease; -webkit-text-stroke: var(--g-card-text-stroke); line-height: var(--g-card-line-height); background-clip: padding-box; }
+        .preview-card-inner { width: 100%; height: 100%; box-sizing: border-box; position: relative; overflow: hidden; color: var(--card-text-color, var(--g-card-text-color)); border-radius: var(--g-card-border-radius); box-shadow: var(--active-card-shadow, none); border: var(--active-card-border, none); font-weight: var(--card-font-weight, normal); text-shadow: var(--active-card-text-shadow, none); padding: 15px; word-wrap: break-word; transition: all var(--transition-short) ease; -webkit-text-stroke: var(--g-card-text-stroke); line-height: var(--g-card-line-height); background-clip: padding-box; }
         .preview-card-inner::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 0; background-size: cover; background-position: center; border-radius: inherit; background: var(--card-bg-final); transition: background var(--transition-speed) ease; }
         .preview-card-inner::after { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--card-overlay-color, transparent); opacity: var(--card-overlay-opacity, 0); border-radius: inherit; z-index: 1; pointer-events: none; transition: all var(--transition-short) ease; }
         .preview-card:hover .preview-card-inner { transform: scale(1.02); box-shadow: 0 6px 16px var(--shadow-medium); }
@@ -344,13 +381,12 @@
         .texture-preview { width: 100%; height: 80px; border: 1px solid var(--border-color); border-radius: 4px; background-size: 20px; }
         .texture-name { font-size: 0.75rem; margin-top: 5px; color: var(--text-secondary); text-align: center; }
         #tag-manager-list { display: flex; flex-direction: column; gap: 10px; max-height: 250px; overflow-y: auto; padding: 10px; border: 1px solid var(--border-input); border-radius: 6px; background-color: var(--bg-input); margin-bottom: 15px; }
-        .tag-manager-item { display: flex; align-items: center; gap: 8px; background-color: var(--bg-section); padding: 8px; border-radius: 4px; border: 1px solid var(--border-color); }
-        .tag-manager-item .tag-icon-btn { flex-shrink: 0; width: 32px; height: 32px; padding: 0; font-size: 1.2rem; }
-        .tag-manager-item .tag-text-input { flex-grow: 1; border: none; background: transparent; padding: 4px 6px; }
-        .tag-manager-item .tag-delete-btn { flex-shrink: 0; width: 32px; height: 32px; padding: 0; }
+        .tag-manager-item { display: flex; align-items: center; gap: 8px; background-color: var(--bg-section); padding: 8px; border-radius: 4px; border: 1px solid var(--border-color); cursor: grab; }
+        .tag-manager-item .tag-icon-btn { flex-shrink: 0; width: 32px; height: 32px; padding: 0; font-size: 1.2rem; cursor: pointer; }
+        .tag-manager-item .tag-text-input { flex-grow: 1; border: none; background: transparent; padding: 4px 6px; cursor: text; }
+        .tag-manager-item .tag-delete-btn { flex-shrink: 0; width: 32px; height: 32px; padding: 0; cursor: pointer; }
         .empty-tag-list { text-align: center; color: var(--text-placeholder); padding: 20px 0; }
         .inset-controls { border: 1px solid var(--border-input); border-radius: 6px; padding: 15px; margin-top: 10px; background: var(--bg-input); }
-        /* Styles for Help Modal */
         #help-modal .tab-content { max-height: 60vh; overflow-y: auto; padding: 15px; }
         #help-thanks .thanks-item { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid var(--border-color); }
         #help-thanks .thanks-item:last-child { border-bottom: none; }
@@ -360,7 +396,6 @@
         #help-thanks summary { cursor: pointer; font-weight: 600; color: var(--text-action); }
         #help-thanks pre { white-space: pre-wrap; word-wrap: break-word; background: var(--bg-input); padding: 10px; border-radius: 6px; font-size: 0.8rem; max-height: 200px; overflow-y: auto; border: 1px solid var(--border-color); }
         
-        /* v1.5.1: Color Thief & Context Menu styles */
         .palette-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(40px, 1fr)); gap: 10px; margin-top: 10px; }
         .palette-color { width: 100%; padding-top: 100%; border-radius: 8px; cursor: pointer; border: 2px solid var(--border-color); transition: transform var(--transition-short); position: relative; }
         .palette-color:hover { transform: scale(1.1); }
@@ -391,7 +426,6 @@
                 width: 85%; max-width: 350px;
                 height: calc(100vh - var(--header-height)); z-index: 200;
                 transition: transform 0.3s ease-in-out;
-                box-shadow: 4px 0 15px rgba(0,0,0,0.1);
                 overflow-x: hidden;
             }
             .layer-panel { left: 0; transform: translateX(-100%); border-right: 1px solid var(--border-color); }
@@ -404,9 +438,6 @@
                 height: calc(100vh - var(--header-height)); background: rgba(0,0,0,0.4); z-index: 199;
                 opacity: 1; pointer-events: auto; transition: opacity 0.3s ease-in-out;
             }
-            /* v1.5.1 Bug Fix: Allow triple layout on mobile */
-            /* .preview-cards-triple { grid-template-columns: 1fr; } */
-            /* .masonry-active.preview-cards-triple .preview-card, .masonry-active.preview-cards-triple figure { width: 100%; } */
             .color-control-row, .gradient-controls { flex-direction: column; gap: 10px; }
             .gradient-controls { grid-template-columns: 1fr; }
             .color-control-group { width: 100%; min-width: 0; }
@@ -417,7 +448,7 @@
 
     <header class="app-header">
         <button id="mobile-layer-toggle" class="btn btn-default btn-icon" style="width: auto; padding: 6px 12px;"><span class="iconify" data-icon="mdi:layers-outline"></span> 内容</button>
-        <div class="app-header-title">Blokko (v1.5.1)</div>
+        <div class="app-header-title">Blokko (v1.5.2)</div>
         <div class="header-actions-wrapper">
             <button id="lock-mode-toggle" class="btn btn-default" style="width: auto; padding: 6px 12px;" title="切换编辑/预览模式">编辑中</button>
             <button id="show-help-btn" class="btn btn-default btn-icon" style="width: auto; padding: 6px 12px;"><span class="iconify" data-icon="mdi:help-circle-outline"></span> 帮助</button>
@@ -468,7 +499,6 @@
     <div class="modal-overlay" id="cropper-modal"><div class="modal-container"><h3 id="cropper-title">裁剪图片</h3><div class="crop-ratios radio-group"><label><input type="radio" name="crop-ratio" value="NaN" checked> 自由</label><label><input type="radio" name="crop-ratio" value="1"> 1:1</label><label><input type="radio" name="crop-ratio" value="1.3333"> 4:3</label><label><input type="radio" name="crop-ratio" value="1.7777"> 16:9</label></div><div class="cropper-img-container"><img id="cropper-image" src=""></div><div class="modal-actions"><button id="cropper-cancel-btn" class="btn btn-default">取消</button><button id="cropper-save-btn" class="btn btn-primary">确认</button></div></div></div>
     <div class="modal-overlay" id="download-modal"><div class="modal-container"><h3 id="download-modal-title">下载已准备好</h3><div id="download-modal-content"></div><div class="modal-actions" style="justify-content: center;"><button id="download-modal-close-btn" class="btn btn-default">关闭</button></div></div></div>
     
-    <!-- v1.5.1: New Confirm Modal -->
     <div class="modal-overlay" id="confirm-modal">
         <div class="modal-container">
             <h3 id="confirm-modal-title">请确认</h3>
@@ -533,66 +563,94 @@
                 </ul>
 		   </div>
             <div id="help-changelog" class="tab-content">
+                <h4>v1.5.2</h4>
+                <ul>
+                    <li><b>【新增】</b> <b>树状图层 & 嵌套排序</b>: 左侧“内容图层”面板现在支持折叠。点击区块旁的箭头可展开/收起其内部的卡片列表，并支持在区块内拖动卡片进行排序。</li>
+                    <li><b>【新增】</b> <b>区块显/隐切换</b>: 在左侧图层面板中，为每个区块增加了“眼睛”图标，可一键在预览中显示或隐藏整个区块。</li>
+                    <li><b>【新增】</b> <b>样式复制 (区块)</b>: 在左侧图层面板中，为每个区块增加了“复制”图标，可快速创建一个样式相同但内容为空的新区块。</li>
+                    <li><b>【新增】</b> <b>标签拖拽排序</b>: 在个人信息设置的“标签管理器”中，现在可以通过拖拽来调整标签的显示顺序。</li>
+                    <li><b>【优化】</b> <b>“基础/高级”样式分离</b>: 为了简化界面，右侧检查器中的复杂设置项（如描边、纹理、独立不透明度等）被默认隐藏，可通过“显示高级选项”开关来显示。</li>
+                    <li><b>【优化】</b> <b>卡片颜色重置</b>: 为卡片独立的颜色设置项增加了“重置”按钮，可一键清除独立设置，使其回退至全局样式。</li>
+                    <li><b>【调整】</b> <b>移除所有阴影</b>: 根据设计反馈，完全移除了应用内所有的 `box-shadow` 阴影效果，使风格更统一。同时保留了旧配置文件的兼容性。</li>
+                    <li><b>【修复】</b> 修复了删除区块后，其在左侧图层面板中仍会残留显示的BUG。</li>
+                    <li><b>【修复】</b> 修复了在检查器中手动输入HEX颜色代码无法生效的问题。</li>
+                    <li><b>【修复】</b> 修复了使用智能取色或重置颜色后，检查器中对应的颜色选择器和HEX代码不会同步更新的问题。</li>
+                    <li><b>【修复】</b> 修复了当卡片文字设为“居右”对齐时，卡片标题未同步居右的问题。</li>
+                </ul>
+                <hr class="separator">
                 <h4>v1.5.1</h4>
                 <ul>
-                    <li><b>【新增】</b> <b>🎨 智能取色 & 调色板</b>:
-                        <ul>
-                            <li>新增独立的“智能取色”面板，可上传任意图片，工具将自动分析并提取 8 种和谐的推荐色。</li>
-                            <li>实现快捷应用功能：在PC端右键或移动端长按调色板中的颜色，可快速将其应用到页面背景、文字等多个位置。</li>
-                        </ul>
-                    </li>
-                    <li><b>【新增】</b> <b>增强版分隔符</b>:
-                        <ul>
-                            <li>分隔符现在支持嵌入文字和图标，并可自定义文字颜色。</li>
-                            <li>新增“点状”线条样式。</li>
-                            <li>预览区的分隔符文字支持双击直接编辑。</li>
-                        </ul>
-                    </li>
-                    <li><b>【功能与体验优化】</b>
-                        <ul>
-                            <li><b>图层双击重命名</b>: 现在可以直接在左侧“内容图层”面板双击区块名称进行重命名。</li>
-                            <li><b>字体实时预览</b>: “全局卡片样式”中的字体选择下拉框，现在会以对应的字体样式显示选项。</li>
-                            <li><b>全新确认弹窗</b>: 使用体验更佳的自定义模态框替代了浏览器的原生`confirm`弹窗。</li>
-                            <li><b>初始加载优化</b>: 通过延迟初始化非核心模块（如图标选择器）和优化资源加载策略，提升了应用的初始打开速度。</li>
-                        </ul>
-                    </li>
-                    <li><b>【问题修复】</b>
-                        <ul>
-                            <li>修复了在检查器（右侧面板）中，部分可折叠区域（如“页面与头部样式”）无法正常展开/收起的问题。</li>
-                            <li>修复了在移动端视图下，设置为“三排”的区块无法正确显示为三列布局的BUG。</li>
-                            <li>修复了在“编辑/预览”模式之间切换后，会导致区块和卡片无法拖拽排序的BUG。</li>
-                            <li>修复了颜色选择器更新颜色后，其右侧的 HEX 颜色代码输入框内容不同步的BUG。</li>
-                        </ul>
-                    </li>
+                    <li><b>【新增】</b> <b>智能取色 & 调色板</b>: 新增独立的“智能取色”面板，可上传图片自动提取8种推荐色，并通过右键快捷应用。</li>
+                    <li><b>【新增】</b> <b>增强版分隔符</b>: 分隔符现已支持嵌入文字和图标，并可自定义文字颜色。</li>
+                    <li><b>【优化】</b> <b>图层双击重命名</b>: 现在可以直接在左侧“内容图层”面板双击区块名称进行重命名。</li>
+                    <li><b>【优化】</b> <b>字体实时预览</b>: 字体选择下拉框现在会以对应的字体样式显示选项。</li>
+                    <li><b>【优化】</b> <b>交互体验</b>: 使用体验更佳的自定义模态框替代了浏览器的原生确认弹窗；提升了应用的初始加载速度。</li>
+                    <li><b>【修复】</b> 修复了右侧检查器中部分区域无法正常展开/收起的问题。</li>
+                    <li><b>【修复】</b> 修复了移动端视图下，“三排”区块无法正确显示为三列的BUG。</li>
+                    <li><b>【修复】</b> 修复了切换“编辑/预览”模式后，可能导致无法拖拽排序的BUG。</li>
+                    <li><b>【修复】</b> 修复了颜色选择器与HEX输入框内容在某些情况下不同步的BUG。</li>
+                </ul>
+                <hr class="separator">
+                <h4>v1.5.0</h4>
+                <ul>
+                    <li><b>【新增】</b> <b>全新三栏式布局</b>: 重构为“内容图层(左) - 实时预览(中) - 样式检查器(右)”的三栏布局，操作流程更清晰。</li>
+                    <li><b>【新增】</b> <b>上下文关联编辑</b>: 点击预览区或左侧图层中的任意元素，右侧检查器将自动显示其相关设置。</li>
+                    <li><b>【优化】</b> <b>视觉联动高亮</b>: 编辑元素时，在预览区和图层列表中会同步高亮显示。</li>
+                    <li><b>【优化】</b> 更新了新手教程和帮助文档中的文本内容。</li>
+                    <li><b>【修复】</b> 修复了全局卡片不透明度为0时，边框样式会消失的BUG。</li>
+                    <li><b>【修复】</b> 修复了为多列区块启用瀑布流布局后，导出图片时可能发生的布局错乱问题。</li>
                 </ul>
                 <details>
-                    <summary>查看过往版本更新日志</summary>
-                    <hr class="separator">
-                    <h4>v1.5.0</h4>
-                    <ul>
-                        <li><b>【重做】</b> <b>全新三栏式专业布局</b>: 为了从根本上解决编辑区拥挤的问题，v1.5.0 引入了全新的专业级三栏式界面布局，操作流程更清晰、更高效。
-                            <ul>
-                                <li><b>左侧 - 内容图层</b>: 清晰地展示所有内容区块的层级结构，专注于内容的增删、排序和重命名。</li>
-                                <li><b>中间 - 实时预览</b>: 保持所见即所得的画布体验，现在点击其中元素可以直接激活右侧的样式设置。</li>
-                                <li><b>右侧 - 样式检查器</b>: 一个强大的上下文关联面板。默认显示全局样式；当您选中任何元素时，它会自动切换，只显示该元素的专属设置选项。</li>
-                            </ul>
-                        </li>
-                        <li><b>【功能与体验优化】</b>
-                            <ul>
-                                <li><b>上下文关联编辑</b>: 现在，您可以通过点击预览区或左侧图层列表中的任意元素，来让右侧的“样式检查器”自动显示其相关设置。</li>
-                                <li><b>视觉联动高亮</b>: 当您选中一个元素进行编辑时，在预览区和图层列表中，该元素都会出现高亮边框提示，让您始终清楚当前正在编辑的对象。</li>
-                                <li><b>新手教程与帮助</b>: “新手教程”中的版权重要提示已被移至顶部；教程页的关闭按钮文案已改为 “我已了解，开始使用”。</li>
-                                <li><b>隐私与安全声明</b>: 在“帮助”的“使用说明”中，新增了 “🔒 隐私与数据安全” 章节。</li>
-                            </ul>
-                        </li>
-                        <li><b>【问题修复】</b>
-                            <ul>
-                                <li>修复了在“全局卡片样式”中将不透明度滑块拉到 0 时，会导致卡片边框样式也一并消失的 Bug。</li>
-                                <li>修复了在为多列区块启用瀑布流（Masonry）布局后，导出图片时可能发生的元素重叠或布局错乱问题。</li>
-                                <li>优化了暗黑模式下的样式变量，确保主题切换不影响用户设置的阴影开关状态，仅改变阴影的视觉外观以适应深色背景。</li>
-                            </ul>
-                        </li>
-                    </ul>
+                    <summary>查看更早的版本更新日志</summary>
+                    <div style="padding-top: 15px;">
+                        <h4>v1.4.0（25.11.08）</h4>
+                        <ul>
+                            <li><b>【新增】</b> <b>新手教程</b>: 首次访问的用户将自动弹出新手教程，帮助快速上手。后续可通过“帮助”按钮查看。</li>
+                            <li><b>【优化】</b> <b>编辑区布局</b>: 调整了左侧编辑区的模块顺序，将不常用的“操作”部分移至底部，更符合新用户的使用习惯。</li>
+                            <li><b>【优化】</b> <b>预览定位增强</b>: 在电脑端，点击预览区的任意卡片，左侧编辑区现在会精确滚动到该卡片的具体设置项，而不仅仅是其所属的区块。</li>
+                            <li><b>【优化】</b> <b>移动端UI</b>: 修复了在手机上编辑面板可能会出现水平滚动条的问题；减小了各编辑模块之间的垂直间距；修复了“页面样式”设置中Tab控件互相干扰的BUG。</li>
+                            <li><b>【修复】</b> <b>图片导出</b>: 修复了在特定情况下导出图片时可能因背景定位问题导致报错的BUG。</li>
+                        </ul>
+                        <hr>
+                        <h4>v1.3.2 (25.11.08)</h4>
+                        <ul>
+                            <li><b>【新增】</b> 为多列文本区块（双排/三排）增加了瀑布流（Masonry）布局选项。</li>
+                            <li><b>【新增/重构】</b> 图片区块已完全重构，现在与文本区块拥有统一的卡片式管理逻辑，并支持瀑布流。</li>
+                            <li><b>【优化】</b> 点击预览区区块时，左侧编辑面板会自动定位并展开。</li>
+                            <li><b>【优化】</b> 导入旧版配置文件时，会自动迁移旧的图片区块数据结构，保证兼容性。</li>
+                        </ul>
+                        <hr>
+                        <h4>v1.3.1 (2025.11.07)</h4>
+                        <ul>
+                            <li><b>【新增】</b> 内置了四款开源字体。</li>
+                            <li><b>【优化】</b> 优化了感谢信息，现在会显示许可证原文和官网链接。</li>
+                        </ul>
+                        <hr>
+                        <h4>v1.3.0 (2025.11.07)</h4>
+                        <ul>
+                           <li><b>【新增】</b> 自定义导出宽度和导出圆角功能回归。</li>
+                           <li><b>【新增】</b> 背景纹理功能，可与背景色、背景图叠加。</li>
+                           <li><b>【新增】</b> 新增“三排卡片”布局和“留白块”。</li>
+                           <li><b>【优化】</b> 图片区块的文字现在支持独立的颜色和字号设置。</li>
+                           <li><b>【调整】</b> 出于署名合规原则，图标库搜索源已调整。</li>
+                           <li><b>【修复】</b> 修复了双击编辑只能输入一个字符的BUG；修复了导出图片时背景图无法显示的BUG。</li>
+                        </ul>
+                        <hr>
+                        <h4>v1.2.0 - v1.2.3 (2025.11.06-07)</h4>
+                        <ul>
+                           <li><b>【新增】</b> 新增锁定按钮、自定义导出宽度、关于与致谢页面。</li>
+                           <li><b>【优化】</b> 优化触屏体验、重做标签系统、更换为 "Iconify" 图标库。</li>
+                           <li><b>【调整】</b> 更名为“Blokko”。</li>
+                           <li><b>【修复】</b> 修复了无法增删区块、手机导出异常、背景蒙版导出、圆角边框空隙等多个BUG。</li>
+                        </ul>
+                        <hr>
+                        <h4>v1.1.1 (2025.11.06)</h4>
+                        <ul>
+                           <li><b>【新增】</b> 新增渐变角度、小图标、导出模板、卡片边框功能。</li>
+                           <li><b>【优化】</b> 优化手机端体验，支持折叠编辑区。</li>
+                           <li><b>【修复】</b> 修复刷新丢失编辑记录的BUG。</li>
+                        </ul>
+                    </div>
                 </details>
             </div>
             <div id="help-thanks" class="tab-content">
@@ -726,7 +784,7 @@ not met.
 
 DISCLAIMER
 THE FONT SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO ANY WARRANTIES OF
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT
 OF COPYRIGHT, PATENT, TRADEMARK, OR OTHER RIGHT. IN NO EVENT SHALL THE
 COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
@@ -788,7 +846,6 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     <div id="loading-overlay"><div class="spinner"></div><span id="loading-text">正在处理...</span></div>
     <div class="toast-notification-container" id="toast-container"></div>
     
-    <!-- v1.5.1: New Context Menu for Color Picker -->
     <div id="color-context-menu">
         <ul>
             <li data-action="apply-page-bg-solid">应用到页面背景色</li>
@@ -839,7 +896,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         document.addEventListener('DOMContentLoaded', () => {
             const App = {
                 state: {},
-                selection: { type: 'global' },
+                selection: { type: 'global', cardId: null },
                 history: [],
                 historyIndex: -1,
                 isRestoringState: false,
@@ -849,6 +906,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                 currentIconTarget: null, 
                 sortableLayers: null,
                 sortablePreview: null,
+                sortableTags: null,
+                cardLayerSortables: {},
                 cardSortables: {},
                 imageCardSortables: {},
                 masonryInstances: {},
@@ -861,10 +920,10 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                 iconPickerInitialized: false,
                 colorThief: null,
                 longPressTimer: null,
-                lastPalette: [], // BUGFIX: Store last generated palette
+                lastPalette: [],
 
                 init() {
-                    console.log("Blokko 初始化 v1.5.1 ...");
+                    console.log("Blokko 初始化 v1.5.2 ...");
                     this.elements = this.queryElements();
                     this.presets = this.getPresets();
                     this.state = this.getDefaultState();
@@ -915,7 +974,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                             bio: "这是简介，双击可编辑", bioColor: lightTheme.pBioColor,
                             avatarDataUrl: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23cccccc'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E", 
                             avatarShape: '50%', avatarBorderSize: 4, avatarBorderColor: '#ffffff',
-                            headerShadowEnabled: true,
+                            headerShadowEnabled: false, // Compatibility
                             tags: [
                                 { id: this.generateId('t'), icon: 'mdi:palette', text: '设计师' },
                                 { id: this.generateId('t'), icon: 'mdi:github', text: '代码爱好者' }
@@ -935,23 +994,24 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                             headerBgGradientAngle: 135,
                         },
                         blocks: [
-                            { id: this.generateId('b'), type: 'text', title: "单排卡片区块", settings: { layout: 'single', masonryEnabled: false }, cards: [
-                                { id: this.generateId('c'), icon: '', title: "这是单排卡片", content: "双击这里进行编辑", opacity: 1.0, followGlobalOpacity: true }
+                            { id: this.generateId('b'), type: 'text', title: "单排卡片区块", isVisible: true, settings: { layout: 'single', masonryEnabled: false }, cards: [
+                                { id: this.generateId('c'), icon: '', title: "这是单排卡片", content: "双击这里进行编辑", opacity: 1.0, followGlobalOpacity: true, textShadowEnabled: false }
                             ]},
-                            { id: this.generateId('b'), type: 'text', title: "双排卡片区块", settings: { layout: 'dual', masonryEnabled: false }, cards: [
-                                { id: this.generateId('c'), icon: '', title: "这是双排卡片 1", content: "双击这里进行编辑", opacity: 1.0, followGlobalOpacity: true },
-                                { id: this.generateId('c'), icon: '', title: "这是双排卡片 2", content: "双击这里进行编辑", opacity: 1.0, followGlobalOpacity: true }
+                            { id: this.generateId('b'), type: 'text', title: "双排卡片区块", isVisible: true, settings: { layout: 'dual', masonryEnabled: false }, cards: [
+                                { id: this.generateId('c'), icon: '', title: "这是双排卡片 1", content: "双击这里进行编辑", opacity: 1.0, followGlobalOpacity: true, textShadowEnabled: false },
+                                { id: this.generateId('c'), icon: '', title: "这是双排卡片 2", content: "双击这里进行编辑", opacity: 1.0, followGlobalOpacity: true, textShadowEnabled: false }
                             ]},
-                            { id: this.generateId('b'), type: 'separator', title: "分割线", settings: { style: 'solid', color: '#dddddd', thickness: 1, margin: 20, text: '', icon: null, textColor: '#555555' }},
-                            { id: this.generateId('b'), type: 'image', title: "图片区块", settings: { layout: 'dual', masonryEnabled: false, textColor: '' }, cards: [] },
-                            { id: this.generateId('b'), type: 'spacer', title: "留白块", settings: { height: 20 }},
+                            { id: this.generateId('b'), type: 'separator', title: "分割线", isVisible: true, settings: { style: 'solid', color: '#dddddd', thickness: 1, margin: 20, text: '', icon: null, textColor: '#555555' }},
+                            { id: this.generateId('b'), type: 'image', title: "图片区块", isVisible: true, settings: { layout: 'dual', masonryEnabled: false, textColor: '' }, cards: [] },
+                            { id: this.generateId('b'), type: 'spacer', title: "留白块", isVisible: true, settings: { height: 20 }},
                         ],
                         globalCardStyles: { 
                             bgMode: 'solid', 
                             bgColor: lightTheme.gCardBgColor, textColor: lightTheme.gCardTextColor, opacity: 1.0,
                             bgGradientStart: lightTheme.gCardBgGradientStart, bgGradientEnd: lightTheme.gCardBgGradientEnd,
                             bgGradientAngle: 135,
-                            shadowEnabled: true, radius: 12, textAlign: "left", lineHeight: "1.5", 
+                            shadowEnabled: false, // Compatibility
+                            radius: 12, textAlign: "left", lineHeight: "1.5", 
                             fontFamily: "", fontSize: "1rem",
                             textStrokeWidth: 0, textStrokeColor: "#000000",
                             borderWidth: 0, borderStyle: 'none', borderColor: '#cccccc',
@@ -1110,12 +1170,45 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                     this.elements.uploadIconBtn.addEventListener('click', () => this.elements.iconUploadInput.click());
                     this.elements.iconUploadInput.addEventListener('change', e => this.handleIconUpload(e));
                     this.elements.lockModeToggle.addEventListener('click', () => this.toggleLockMode());
+                    
                     this.elements.layerList.addEventListener('click', e => {
-                        const layerItem = e.target.closest('.layer-item');
-                        if (!layerItem) return;
-                        const { type, id } = layerItem.dataset;
-                        this.setSelection({ type, id });
+                        const layerItemContainer = e.target.closest('.layer-item-container');
+                        if (!layerItemContainer) return;
+
+                        const layerItem = layerItemContainer.querySelector('.layer-item');
+                        const cardItem = e.target.closest('.card-layer-item');
+                        
+                        // Action buttons on main layer item
+                        const actionBtn = e.target.closest('.layer-actions button, .layer-toggle');
+                        if (actionBtn) {
+                            const blockId = layerItem.dataset.id;
+                            if (actionBtn.matches('.toggle-visibility-btn')) {
+                                this.toggleBlockVisibility(blockId);
+                            } else if (actionBtn.matches('.duplicate-block-btn')) {
+                                this.duplicateBlock(blockId);
+                            } else if (actionBtn.matches('.layer-toggle')) {
+                                layerItemContainer.classList.toggle('is-expanded');
+                            }
+                            return; // Prevent selection change on button click
+                        }
+
+                        // Click on a sub-card item
+                        if (cardItem) {
+                            const blockId = cardItem.closest('.layer-item-container').dataset.blockId;
+                            const cardId = cardItem.dataset.cardId;
+                            this.setSelection({ type: 'block', id: blockId, cardId: cardId });
+                            const cardEditorEl = this.elements.inspectorPanel.querySelector(`.editor-card[data-card-id="${cardId}"]`);
+                            if (cardEditorEl) {
+                                cardEditorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            }
+                        } 
+                        // Click on a main layer item
+                        else {
+                            const { type, id } = layerItem.dataset;
+                            this.setSelection({ type, id });
+                        }
                     });
+
                     this.elements.texturePickerCloseBtn.addEventListener('click', () => this.elements.texturePickerModal.classList.remove('visible'));
                     this.elements.removeTextureBtn.addEventListener('click', () => this.selectTexture(null));
                     this.elements.textureGrid.addEventListener('click', e => {
@@ -1148,13 +1241,15 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                             if (ev.key === 'Enter') {
                                 ev.preventDefault();
                                 layerNameEl.blur();
+                            } else if (ev.key === 'Escape') {
+                                layerNameEl.innerText = this.findBlock(layerItem.dataset.id).title;
+                                layerNameEl.blur();
                             }
                         };
                         layerNameEl.addEventListener('blur', handleEditEnd);
                         layerNameEl.addEventListener('keydown', handleKeydown);
                     });
                     
-                    // MODIFICATION: Bind color context menu listener
                     this.elements.colorContextMenu.addEventListener('click', e => {
                         const action = e.target.dataset.action;
                         const color = this.elements.colorContextMenu.dataset.color;
@@ -1171,7 +1266,6 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                 bindEditorEvents() {
                     const panel = this.elements.inspectorPanel;
 
-                    // Function: Handle all live input changes
                     panel.addEventListener('input', e => {
                         if (this.isRestoringState) return;
                         const target = e.target;
@@ -1180,65 +1274,68 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                             this.populateFontList(target.value);
                             return;
                         }
-                        
-                        const stateKey = target.dataset.stateKey;
-                        const blockEl = target.closest('.editor-block');
-                        const settingKey = target.dataset.settingKey;
-                        const cardKey = target.dataset.cardKey;
+
+                        const updateSource = target.closest('[data-state-key], [data-setting-key], [data-card-key], [data-color-sync-key]');
+                        if (!updateSource) return;
 
                         let value = target.type === 'checkbox' ? target.checked : (target.type === 'number' || target.type === 'range') ? parseFloat(target.value) : target.value;
-
-                        // Logic: Synchronize color picker and HEX input
-                        if (target.type === 'color') {
-                            const hexInput = target.nextElementSibling;
-                             if(hexInput && hexInput.matches('.color-hex-input')) {
-                                hexInput.value = value;
-                             }
-                        } else if (target.matches('.color-hex-input')) {
-                             if (/^#([0-9A-F]{3}){1,2}$/i.test(target.value)) {
-                                const colorInput = target.previousElementSibling;
-                                if (colorInput && colorInput.type === 'color') {
-                                    colorInput.value = value;
-                                }
-                             } else {
-                                // If hex is invalid, do not update the color picker
+                        
+                        // ========== BUG FIX #2 START ==========
+                        if (target.matches('.color-hex-input')) {
+                            // Only return if the value is not empty AND it's an invalid format
+                            if (target.value !== '' && !/^#([0-9A-F]{3,8})$/i.test(target.value)) {
                                 return;
-                             }
+                            }
+                            const colorInput = target.previousElementSibling;
+                            if (colorInput) {
+                                colorInput.value = value;
+                            }
+                        } 
+                        // ========== BUG FIX #2 END ==========
+                        else if (target.type === 'color') {
+                            const hexInput = target.nextElementSibling;
+                             if(hexInput && hexInput.matches('.color-hex-input')) hexInput.value = value;
                         }
+
+                        const colorInput = target.closest('.input-group')?.querySelector('input[type="color"]');
+                        const keySource = colorInput || target;
+
+                        const stateKey = keySource.dataset.stateKey;
+                        const blockEl = keySource.closest('.editor-block');
+                        const settingKey = keySource.dataset.settingKey;
+                        const cardKey = keySource.dataset.cardKey;
                         
                         if (stateKey) {
                             this.updateState(stateKey, value, false);
                         } else if (blockEl && settingKey) {
                              this.updateBlockSettings(blockEl.dataset.blockId, settingKey, value, false);
                         } else if (blockEl && cardKey) {
-                            const cardEl = target.closest('.editor-card');
-                            if (cardEl) {
-                                this.updateCard(blockEl.dataset.blockId, cardEl.dataset.cardId, cardKey, value, false);
-                            }
+                            const cardEl = keySource.closest('.editor-card');
+                            if (cardEl) this.updateCard(blockEl.dataset.blockId, cardEl.dataset.cardId, cardKey, value, false);
                         } else if (target.matches('.tag-manager-item .tag-text-input')) {
                             const tagItem = target.closest('.tag-manager-item');
                             if (tagItem) this.updateTag(tagItem.dataset.tagId, 'text', target.value, false);
                         }
 
-                        // MODIFICATION: Real-time updates for range slider value displays
                         if (target.type === 'range') {
-                            const valueDisplay = target.previousElementSibling?.querySelector('.angle-value, .spacer-height-value, #gCardRadiusValue');
-                            if (valueDisplay) {
-                                valueDisplay.textContent = value;
-                            }
+                            const valueDisplay = target.closest('.form-group').querySelector('.angle-value, .spacer-height-value, #gCardRadiusValue');
+                            if (valueDisplay) valueDisplay.textContent = value;
                         }
                     });
 
-                    // Function: Handle changes that should be saved or trigger re-renders
                     panel.addEventListener('change', e => {
                         if (this.isRestoringState) return;
                         const target = e.target;
                         
+                        if (target.matches('.advanced-toggle')) {
+                            target.closest('.editor-section, .editor-card-content').classList.toggle('show-advanced');
+                            return;
+                        }
+
                         if (target.dataset.stateKey || target.closest('.editor-block') || target.dataset.colorSyncKey || target.matches('.tag-manager-item .tag-text-input')) {
                             this.pushHistory();
                         }
 
-                        // Logic: Handle all file inputs
                         const fileInputs = {
                             '#avatar-upload': 'avatar',
                             '#page-bg-upload': 'pageBg',
@@ -1262,7 +1359,6 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                             }
                         }
                         
-                        // MODIFICATION: Handle UI changes for export settings
                         if (target.matches('#hd-export-toggle, #custom-width-toggle, #custom-width-input, #export-rounded-corners-toggle, #export-corner-radius-input')) {
                             const customWidthToggle = panel.querySelector('#custom-width-toggle');
                             const customWidthInput = panel.querySelector('#custom-width-input');
@@ -1287,31 +1383,24 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                             this.updateExportSizePreview();
                         }
 
-                        // MODIFICATION: Handle UI changes for block layout and card opacity settings
                         if (target.matches('[name^="block-layout"]')) {
                             const blockEl = target.closest('.editor-block');
                             if (blockEl) {
                                 const masonryToggle = blockEl.querySelector('.masonry-toggle-container');
-                                if (masonryToggle) {
-                                    masonryToggle.style.display = ['dual', 'triple'].includes(target.value) ? 'block' : 'none';
-                                }
+                                if (masonryToggle) masonryToggle.style.display = ['dual', 'triple'].includes(target.value) ? 'block' : 'none';
                             }
-                            this.renderInspector(); // Re-render for masonry changes to take effect
+                            this.renderInspector();
                         }
 
                         if (target.matches('[data-card-key="followGlobalOpacity"]')) {
-                            const opacitySliderGroup = target.closest('.editor-card-content').querySelector('.form-group:has([data-card-key="opacity"])');
-                            if (opacitySliderGroup) {
-                                opacitySliderGroup.style.display = target.checked ? 'none' : 'block';
-                            }
+                            const opacitySliderGroup = target.closest('.editor-card-content').querySelector('.advanced-setting.opacity-control');
+                            if (opacitySliderGroup) opacitySliderGroup.style.display = target.checked ? 'none' : 'block';
                         }
                     });
                     
-                    // Function: Handle all button clicks within the inspector
                     panel.addEventListener('click', e => {
                         const target = e.target;
 
-                        // Logic: Handle collapsible sections first to prevent other actions
                         const legend = target.closest('.editor-section > legend');
                         if (legend) {
                             legend.parentElement.classList.toggle('collapsed');
@@ -1321,7 +1410,6 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                         const actionButton = target.closest('button, .back-to-global-btn');
                         if (!actionButton) return;
                         
-                        // Logic: Map buttons to their respective functions
                         const actions = {
                             '#undo-btn': () => this.undo(),
                             '#redo-btn': () => this.redo(),
@@ -1349,51 +1437,62 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                             }
                         }
 
-                        // Logic: Handle preset and color reset buttons
                         if (actionButton.dataset.preset) this.applyPreset(this.presets[actionButton.dataset.preset]);
+                        
                         if (actionButton.dataset.resetKey) {
-                            let basePreset = this.presets.light;
-                            const keyMap = { nicknameColor: 'pNicknameColor', subtitleColor: 'pSubtitleColor', bioColor: 'pBioColor', tagBgColor: 'pTagBgColor', tagTextColor: 'pTagTextColor', avatarBorderColor: '#ffffff' };
-                            const [section, key] = actionButton.dataset.resetKey.split('.');
-                            let valueToReset = basePreset[keyMap[key]] || this.presets.light[keyMap[key]];
-                            this.updateState(actionButton.dataset.resetKey, valueToReset, true);
+                            const keyPath = actionButton.dataset.resetKey;
+                            const keyMap = { nicknameColor: 'pNicknameColor', subtitleColor: 'pSubtitleColor', bioColor: 'pBioColor', tagBgColor: 'pTagBgColor', tagTextColor: 'pTagTextColor' };
+                            const basePreset = this.presets.light;
+                            const key = keyPath.split('.')[1];
+                            const defaultValue = basePreset[keyMap[key]] || '#ffffff';
+                            this.updateState(keyPath, defaultValue, true);
                             this.showToast('颜色已重置', 'info');
                         }
                         
-                        // Logic: Handle tag management buttons
                         const tagItem = target.closest('.tag-manager-item');
                         if (tagItem) {
                             if (target.closest('.tag-icon-btn')) { this.initIconPicker(); this.showIconPicker('tag', tagItem.dataset.tagId); }
                             if (target.closest('.tag-delete-btn')) this.deleteTag(tagItem.dataset.tagId);
                         }
                         
-                        // Logic: Handle buttons within a block editor
                         const blockEl = target.closest('.editor-block');
                         if (blockEl) {
                             const blockId = blockEl.dataset.blockId;
                             if (target.closest('.block-delete-btn')) { this.deleteBlock(blockId); }
                             else if (target.closest('.add-card-btn')) this.addCard(blockId);
                             else if (target.closest('.add-image-btn')) this.addImageCard(blockId);
-                            else if (target.closest('.card-delete-btn')) this.deleteCard(blockId, target.closest('.editor-card').dataset.cardId);
-                            else if (target.closest('.card-clear-bg-btn')) {
-                                this.updateCard(blockId, target.closest('.editor-card').dataset.cardId, 'bgImageDataUrl', null, true);
-                                this.showToast('卡片背景图已清除', 'info');
-                            }
-                            else if (target.closest('.crop-image-btn')) this.cropImage(blockId, target.closest('.editor-card').dataset.cardId);
-                            else if (target.closest('.select-icon-btn')) { 
-                                this.initIconPicker();
-                                if (target.closest('[data-separator-icon-btn]')) {
-                                    this.showIconPicker('separator', blockId);
-                                } else {
-                                    this.showIconPicker('card', blockId, target.closest('.editor-card').dataset.cardId);
+                            
+                            const cardEl = target.closest('.editor-card');
+                            if (cardEl) {
+                                const cardId = cardEl.dataset.cardId;
+                                if (target.closest('.card-delete-btn')) this.deleteCard(blockId, cardId);
+                                else if (target.closest('.card-clear-bg-btn')) {
+                                    this.updateCard(blockId, cardId, 'bgImageDataUrl', null, true);
+                                    this.showToast('卡片背景图已清除', 'info');
                                 }
+                                else if (target.closest('.crop-image-btn')) this.cropImage(blockId, cardId);
+                                else if (target.closest('.select-icon-btn')) { 
+                                    this.initIconPicker();
+                                    this.showIconPicker('card', blockId, cardId);
+                                }
+                                else if(target.closest('[data-reset-card-key]')) {
+                                    const keyToReset = target.closest('[data-reset-card-key]').dataset.resetCardKey;
+                                    this.updateCard(blockId, cardId, keyToReset, null, true);
+                                    this.showToast('已重置为全局样式', 'info');
+                                }
+                            } else if (target.closest('.select-icon-btn[data-separator-icon-btn]')) {
+                                this.initIconPicker();
+                                this.showIconPicker('separator', blockId);
+                            } else if (target.closest('[data-reset-block-key]')) {
+                                const keyToReset = target.closest('[data-reset-block-key]').dataset.resetBlockKey;
+                                this.updateBlockSettings(blockId, keyToReset, null, true);
+                                this.showToast('已重置', 'info');
                             }
                         }
                         
-                        // Logic: Handle tab switching
                         const tabBtn = target.closest('.tabs .tab-btn');
                         if (tabBtn) {
-                            const parent = tabBtn.closest('.tab-group-wrapper, #global-card-styles-section > .section-content');
+                            const parent = tabBtn.closest('.tab-group-wrapper, .editor-section > .section-content');
                             if (!parent) return;
                             parent.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
                             tabBtn.classList.add('active');
@@ -1427,10 +1526,14 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 
                         const blockWrapper = e.target.closest('.preview-block-wrapper');
                         if (blockWrapper && blockWrapper.dataset.blockId) {
-                            this.setSelection({ type: 'block', id: blockWrapper.dataset.blockId });
                             const cardWrapper = e.target.closest('.preview-card, figure');
-                            if (cardWrapper && cardWrapper.dataset.cardId && this.selection.type === 'block') {
-                                this.elements.inspectorPanel.querySelector(`.editor-card[data-card-id="${cardWrapper.dataset.cardId}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            const cardId = cardWrapper ? cardWrapper.dataset.cardId : null;
+                            this.setSelection({ type: 'block', id: blockWrapper.dataset.blockId, cardId: cardId });
+                            if (cardId) {
+                                const cardEditorEl = this.elements.inspectorPanel.querySelector(`.editor-card[data-card-id="${cardId}"]`);
+                                if (cardEditorEl) {
+                                    cardEditorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                }
                             }
                         } else {
                             if (e.target.closest('.preview-wrapper')) {
@@ -1501,6 +1604,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                                     if(card) card[cardKey] = value;
                                     const editorInput = this.elements.inspectorPanel.querySelector(`.editor-card[data-card-id="${cardEl.dataset.cardId}"] [data-card-key="${cardKey}"]`);
                                     if(editorInput) editorInput.value = value;
+                                    this.renderLayerPanel(); // Update card title in layer panel
                                 }
                             } else if (separatorKey) {
                                 const block = this.findBlock(separatorKey);
@@ -1574,7 +1678,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                     this.elements.previewAvatar.style.borderWidth = `${info.avatarBorderSize}px`;
                     this.elements.previewAvatar.style.borderColor = info.avatarBorderColor;
                     
-                    this.elements.previewHeader.style.boxShadow = info.headerShadowEnabled ? 'var(--g-card-shadow)' : 'none';
+                    this.elements.previewHeader.style.boxShadow = 'none';
 
                     this.elements.previewTagsContainer.innerHTML = (info.tags || [])
                         .map(tag => {
@@ -1652,27 +1756,41 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 
                 renderLayerPanel() {
                     const list = this.elements.layerList;
-                    const {type, id} = this.selection;
-
-                    let html = `<div class="layer-item ${type === 'personalInfo' ? 'selected' : ''}" data-type="personalInfo">
-                                    <span class="layer-icon iconify" data-icon="mdi:account-circle-outline"></span>
-                                    <span class="layer-name">个人信息</span>
-                                </div><hr>`;
+                    const {type, id, cardId} = this.selection;
+                    
+                    let html = `<div class="layer-item-container">
+                                    <div class="layer-item ${type === 'personalInfo' ? 'selected' : ''}" data-type="personalInfo">
+                                        <button class="layer-toggle"></button>
+                                        <span class="layer-icon iconify" data-icon="mdi:account-circle-outline"></span>
+                                        <span class="layer-name">个人信息</span>
+                                    </div>
+                               </div><hr>`;
 
                     html += this.state.blocks.map(b => {
-                        const iconMap = {
-                            text: 'mdi:format-text-variant-outline',
-                            image: 'mdi:image-multiple-outline',
-                            separator: 'mdi:minus',
-                            spacer: 'mdi:arrow-expand-vertical'
-                        };
-                        return `<div class="layer-item ${type === 'block' && id === b.id ? 'selected' : ''}" data-type="block" data-id="${b.id}">
-                                    <span class="layer-icon iconify" data-icon="${iconMap[b.type]}"></span>
-                                    <span class="layer-name">${this.escapeHTML(b.title)}</span>
+                        const iconMap = { text: 'mdi:format-text-variant-outline', image: 'mdi:image-multiple-outline', separator: 'mdi:minus', spacer: 'mdi:arrow-expand-vertical' };
+                        const isHidden = b.isVisible === false;
+                        const isExpandable = (b.type === 'text' || b.type === 'image') && b.cards && b.cards.length > 0;
+                        
+                        const cardsListHTML = isExpandable ? `<ul class="card-layer-list" data-block-id="${b.id}">
+                            ${b.cards.map(c => `<li class="card-layer-item ${cardId === c.id ? 'selected' : ''}" data-card-id="${c.id}">${this.escapeHTML(c.title) || '无标题卡片'}</li>`).join('')}
+                        </ul>` : '';
+
+                        return `<div class="layer-item-container ${isExpandable ? 'is-expandable' : ''}" data-block-id="${b.id}">
+                                    <div class="layer-item ${type === 'block' && id === b.id ? 'selected' : ''} ${isHidden ? 'is-hidden': ''}" data-type="block" data-id="${b.id}">
+                                        <button class="layer-toggle"><span class="iconify" data-icon="mdi:chevron-right"></span></button>
+                                        <span class="layer-icon iconify" data-icon="${iconMap[b.type]}"></span>
+                                        <span class="layer-name">${this.escapeHTML(b.title)}</span>
+                                        <div class="layer-actions">
+                                            <button class="btn-icon toggle-visibility-btn" title="切换显示/隐藏"><span class="iconify" data-icon="${isHidden ? 'mdi:eye-off' : 'mdi:eye'}"></span></button>
+                                            <button class="btn-icon duplicate-block-btn" title="复制样式"><span class="iconify" data-icon="mdi:content-copy"></span></button>
+                                        </div>
+                                    </div>
+                                    ${cardsListHTML}
                                 </div>`;
                     }).join('');
                     
                     list.innerHTML = html;
+                    this.initNestedSortables();
                 },
 
                 renderInspector() {
@@ -1697,7 +1815,6 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                     if (this.selection.type === 'global') {
                         this.populateFontList();
                         this.bindColorThiefEvents();
-                        // MODIFICATION: Re-render palette if it exists
                         if (this.lastPalette && this.lastPalette.length > 0) {
                             this.renderPalette(this.lastPalette);
                         }
@@ -1715,6 +1832,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                         }
                     } else if (type === 'personalInfo') {
                         this.renderTagManager();
+                        this.initSortableTags();
                     }
                 },
 
@@ -1723,26 +1841,29 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                     return `
                         <h3 class="panel-header">全局样式与导出 ${backBtn}</h3>
                         <div class="inspector-state active">
-                             <fieldset class="editor-section" id="page-styles-section">
+                             <fieldset class="editor-section">
                                 <legend>页面与头部样式</legend>
                                 <div class="section-content">
                                     <div class="tab-group-wrapper">
-                                        <h4>页面背景</h4>
+                                        <div class="section-header">
+                                            <h4>页面背景</h4>
+                                            <label class="checkbox-group advanced-toggle-label"><input type="checkbox" class="advanced-toggle"> 高级</label>
+                                        </div>
                                         <div class="tabs"><button class="tab-btn" data-tab="page-bg-solid">纯色/图片</button><button class="tab-btn" data-tab="page-bg-gradient">渐变</button></div>
-                                        <div id="page-bg-solid" class="tab-content"><div class="form-group"><label>页面背景颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.pageBgSolidColor"><input type="text" class="color-hex-input" data-color-sync-key="pageStyles.pageBgSolidColor"></div></div><div class="form-group"><label>背景图 (可选):</label><div class="input-group simple"><input type="file" id="page-bg-upload" accept="image/*" style="width:100%"><button id="clear-page-bg-btn" class="btn btn-default btn-small">清除</button></div></div>
-                                        <div id="page-image-controls" style="display:none;"><div class="form-group"><label>图片遮罩颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.pageOverlayColor"><input type="text" class="color-hex-input" data-color-sync-key="pageStyles.pageOverlayColor"></div></div><div class="form-group"><label>图片遮罩不透明度:</label><input type="range" data-state-key="pageStyles.pageOverlayOpacity" min="0" max="1" step="0.05"></div></div></div>
-                                        <div id="page-bg-gradient" class="tab-content"><div class="gradient-controls"><div class="form-group"><label>起始颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.pageBgGradientStart"><input type="text" class="color-hex-input" data-color-sync-key="pageStyles.pageBgGradientStart"></div></div><div class="form-group"><label>结束颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.pageBgGradientEnd"><input type="text" class="color-hex-input" data-color-sync-key="pageStyles.pageBgGradientEnd"></div></div><div class="gradient-angle-control form-group"><label>角度 (<span class="angle-value">135</span>°):</label><input type="range" data-state-key="pageStyles.pageBgGradientAngle" min="0" max="360" step="1"></div></div></div>
-                                        <div class="form-group" style="margin-top: 10px;"><button id="show-texture-picker-btn" class="btn btn-default">🎨 添加纹理</button></div>
-                                        <div id="page-texture-controls" class="inset-controls" style="display:none;"><div class="form-group"><label>当前纹理: <span id="current-texture-name">无</span></label><button id="clear-texture-btn" class="btn btn-default btn-small">清除纹理</button></div><div class="color-control-row"><div class="color-control-group"><label>纹理颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.pageBgPatternColor"><input type="text" class="color-hex-input" data-color-sync-key="pageStyles.pageBgPatternColor"></div></div><div class="color-control-group"><label>纹理不透明度:</label><input type="range" data-state-key="pageStyles.pageBgPatternOpacity" min="0" max="1" step="0.05"></div></div><div class="form-group"><label>纹理密度:</label><input type="range" data-state-key="pageStyles.pageBgPatternDensity" min="10" max="100" step="2"></div></div>
+                                        <div id="page-bg-solid" class="tab-content"><div class="form-group"><label>页面背景颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.pageBgSolidColor"><input type="text" class="color-hex-input" data-state-key="pageStyles.pageBgSolidColor"></div></div><div class="form-group"><label>背景图 (可选):</label><div class="input-group simple"><input type="file" id="page-bg-upload" accept="image/*" style="width:100%"><button id="clear-page-bg-btn" class="btn btn-default btn-small">清除</button></div></div>
+                                        <div id="page-image-controls" class="advanced-setting" style="display:none;"><div class="form-group"><label>图片遮罩颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.pageOverlayColor"><input type="text" class="color-hex-input" data-state-key="pageStyles.pageOverlayColor"></div></div><div class="form-group"><label>图片遮罩不透明度:</label><input type="range" data-state-key="pageStyles.pageOverlayOpacity" min="0" max="1" step="0.05"></div></div></div>
+                                        <div id="page-bg-gradient" class="tab-content"><div class="gradient-controls"><div class="form-group"><label>起始颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.pageBgGradientStart"><input type="text" class="color-hex-input" data-state-key="pageStyles.pageBgGradientStart"></div></div><div class="form-group"><label>结束颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.pageBgGradientEnd"><input type="text" class="color-hex-input" data-state-key="pageStyles.pageBgGradientEnd"></div></div><div class="gradient-angle-control form-group advanced-setting"><label>角度 (<span class="angle-value">135</span>°):</label><input type="range" data-state-key="pageStyles.pageBgGradientAngle" min="0" max="360" step="1"></div></div></div>
+                                        <div class="form-group advanced-setting" style="margin-top: 10px;"><button id="show-texture-picker-btn" class="btn btn-default">🎨 添加纹理</button></div>
+                                        <div id="page-texture-controls" class="inset-controls advanced-setting" style="display:none;"><div class="form-group"><label>当前纹理: <span id="current-texture-name">无</span></label><button id="clear-texture-btn" class="btn btn-default btn-small">清除纹理</button></div><div class="color-control-row"><div class="color-control-group"><label>纹理颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.pageBgPatternColor"><input type="text" class="color-hex-input" data-state-key="pageStyles.pageBgPatternColor"></div></div><div class="color-control-group"><label>纹理不透明度:</label><input type="range" data-state-key="pageStyles.pageBgPatternOpacity" min="0" max="1" step="0.05"></div></div><div class="form-group"><label>纹理密度:</label><input type="range" data-state-key="pageStyles.pageBgPatternDensity" min="10" max="100" step="2"></div></div>
                                     </div>
                                     <hr class="separator">
                                     <div class="tab-group-wrapper">
                                         <h4>头部背景</h4>
                                         <div class="tabs"><button class="tab-btn" data-tab="header-bg-solid">纯色</button><button class="tab-btn" data-tab="header-bg-gradient">渐变</button></div>
-                                        <div id="header-bg-solid" class="tab-content"><div class="form-group"><label>头部背景颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.headerBgColor"><input type="text" class="color-hex-input" data-color-sync-key="pageStyles.headerBgColor"></div></div></div>
-                                        <div id="header-bg-gradient" class="tab-content"><div class="gradient-controls"><div class="form-group"><label>起始颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.headerBgGradientStart"><input type="text" class="color-hex-input" data-color-sync-key="pageStyles.headerBgGradientStart"></div></div><div class="form-group"><label>结束颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.headerBgGradientEnd"><input type="text" class="color-hex-input" data-color-sync-key="pageStyles.headerBgGradientEnd"></div></div><div class="gradient-angle-control form-group"><label>角度 (<span class="angle-value">135</span>°):</label><input type="range" data-state-key="pageStyles.headerBgGradientAngle" min="0" max="360" step="1"></div></div></div>
-                                        <div class="form-group"><label>头部文字颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.headerTextColor"><input type="text" class="color-hex-input" data-color-sync-key="pageStyles.headerTextColor"></div></div>
-                                        <div class="form-group"><label>头部不透明度:</label><input type="range" data-state-key="pageStyles.headerOpacity" min="0" max="1" step="0.05"></div>
+                                        <div id="header-bg-solid" class="tab-content"><div class="form-group"><label>头部背景颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.headerBgColor"><input type="text" class="color-hex-input" data-state-key="pageStyles.headerBgColor"></div></div></div>
+                                        <div id="header-bg-gradient" class="tab-content"><div class="gradient-controls"><div class="form-group"><label>起始颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.headerBgGradientStart"><input type="text" class="color-hex-input" data-state-key="pageStyles.headerBgGradientStart"></div></div><div class="form-group"><label>结束颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.headerBgGradientEnd"><input type="text" class="color-hex-input" data-state-key="pageStyles.headerBgGradientEnd"></div></div><div class="gradient-angle-control form-group advanced-setting"><label>角度 (<span class="angle-value">135</span>°):</label><input type="range" data-state-key="pageStyles.headerBgGradientAngle" min="0" max="360" step="1"></div></div></div>
+                                        <div class="form-group"><label>头部文字颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.headerTextColor"><input type="text" class="color-hex-input" data-state-key="pageStyles.headerTextColor"></div></div>
+                                        <div class="form-group advanced-setting"><label>头部不透明度:</label><input type="range" data-state-key="pageStyles.headerOpacity" min="0" max="1" step="0.05"></div>
                                     </div>
                                 </div>
                             </fieldset>
@@ -1758,18 +1879,21 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                             <fieldset class="editor-section" id="global-card-styles-section"> 
                                 <legend>全局卡片样式</legend>
                                 <div class="section-content">
+                                    <div class="section-header">
+                                        <h4></h4>
+                                        <label class="checkbox-group advanced-toggle-label"><input type="checkbox" class="advanced-toggle"> 高级</label>
+                                    </div>
                                     <div class="tabs"><button class="tab-btn" data-tab="card-bg-solid">纯色</button><button class="tab-btn" data-tab="card-bg-gradient">渐变</button></div>
-                                    <div id="card-bg-solid" class="tab-content"><div class="color-control-row"><div class="color-control-group"><label>背景色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.bgColor"><input type="text" class="color-hex-input" data-color-sync-key="globalCardStyles.bgColor"></div></div><div class="color-control-group"><label>文字颜色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.textColor"><input type="text" class="color-hex-input" data-color-sync-key="globalCardStyles.textColor"></div></div></div></div>
-                                    <div id="card-bg-gradient" class="tab-content"><div class="gradient-controls"><div class="form-group"><label>起始颜色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.bgGradientStart"><input type="text" class="color-hex-input" data-color-sync-key="globalCardStyles.bgGradientStart"></div></div><div class="form-group"><label>结束颜色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.bgGradientEnd"><input type="text" class="color-hex-input" data-color-sync-key="globalCardStyles.bgGradientEnd"></div></div><div class="gradient-angle-control form-group"><label>角度 (<span class="angle-value">135</span>°):</label><input type="range" data-state-key="globalCardStyles.bgGradientAngle" min="0" max="360" step="1"></div></div></div>
+                                    <div id="card-bg-solid" class="tab-content"><div class="color-control-row"><div class="color-control-group"><label>背景色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.bgColor"><input type="text" class="color-hex-input" data-state-key="globalCardStyles.bgColor"></div></div><div class="color-control-group"><label>文字颜色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.textColor"><input type="text" class="color-hex-input" data-state-key="globalCardStyles.textColor"></div></div></div></div>
+                                    <div id="card-bg-gradient" class="tab-content"><div class="gradient-controls"><div class="form-group"><label>起始颜色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.bgGradientStart"><input type="text" class="color-hex-input" data-state-key="globalCardStyles.bgGradientStart"></div></div><div class="form-group"><label>结束颜色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.bgGradientEnd"><input type="text" class="color-hex-input" data-state-key="globalCardStyles.bgGradientEnd"></div></div><div class="gradient-angle-control form-group advanced-setting"><label>角度 (<span class="angle-value">135</span>°):</label><input type="range" data-state-key="globalCardStyles.bgGradientAngle" min="0" max="360" step="1"></div></div></div>
                                     <div class="form-group"><label>不透明度:</label><input type="range" data-state-key="globalCardStyles.opacity" min="0" max="1" step="0.05"></div>
-                                    <div class="form-group checkbox-group"><label><input type="checkbox" data-state-key="globalCardStyles.shadowEnabled"> 显示卡片阴影</label></div>
                                     <div class="form-group"><label>圆角 (px): <span id="gCardRadiusValue">12</span></label><input type="range" data-state-key="globalCardStyles.radius" min="0" max="40" step="1"></div>
-                                    <hr class="separator"><label>卡片边框:</label><div class="form-group inset-controls"><div class="form-group"><label>样式:</label><select data-state-key="globalCardStyles.borderStyle"><option value="none">无</option><option value="solid">实线</option><option value="dashed">虚线</option><option value="dotted">点状</option></select></div><div class="color-control-row"><div class="color-control-group"><label>粗细(px):</label><input type="range" data-state-key="globalCardStyles.borderWidth" min="0" max="10" step="1"></div><div class="color-control-group"><label>颜色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.borderColor"><input type="text" class="color-hex-input" data-color-sync-key="globalCardStyles.borderColor"></div></div></div></div>
+                                    <div class="advanced-setting"><hr class="separator"><label>卡片边框:</label><div class="form-group inset-controls"><div class="form-group"><label>样式:</label><select data-state-key="globalCardStyles.borderStyle"><option value="none">无</option><option value="solid">实线</option><option value="dashed">虚线</option><option value="dotted">点状</option></select></div><div class="color-control-row"><div class="color-control-group"><label>粗细(px):</label><div class="input-group simple"><input type="range" data-state-key="globalCardStyles.borderWidth" min="0" max="10" step="1"></div></div><div class="color-control-group"><label>颜色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.borderColor"><input type="text" class="color-hex-input" data-state-key="globalCardStyles.borderColor"></div></div></div></div></div>
                                     <hr class="separator"><div class="form-group"><label>对齐:</label><div class="radio-group"><label><input type="radio" name="gCardAlign" value="left" data-state-key="globalCardStyles.textAlign">居左</label><label><input type="radio" name="gCardAlign" value="center" data-state-key="globalCardStyles.textAlign">居中</label><label><input type="radio" name="gCardAlign" value="right" data-state-key="globalCardStyles.textAlign">居右</label></div></div>
                                     <div class="form-group"><label>行高:</label><div class="radio-group"><label><input type="radio" name="gCardLineHeight" value="1.4" data-state-key="globalCardStyles.lineHeight">紧凑</label><label><input type="radio" name="gCardLineHeight" value="1.5" data-state-key="globalCardStyles.lineHeight">中等</label><label><input type="radio" name="gCardLineHeight" value="1.6" data-state-key="globalCardStyles.lineHeight">宽松</label></div></div>
                                     <hr class="separator"><div class="form-group"><label>字体:</label><div class="font-controls"><input type="text" id="font-search-input" placeholder="搜索本地字体..." style="margin-bottom: 5px;"><select id="font-family-select" data-state-key="globalCardStyles.fontFamily"></select><div class="buttons"><button id="load-local-fonts-btn" class="btn btn-default">加载本地</button><button id="upload-font-btn" class="btn btn-default">上传字体</button></div><input type="file" id="font-upload-input" accept=".ttf,.woff,.woff2,.otf" style="display: none;"></div></div>
                                     <div class="form-group"> <label>字号:</label> <select data-state-key="globalCardStyles.fontSize"> <option value="0.9rem">小</option> <option value="1rem" selected>中 (默认)</option> <option value="1.1rem">大</option> </select> </div>
-                                    <div class="color-control-row"><div class="color-control-group"><label>文字描边(px):</label><input type="range" data-state-key="globalCardStyles.textStrokeWidth" min="0" max="5" step="0.5"></div><div class="color-control-group"><label>描边颜色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.textStrokeColor"><input type="text" class="color-hex-input" data-color-sync-key="globalCardStyles.textStrokeColor"></div></div></div>
+                                    <div class="advanced-setting"><div class="color-control-row"><div class="color-control-group"><label>文字描边(px):</label><div class="input-group simple"><input type="range" data-state-key="globalCardStyles.textStrokeWidth" min="0" max="5" step="0.5"></div></div><div class="color-control-group"><label>描边颜色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.textStrokeColor"><input type="text" class="color-hex-input" data-state-key="globalCardStyles.textStrokeColor"></div></div></div></div>
                                 </div>
                             </fieldset>
                             <fieldset class="editor-section">
@@ -1792,23 +1916,22 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                     return `
                         <h3 class="panel-header">个人信息设置 ${backBtn}</h3>
                         <div class="inspector-state active">
-                             <fieldset class="editor-section" id="personal-info-section">
+                             <fieldset class="editor-section">
                                 <legend>个人信息</legend>
                                 <div class="section-content">
                                     <div class="form-group"><label>昵称:</label><input type="text" data-state-key="personalInfo.nickname" data-preview-target="#preview-nickname"></div>
-                                    <div class="form-group"><label>昵称颜色:</label><div class="input-group"><input type="color" data-state-key="personalInfo.nicknameColor"><input type="text" class="color-hex-input" data-color-sync-key="personalInfo.nicknameColor"><button class="btn btn-default btn-small" data-reset-key="personalInfo.nicknameColor">重置</button></div></div>
+                                    <div class="form-group"><label>昵称颜色:</label><div class="input-group"><input type="color" data-state-key="personalInfo.nicknameColor"><input type="text" class="color-hex-input" data-state-key="personalInfo.nicknameColor"><button class="btn btn-default btn-small" data-reset-key="personalInfo.nicknameColor">重置</button></div></div>
                                     <div class="form-group"><label>副标题 (可选):</label><input type="text" data-state-key="personalInfo.subtitle" data-preview-target="#preview-subtitle"></div>
-                                    <div class="form-group"><label>副标题颜色:</label><div class="input-group"><input type="color" data-state-key="personalInfo.subtitleColor"><input type="text" class="color-hex-input" data-color-sync-key="personalInfo.subtitleColor"><button class="btn btn-default btn-small" data-reset-key="personalInfo.subtitleColor">重置</button></div></div>
+                                    <div class="form-group"><label>副标题颜色:</label><div class="input-group"><input type="color" data-state-key="personalInfo.subtitleColor"><input type="text" class="color-hex-input" data-state-key="personalInfo.subtitleColor"><button class="btn btn-default btn-small" data-reset-key="personalInfo.subtitleColor">重置</button></div></div>
                                     <div class="form-group"><label>简介 (可选):</label><textarea data-state-key="personalInfo.bio" rows="3" data-preview-target="#preview-bio"></textarea></div>
-                                    <div class="form-group"><label>简介颜色:</label><div class="input-group"><input type="color" data-state-key="personalInfo.bioColor"><input type="text" class="color-hex-input" data-color-sync-key="personalInfo.bioColor"><button class="btn btn-default btn-small" data-reset-key="personalInfo.bioColor">重置</button></div></div>
+                                    <div class="form-group"><label>简介颜色:</label><div class="input-group"><input type="color" data-state-key="personalInfo.bioColor"><input type="text" class="color-hex-input" data-state-key="personalInfo.bioColor"><button class="btn btn-default btn-small" data-reset-key="personalInfo.bioColor">重置</button></div></div>
                                     <hr class="separator">
-                                    <div class="form-group"><label>标签管理器:</label><div id="tag-manager-list"></div><div class="input-group simple" style="margin-top: 10px;"><input type="text" id="new-tag-text-input" placeholder="输入新标签文字..."><button id="add-new-tag-btn" class="btn btn-default btn-small">添加标签</button></div></div>
-                                    <div class="form-group"><label>标签样式:</label><div class="color-control-row"><div class="color-control-group"><label>背景</label><div class="input-group"><input type="color" data-state-key="personalInfo.tagBgColor"><input type="text" class="color-hex-input" data-color-sync-key="personalInfo.tagBgColor"><button class="btn btn-default btn-small" data-reset-key="personalInfo.tagBgColor">重置</button></div></div><div class="color-control-group"><label>文字</label><div class="input-group"><input type="color" data-state-key="personalInfo.tagTextColor"><input type="text" class="color-hex-input" data-color-sync-key="personalInfo.tagTextColor"><button class="btn btn-default btn-small" data-reset-key="personalInfo.tagTextColor">重置</button></div></div></div></div>
+                                    <div class="form-group"><label>标签管理器 (可拖拽排序):</label><div id="tag-manager-list"></div><div class="input-group simple" style="margin-top: 10px;"><input type="text" id="new-tag-text-input" placeholder="输入新标签文字..."><button id="add-new-tag-btn" class="btn btn-default btn-small">添加标签</button></div></div>
+                                    <div class="form-group"><label>标签样式:</label><div class="color-control-row"><div class="color-control-group"><label>背景</label><div class="input-group"><input type="color" data-state-key="personalInfo.tagBgColor"><input type="text" class="color-hex-input" data-state-key="personalInfo.tagBgColor"><button class="btn btn-default btn-small" data-reset-key="personalInfo.tagBgColor">重置</button></div></div><div class="color-control-group"><label>文字</label><div class="input-group"><input type="color" data-state-key="personalInfo.tagTextColor"><input type="text" class="color-hex-input" data-state-key="personalInfo.tagTextColor"><button class="btn btn-default btn-small" data-reset-key="personalInfo.tagTextColor">重置</button></div></div></div></div>
                                     <hr class="separator">
-                                    <div class="form-group checkbox-group"><label><input type="checkbox" data-state-key="personalInfo.headerShadowEnabled"> 显示头部卡片阴影</label></div>
                                     <div class="form-group"><label>头像上传:</label><input type="file" id="avatar-upload" accept="image/*"></div>
                                     <div class="form-group"><label>头像形状:</label><div class="radio-group"><label><input type="radio" name="avatarShape" value="50%" data-state-key="personalInfo.avatarShape">圆形</label><label><input type="radio" name="avatarShape" value="16px" data-state-key="personalInfo.avatarShape">圆角</label><label><input type="radio" name="avatarShape" value="0px" data-state-key="personalInfo.avatarShape">方形</label></div></div>
-                                    <div class="color-control-row"><div class="color-control-group"><label>头像边框(px):</label><input type="range" data-state-key="personalInfo.avatarBorderSize" min="0" max="10" step="1"></div><div class="color-control-group"><label>边框颜色:</label><div class="input-group"><input type="color" data-state-key="personalInfo.avatarBorderColor"><input type="text" class="color-hex-input" data-color-sync-key="personalInfo.avatarBorderColor"><button class="btn btn-default btn-small" data-reset-key="personalInfo.avatarBorderColor">重置</button></div></div></div>
+                                    <div class="form-group"><label>头像边框:</label><div class="color-control-row"><div class="color-control-group"><label>粗细(px):</label><div class="input-group simple"><input type="range" data-state-key="personalInfo.avatarBorderSize" min="0" max="10" step="1"></div></div><div class="color-control-group"><label>颜色:</label><div class="input-group"><input type="color" data-state-key="personalInfo.avatarBorderColor"><input type="text" class="color-hex-input" data-state-key="personalInfo.avatarBorderColor"></div></div></div></div>
                                 </div>
                             </fieldset>
                         </div>
@@ -1816,7 +1939,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                 },
 
                 renderPreviewBlocks() {
-                    this.elements.previewBlocksContainer.innerHTML = this.state.blocks.length ? this.state.blocks.map(b => `<div class="preview-block-wrapper" data-block-id="${b.id}">${this.createPreviewBlockHTML(b)}</div>`).join('') : '<div class="empty-placeholder">(预览区) 无区块</div>';
+                    this.elements.previewBlocksContainer.innerHTML = this.state.blocks.length ? this.state.blocks.map(b => `<div class="preview-block-wrapper ${b.isVisible === false ? 'is-hidden' : ''}" data-block-id="${b.id}">${this.createPreviewBlockHTML(b)}</div>`).join('') : '<div class="empty-placeholder">(预览区) 无区块</div>';
                     this.state.blocks.forEach(b => this.initMasonryForBlock(b.id));
                     this.updateHighlights();
                 },
@@ -1826,7 +1949,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                     const backBtn = this.selection.type !== 'global' ? `<button class="back-to-global-btn">← 返回全局</button>` : '';
                     const masonryCheckboxHTML = `
                         <div class="masonry-toggle-container" style="${['dual', 'triple'].includes(block.settings.layout) ? 'display: block;' : 'display: none;'}">
-                            <div class="checkbox-group" style="margin-top: 10px;">
+                            <div class="checkbox-group advanced-setting" style="margin-top: 10px;">
                                 <label><input type="checkbox" data-setting-key="masonryEnabled" ${block.settings.masonryEnabled ? 'checked' : ''}> 启用瀑布流</label>
                             </div>
                         </div>`;
@@ -1838,22 +1961,24 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                         </div>`;
 
                     if (block.type === 'text') {
-                        let cardsHTML = !block.cards?.length ? '<div class="empty-placeholder">暂无卡片</div>' : block.cards.map(c => `<div class="editor-card" data-card-id="${c.id}">${this.createEditorCardHTML(c)}</div>`).join('');
-                        content = `<div class="form-group"><label>布局:</label>${layoutRadiosHTML}${masonryCheckboxHTML}</div>
-                                   <div class="card-editors-list">${cardsHTML}</div><button class="btn btn-default add-card-btn" style="margin-top: 15px;">➕ 添加卡片</button>`;
+                        let cardsHTML = !block.cards?.length ? '<div class="empty-placeholder">暂无卡片</div>' : block.cards.map(c => `<div class="editor-card ${this.selection.cardId === c.id ? 'is-active' : ''}" data-card-id="${c.id}">${this.createEditorCardHTML(c)}</div>`).join('');
+                        content = `<div class="form-group"><div class="section-header"><label>布局:</label><label class="checkbox-group advanced-toggle-label"><input type="checkbox" class="advanced-toggle"> 高级</label></div>${layoutRadiosHTML}${masonryCheckboxHTML}</div>
+                                   <hr class="separator"><div class="card-editors-list">${cardsHTML}</div><button class="btn btn-default add-card-btn" style="margin-top: 15px;">➕ 添加卡片</button>`;
                     } else if (block.type === 'image') {
-                        let imageCardsHTML = !block.cards?.length ? '<div class="empty-placeholder">暂无图片</div>' : block.cards.map(c => `<div class="editor-card" data-card-id="${c.id}">${this.createEditorImageCardHTML(c)}</div>`).join('');
-                        content = `<div class="form-group"><label>布局:</label>${layoutRadiosHTML}${masonryCheckboxHTML}</div>
-                                   <div class="form-group"><label>文字颜色:</label><div class="input-group"><input type="color" data-setting-key="textColor" value="${block.settings.textColor || ''}"><input type="text" class="color-hex-input" data-setting-key="textColor" value="${block.settings.textColor || ''}" placeholder="全局默认"></div></div>
-                                   <div class="image-card-editors-list">${imageCardsHTML}</div><button class="btn btn-default add-image-btn" style="margin-top: 15px;">➕ 添加图片</button>
+                        let imageCardsHTML = !block.cards?.length ? '<div class="empty-placeholder">暂无图片</div>' : block.cards.map(c => `<div class="editor-card ${this.selection.cardId === c.id ? 'is-active' : ''}" data-card-id="${c.id}">${this.createEditorImageCardHTML(c)}</div>`).join('');
+                        content = `<div class="form-group"><div class="section-header"><label>布局:</label><label class="checkbox-group advanced-toggle-label"><input type="checkbox" class="advanced-toggle"> 高级</label></div>${layoutRadiosHTML}${masonryCheckboxHTML}</div>
+                                   <div class="form-group"><label>文字颜色:</label><div class="input-group"><input type="color" data-setting-key="textColor" value="${block.settings.textColor || ''}"><input type="text" class="color-hex-input" data-setting-key="textColor" value="${block.settings.textColor || ''}" placeholder="全局默认"><button class="btn btn-default btn-small" data-reset-block-key="textColor">重置</button></div></div>
+                                   <hr class="separator"><div class="image-card-editors-list">${imageCardsHTML}</div><button class="btn btn-default add-image-btn" style="margin-top: 15px;">➕ 添加图片</button>
                                    <input type="file" class="image-upload-input" multiple accept="image/*" style="display: none;">`;
                     } else if (block.type === 'separator') {
                         const s = block.settings;
                         const iconHTML = s.icon ? `<span class="iconify" data-icon="${s.icon}"></span>` : '选择图标';
-                        content = `<div class="form-group"><label>样式:</label><div class="radio-group"><label><input type="radio" name="sep-style-${block.id}" data-setting-key="style" value="solid" ${s.style==='solid'?'checked':''}>实线</label><label><input type="radio" name="sep-style-${block.id}" data-setting-key="style" value="dashed" ${s.style==='dashed'?'checked':''}>虚线</label><label><input type="radio" name="sep-style-${block.id}" data-setting-key="style" value="dotted" ${s.style==='dotted'?'checked':''}>点状</label></div></div><div class="color-control-row"><div class="color-control-group"><label>线条颜色:</label><div class="input-group"><input type="color" data-setting-key="color" value="${s.color}"><input type="text" class="color-hex-input" data-setting-key="color" value="${s.color}"></div></div><div class="color-control-group"><label>粗细(px):</label><input type="range" data-setting-key="thickness" min="1" max="10" value="${s.thickness}"></div></div><div class="form-group"><label>垂直间距(px):</label><input type="range" data-setting-key="margin" min="0" max="50" value="${s.margin}"></div><hr class="separator"><div class="form-group"><label>嵌入文本 (可选):</label><div class="input-group"><input type="text" data-setting-key="text" value="${this.escapeHTML(s.text || '')}" style="border-right: none;"><button class="btn btn-default select-icon-btn" data-separator-icon-btn="true" style="width: auto; flex-shrink: 0; border-radius: 0 6px 6px 0;">${iconHTML}</button></div></div><div class="form-group"><label>文本颜色:</label><div class="input-group"><input type="color" data-setting-key="textColor" value="${s.textColor}"><input type="text" class="color-hex-input" data-setting-key="textColor" value="${s.textColor}"></div></div>`;
+                        // ========== BUG FIX #1 START ==========
+                        content = `<div class="form-group"><label>样式:</label><div class="radio-group"><label><input type="radio" name="sep-style-${block.id}" data-setting-key="style" value="solid" ${s.style==='solid'?'checked':''}>实线</label><label><input type="radio" name="sep-style-${block.id}" data-setting-key="style" value="dashed" ${s.style==='dashed'?'checked':''}>虚线</label><label><input type="radio" name="sep-style-${block.id}" data-setting-key="style" value="dotted" ${s.style==='dotted'?'checked':''}>点状</label></div></div><div class="color-control-row"><div class="color-control-group"><label>线条颜色:</label><div class="input-group"><input type="color" data-setting-key="color" value="${s.color}"><input type="text" class="color-hex-input" data-setting-key="color" value="${s.color}"><button class="btn btn-default btn-small" data-reset-block-key="color">重置</button></div></div><div class="color-control-group"><label>粗细(px):</label><div class="input-group simple"><input type="range" data-setting-key="thickness" min="1" max="10" value="${s.thickness}"></div></div></div><div class="form-group"><label>垂直间距(px):</label><div class="input-group simple"><input type="range" data-setting-key="margin" min="0" max="50" value="${s.margin}"></div></div><hr class="separator"><div class="form-group"><label>嵌入文本 (可选):</label><div class="input-group"><input type="text" data-setting-key="text" value="${this.escapeHTML(s.text || '')}" style="border-right: none;"><button class="btn btn-default select-icon-btn" data-separator-icon-btn="true" style="width: auto; flex-shrink: 0; border-radius: 0 6px 6px 0;">${iconHTML}</button></div></div><div class="form-group"><label>文本颜色:</label><div class="input-group"><input type="color" data-setting-key="textColor" value="${s.textColor}"><input type="text" class="color-hex-input" data-setting-key="textColor" value="${s.textColor}"><button class="btn btn-default btn-small" data-reset-block-key="textColor">重置</button></div></div>`;
+                        // ========== BUG FIX #1 END ==========
                     } else if (block.type === 'spacer') {
                         const s = block.settings;
-                        content = `<div class="form-group"><label>高度 (px): <span class="spacer-height-value">${s.height}</span></label><input type="range" data-setting-key="height" min="1" max="200" value="${s.height}"></div>`;
+                        content = `<div class="form-group"><label>高度 (px): <span class="spacer-height-value">${s.height}</span></label><div class="input-group simple"><input type="range" data-setting-key="height" min="1" max="200" value="${s.height}"></div></div>`;
                     }
 
                     return `<h3 class="panel-header">区块设置 ${backBtn}</h3><div class="editor-block" data-block-id="${block.id}"><div class="editor-block-header"><input type="text" class="editor-block-title-input" value="${this.escapeHTML(block.title || '')}" placeholder="区块标题 (可编辑)"><div class="block-actions"><button class="btn btn-danger btn-small block-delete-btn">删除</button></div></div><div class="editor-block-content">${content}</div></div>`;
@@ -1892,8 +2017,12 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                     cardEl.dataset.cardId = card.id;
                     cardEl.style.setProperty('--card-transition-name', `card-${card.id}`);
                     const iconHTML = card.icon ? `<span class="iconify" data-icon="${card.icon}"></span>` : '';
+                    
+                    const finalAlign = (card.textAlign === undefined || card.textAlign === '' || card.textAlign === null) ? this.state.globalCardStyles.textAlign : card.textAlign;
+                    const justifyContent = { left: 'flex-start', center: 'center', right: 'flex-end' }[finalAlign] || 'flex-start';
+                    
                     cardEl.innerHTML = `<div class="preview-card-inner">
-                            <h3 class="preview-card-title" data-card-key="title">${iconHTML}${this.escapeHTML(card.title || '')}</h3>
+                            <h3 class="preview-card-title" data-card-key="title" style="justify-content: ${justifyContent};">${iconHTML}${this.escapeHTML(card.title || '')}</h3>
                             <p class="preview-card-content" data-card-key="content">${this.escapeHTML(card.content || '')}</p>
                         </div>`;
                     this.applyCardStyles(cardEl, card);
@@ -1914,26 +2043,23 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                 createEditorCardHTML(card) {
                     const s = (val, def) => val ?? def;
                     const followGlobalOpacity = card.followGlobalOpacity !== false;
-                    const iconHTML = card.icon ? `<span class="iconify" data-icon="${card.icon}" style="font-size: 1.2em; vertical-align: middle; margin-right: 5px;"></span> ${card.icon}` : '选择图标';
+                    const iconHTML = card.icon ? `<span class="iconify" data-icon="${card.icon}" style="font-size: 1.2em; vertical-align: middle; margin-right: 5px;"></span>` : '选择图标';
+                    const g = this.state.globalCardStyles;
+
                     return `<span class="card-drag-handle">☰</span><div class="editor-card-header"><button class="btn btn-danger btn-small card-delete-btn">删</button></div>
                         <div class="editor-card-content">
+                            <h4>基础设置</h4>
                             <div class="form-group"><label>标题:</label><div class="input-group"><input type="text" data-card-key="title" value="${this.escapeHTML(s(card.title, ''))}" style="border-right: none;"><button class="btn btn-default select-icon-btn" style="width: auto; flex-shrink: 0; border-radius: 0 6px 6px 0; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${iconHTML}</button></div></div>
                             <div class="form-group"><label>内容:</label><textarea data-card-key="content" rows="4">${this.escapeHTML(s(card.content, ''))}</textarea></div>
-                            <hr class="separator"><div class="card-style-grid">
-                                <div class="form-group"><label>字号:</label><select data-card-key="fontSize"><option value="" ${s(card.fontSize, '') === '' ? 'selected' : ''}>默认</option><option value="0.9em" ${card.fontSize === '0.9em' ? 'selected' : ''}>小</option><option value="1em" ${card.fontSize === '1em' ? 'selected' : ''}>中</option><option value="1.1em" ${card.fontSize === '1.1em' ? 'selected' : ''}>大</option></select></div>
-                                <div class="form-group"><label>对齐:</label><div class="radio-group"><label><input type="radio" name="card-${card.id}-align" value="" data-card-key="textAlign" ${s(card.textAlign, '') === '' ? 'checked':''}>默认</label><label><input type="radio" name="card-${card.id}-align" value="left" data-card-key="textAlign" ${card.textAlign === 'left' ?'checked':''}>左</label><label><input type="radio" name="card-${card.id}-align" value="center" data-card-key="textAlign" ${card.textAlign === 'center' ?'checked':''}>中</label><label><input type="radio" name="card-${card.id}-align" value="right" data-card-key="textAlign" ${card.textAlign === 'right' ?'checked':''}>右</label></div></div>
-                                <div class="form-group"><label>字重:</label><select data-card-key="fontWeight"><option value="" ${s(card.fontWeight, '')===''?'selected':''}>默认</option><option value="normal" ${card.fontWeight==='normal'?'selected':''}>常规</option><option value="bold" ${card.fontWeight==='bold'?'selected':''}>粗体</option></select></div>
-                                <div class="form-group checkbox-group"><label><input type="checkbox" data-card-key="textShadowEnabled" ${s(card.textShadowEnabled, false) ? 'checked':''}>文字阴影</label></div>
-                            </div>
-                            <hr class="separator"><div class="form-group"><label>背景图:</label><div class="input-group simple"><input type="file" class="card-bg-upload" accept="image/*"><button class="btn btn-default btn-small card-clear-bg-btn">清除</button></div></div>
-                            <div class="card-overlay-controls" style="${card.bgImageDataUrl?'':'display:none;'}"><label>图片蒙版:</label><div class="color-control-row"><div class="color-control-group"><label>颜色:</label><div class="input-group"><input type="color" data-card-key="overlayColor" value="${s(card.overlayColor, '#ffffff')}"><input class="color-hex-input" type="text" data-card-key="overlayColor" value="${s(card.overlayColor, '#ffffff')}"></div></div><div class="color-control-group"><label>不透明度:</label><input type="range" data-card-key="overlayOpacity" min="0" max="1" step="0.05" value="${s(card.overlayOpacity,0.5)}"></div></div></div>
+                            <div class="form-group"><label>对齐:</label><div class="radio-group"><label><input type="radio" name="card-${card.id}-align" value="" data-card-key="textAlign" ${s(card.textAlign, '') === '' ? 'checked':''}>默认</label><label><input type="radio" name="card-${card.id}-align" value="left" data-card-key="textAlign" ${card.textAlign === 'left' ?'checked':''}>左</label><label><input type="radio" name="card-${card.id}-align" value="center" data-card-key="textAlign" ${card.textAlign === 'center' ?'checked':''}>中</label><label><input type="radio" name="card-${card.id}-align" value="right" data-card-key="textAlign" ${card.textAlign === 'right' ?'checked':''}>右</label></div></div>
                             <hr class="separator">
                             <div class="color-control-row">
-                                <div class="color-control-group"><label>背景色:</label><div class="input-group"><input type="color" data-card-key="bgColor" value="${s(card.bgColor, '')}"><input class="color-hex-input" type="text" data-card-key="bgColor" value="${s(card.bgColor, '')}" placeholder="全局默认"></div></div>
-                                <div class="color-control-group"><label>文字颜色:</label><div class="input-group"><input type="color" data-card-key="textColor" value="${s(card.textColor, '')}"><input class="color-hex-input" type="text" data-card-key="textColor" value="${s(card.textColor, '')}" placeholder="全局默认"></div></div>
+                                <div class="color-control-group"><label>背景色:</label><div class="input-group"><input type="color" data-card-key="bgColor" value="${s(card.bgColor, '')}"><input class="color-hex-input" type="text" data-card-key="bgColor" value="${s(card.bgColor, '')}" placeholder="${g.bgColor} (全局)"><button class="btn btn-default btn-small" data-reset-card-key="bgColor">重置</button></div></div>
+                                <div class="color-control-group"><label>文字颜色:</label><div class="input-group"><input type="color" data-card-key="textColor" value="${s(card.textColor, '')}"><input class="color-hex-input" type="text" data-card-key="textColor" value="${s(card.textColor, '')}" placeholder="${g.textColor} (全局)"><button class="btn btn-default btn-small" data-reset-card-key="textColor">重置</button></div></div>
                             </div>
-                            <div class="form-group checkbox-group"><label><input type="checkbox" data-card-key="followGlobalOpacity" ${followGlobalOpacity ? 'checked' : ''}>跟随全局不透明度</label></div>
-                            <div class="form-group" style="${followGlobalOpacity ? 'display:none;' : 'display:block;'}"><label>独立不透明度:</label><input type="range" data-card-key="opacity" min="0" max="1" step="0.05" value="${s(card.opacity, 1.0)}"></div>
+                            <hr class="separator">
+                            <div class="form-group"><label>背景图:</label><div class="input-group simple"><input type="file" class="card-bg-upload" accept="image/*"><button class="btn btn-default btn-small card-clear-bg-btn">清除</button></div></div>
+                            <div class="card-overlay-controls" style="${card.bgImageDataUrl?'':'display:none;'}"><label>图片蒙版:</label><div class="color-control-row"><div class="color-control-group"><label>颜色:</label><div class="input-group"><input type="color" data-card-key="overlayColor" value="${s(card.overlayColor, '#ffffff')}"><input class="color-hex-input" type="text" data-card-key="overlayColor" value="${s(card.overlayColor, '#ffffff')}"></div></div><div class="color-control-group"><label>不透明度:</label><input type="range" data-card-key="overlayOpacity" min="0" max="1" step="0.05" value="${s(card.overlayOpacity,0.5)}"></div></div></div>
                         </div>`;
                 },
 
@@ -1973,7 +2099,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                         innerEl.style.boxShadow = 'none';
                         innerEl.style.border = 'var(--active-card-border)'; 
                     } else {
-                        const finalTextColor = cardData.textColor || g.textColor;
+                        const finalTextColor = use('textColor', cardData.textColor);
                         let finalBg;
                         if (cardData.bgImageDataUrl) {
                             finalBg = `url(${cardData.bgImageDataUrl})`;
@@ -1992,7 +2118,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                         innerEl.style.textAlign = use('textAlign', cardData.textAlign);
                         innerEl.style.fontSize = cardData.fontSize || 'inherit'; 
                         innerEl.style.setProperty('--card-font-weight', cardData.fontWeight || 'normal');
-                        innerEl.style.setProperty('--active-card-text-shadow', cardData.textShadowEnabled ? 'var(--preset-text-shadow)' : 'none');
+                        innerEl.style.setProperty('--active-card-text-shadow', 'none');
                         
                         innerEl.style.setProperty('--card-overlay-color', cardData.overlayColor || '#FFF');
                         const overlayOpacity = cardData.bgImageDataUrl ? (cardData.overlayOpacity ?? 0.5) : 0;
@@ -2018,13 +2144,27 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                     const mainKey = keyPath.split('.')[0];
                     if (mainKey === 'personalInfo') {
                         this.renderPersonalInfo();
+                        if (keyPath.includes('tags')) this.renderTagManager();
                     } else if (mainKey === 'pageStyles' || mainKey === 'globalCardStyles') {
                         if (mainKey === 'globalCardStyles') this.updateGlobalCardStyleVars();
                         this.renderPageStyles();
                         this.renderPreviewBlocks();
                     } else if (mainKey === 'blocks') {
-                        const blockId = this.state.blocks[parseInt(keyPath.split('.')[1])]?.id;
-                        if(blockId) this.renderPreviewBlockById(blockId);
+                        const blockIndex = parseInt(keyPath.split('.')[1], 10);
+                        const blockId = this.state.blocks[blockIndex]?.id;
+                        if(blockId) {
+                            if (keyPath.includes('isVisible')) {
+                                this.renderLayerPanel();
+                                this.renderPreviewBlocks();
+                            } else if (keyPath.includes('cards')) {
+                                // Re-render layer panel if a card property (like title) changes
+                                this.renderLayerPanel();
+                                this.renderPreviewBlockById(blockId);
+                            }
+                            else {
+                                this.renderPreviewBlockById(blockId);
+                            }
+                        }
                     }
                 },
 
@@ -2032,13 +2172,14 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                     const block = this.findBlock(blockId);
                     if (!block || block.type !== 'text') return;
                     
-                    const newCard = { id: this.generateId('c'), icon: '', title: `新卡片`, content: '双击预览区可直接编辑内容', opacity: 1.0, followGlobalOpacity: true };
+                    const newCard = { id: this.generateId('c'), icon: '', title: `新卡片`, content: '双击预览区可直接编辑内容', opacity: 1.0, followGlobalOpacity: true, textShadowEnabled: false };
                     
                     this.pushHistory();
                     block.cards.push(newCard);
                     this.debouncedSaveToLocal();
                     
                     this.renderInspector();
+                    this.renderLayerPanel();
                     
                     const container = this.elements.previewBlocksContainer.querySelector(`[data-block-id="${blockId}"] > div`);
                     if (!container) {
@@ -2084,6 +2225,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                         block.cards = block.cards.filter(c => c.id !== cardId);
                         this.debouncedSaveToLocal();
                         this.renderInspector();
+                        this.renderLayerPanel();
                         
                         const masonry = this.masonryInstances[blockId];
                         if (!masonry) {
@@ -2134,6 +2276,9 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                                     delete block.images;
                                     migrated = true;
                                 }
+                                if (block.isVisible === undefined) {
+                                    block.isVisible = true;
+                                }
                             });
                             if (migrated) {
                                 this.showToast('旧版图片区块已自动升级', 'info');
@@ -2182,31 +2327,30 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                     return output;
                 },
                 
-                syncControl(stateKey) {
+                syncControl(keyPath) {
                     this.isRestoringState = true;
                     try {
-                        const input = this.elements.inspectorPanel.querySelector(`[data-state-key="${stateKey}"], [data-setting-key="${stateKey.split('.').slice(2).join('.')}"]`);
-                        if (!input) return;
+                        const inputs = this.elements.inspectorPanel.querySelectorAll(`[data-state-key="${keyPath}"], [data-setting-key="${keyPath.split('.').slice(2).join('.')}"]`);
+                        if (inputs.length === 0) return;
 
                         const value = keyPath.split('.').reduce((o, k) => o && o[k], this.state);
-                        
-                        if (input.type === 'radio') {
-                             this.elements.inspectorPanel.querySelectorAll(`input[name="${input.name}"]`).forEach(radio => {
-                                radio.checked = (radio.value == value);
-                            });
-                        } else if (input.type === 'checkbox') input.checked = !!value;
-                        else input.value = value ?? '';
-                        
-                        if (input.type === 'color') {
-                            const hexInput = input.nextElementSibling;
-                            if(hexInput && hexInput.matches('.color-hex-input')) hexInput.value = value || '';
-                        }
-                        if (input.type === 'range' && (stateKey.endsWith('Angle') || input.dataset.settingKey === 'height' || stateKey.endsWith('radius'))) {
-                            const valueDisplay = input.previousElementSibling.querySelector('.angle-value, .spacer-height-value, #gCardRadiusValue');
-                            if (valueDisplay) valueDisplay.textContent = value;
-                        }
+
+                        inputs.forEach(input => {
+                            if (input.type === 'radio') {
+                                input.checked = (input.value == value);
+                            } else if (input.type === 'checkbox') {
+                                input.checked = !!value;
+                            } else {
+                                input.value = value ?? '';
+                            }
+
+                            if (input.type === 'range') {
+                                const valueDisplay = input.closest('.form-group').querySelector('.angle-value, .spacer-height-value, #gCardRadiusValue');
+                                if (valueDisplay) valueDisplay.textContent = value;
+                            }
+                        });
                     } catch (e) {
-                         console.error(`Error syncing control for ${stateKey}:`, e);
+                         console.error(`Error syncing control for ${keyPath}:`, e);
                     } finally {
                         this.isRestoringState = false;
                     }
@@ -2244,8 +2388,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                                         hexInput.value = value || (input.placeholder || '');
                                     }
                                 }
-                                if (input.type === 'range' && (stateKey?.endsWith('Angle') || settingKey === 'height' || stateKey?.endsWith('radius'))) {
-                                     const valueDisplay = input.previousElementSibling.querySelector('.angle-value, .spacer-height-value, #gCardRadiusValue');
+                                if (input.type === 'range') {
+                                     const valueDisplay = input.closest('.form-group').querySelector('.angle-value, .spacer-height-value, #gCardRadiusValue');
                                      if(valueDisplay) valueDisplay.textContent = value;
                                 }
                             }
@@ -2382,6 +2526,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                             block.cards.push(...newCards);
                             this.debouncedSaveToLocal();
                             this.renderInspector(); 
+                            this.renderLayerPanel();
                             this.renderPreviewBlockById(blockId); 
                         } catch (err) {
                             this.showErrorModal('图片上传失败', err.message);
@@ -3095,7 +3240,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                         r.setProperty('--active-card-font-size',g.fontSize);
                         r.setProperty('--g-card-text-stroke', g.textStrokeWidth > 0 ? `${g.textStrokeWidth}px ${g.textStrokeColor}` : '0px transparent');
                         
-                        const regularShadow = g.shadowEnabled ? 'var(--g-card-shadow)' : 'none';
+                        const regularShadow = 'none';
                         if (g.borderStyle === 'solid' && g.borderWidth > 0) {
                             const borderShadow = `0 0 0 ${g.borderWidth}px ${g.borderColor}`;
                             r.setProperty('--active-card-shadow', `${borderShadow}, ${regularShadow}`);
@@ -3107,30 +3252,51 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                 },
                 
                 initAllSortables(){
-                    this.initSortableLayers();
+                    this.initLayerSortables();
                     this.initSortablePreviewBlocks();
                 },
-
-                initSortableLayers(){
+                
+                initLayerSortables() {
                     if(this.sortableLayers) this.sortableLayers.destroy(); 
                     this.sortableLayers = new Sortable(this.elements.layerList, {
+                        group: 'layers',
                         animation: 150,
+                        handle: '.layer-item',
                         ghostClass: 'sortable-ghost',
-                        filter: 'hr, .layer-item[data-type="personalInfo"]',
+                        filter: 'hr, .layer-item[data-type="personalInfo"], .layer-actions, .layer-toggle, .card-layer-list',
                         onEnd: e => {
-                            const oldIndex = e.oldIndex - 2; // Adjust for "Personal Info" and hr
+                            const oldIndex = e.oldIndex - 2;
                             const newIndex = e.newIndex - 2;
                             if (oldIndex === newIndex) return;
-
                             this.pushHistory();
                             const [moved] = this.state.blocks.splice(oldIndex, 1);
                             this.state.blocks.splice(newIndex, 0, moved);
                             this.debouncedSaveToLocal();
-                            
-                            // Re-render both panels to keep them in sync
                             this.renderLayerPanel();
                             this.renderPreviewBlocks();
                         }
+                    });
+                },
+                
+                initNestedSortables() {
+                    Object.values(this.cardLayerSortables).forEach(s => s.destroy());
+                    this.cardLayerSortables = {};
+                    this.elements.layerList.querySelectorAll('.card-layer-list').forEach(list => {
+                        const blockId = list.dataset.blockId;
+                        this.cardLayerSortables[blockId] = new Sortable(list, {
+                            group: `cards-${blockId}`,
+                            animation: 150,
+                            ghostClass: 'sortable-ghost',
+                            onEnd: e => {
+                                const block = this.findBlock(blockId);
+                                if (!block) return;
+                                this.pushHistory();
+                                const [movedCard] = block.cards.splice(e.oldIndex, 1);
+                                block.cards.splice(e.newIndex, 0, movedCard);
+                                this.debouncedSaveToLocal();
+                                this.renderPreviewBlockById(blockId);
+                            }
+                        });
                     });
                 },
                 
@@ -3145,18 +3311,37 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                             const [movedBlock] = this.state.blocks.splice(e.oldIndex, 1);
                             this.state.blocks.splice(e.newIndex, 0, movedBlock);
                             this.debouncedSaveToLocal();
-                            this.renderLayerPanel(); // Sync the layer panel
+                            this.renderLayerPanel();
                         }
                     });
+                },
+                
+                initSortableTags() {
+                    const list = this.elements.inspectorPanel.querySelector('#tag-manager-list');
+                    if (list) {
+                        if (this.sortableTags) this.sortableTags.destroy();
+                        this.sortableTags = new Sortable(list, {
+                            animation: 150,
+                            ghostClass: 'sortable-ghost',
+                            onEnd: e => {
+                                if (e.oldIndex === e.newIndex) return;
+                                this.pushHistory();
+                                const [movedTag] = this.state.personalInfo.tags.splice(e.oldIndex, 1);
+                                this.state.personalInfo.tags.splice(e.newIndex, 0, movedTag);
+                                this.debouncedSaveToLocal();
+                                this.renderPersonalInfo();
+                            }
+                        });
+                    }
                 },
 
                 initSortableCards(blockId){
                     const list = this.elements.inspectorPanel.querySelector(`.editor-block[data-block-id="${blockId}"] .card-editors-list`); 
-                    if (list) { if(this.cardSortables[blockId]) this.cardSortables[blockId].destroy(); this.cardSortables[blockId] = new Sortable(list, { handle: '.card-drag-handle', animation: 150, ghostClass: 'sortable-ghost', onEnd: e => { const b = this.findBlock(blockId); if (b) { this.pushHistory(); const [m] = b.cards.splice(e.oldIndex, 1); b.cards.splice(e.newIndex, 0, m); this.debouncedSaveToLocal(); this.renderPreviewBlockById(blockId); } } }); } 
+                    if (list) { if(this.cardSortables[blockId]) this.cardSortables[blockId].destroy(); this.cardSortables[blockId] = new Sortable(list, { handle: '.card-drag-handle', animation: 150, ghostClass: 'sortable-ghost', onEnd: e => { const b = this.findBlock(blockId); if (b) { this.pushHistory(); const [m] = b.cards.splice(e.oldIndex, 1); b.cards.splice(e.newIndex, 0, m); this.debouncedSaveToLocal(); this.renderPreviewBlockById(blockId); this.renderLayerPanel(); } } }); } 
                 },
                 initSortableImageCards(blockId){
                     const container = this.elements.inspectorPanel.querySelector(`.editor-block[data-block-id="${blockId}"] .image-card-editors-list`);
-                    if (container) { if (this.imageCardSortables[blockId]) this.imageCardSortables[blockId].destroy(); this.imageCardSortables[blockId] = new Sortable(container, { handle: '.card-drag-handle', animation: 150, ghostClass: 'sortable-ghost', onEnd: e => { const block = this.findBlock(blockId); if (block) { this.pushHistory(); const [moved] = block.cards.splice(e.oldIndex, 1); block.cards.splice(e.newIndex, 0, moved); this.debouncedSaveToLocal(); this.renderPreviewBlockById(blockId); } } }); }
+                    if (container) { if (this.imageCardSortables[blockId]) this.imageCardSortables[blockId].destroy(); this.imageCardSortables[blockId] = new Sortable(container, { handle: '.card-drag-handle', animation: 150, ghostClass: 'sortable-ghost', onEnd: e => { const block = this.findBlock(blockId); if (block) { this.pushHistory(); const [moved] = block.cards.splice(e.oldIndex, 1); block.cards.splice(e.newIndex, 0, moved); this.debouncedSaveToLocal(); this.renderPreviewBlockById(blockId); this.renderLayerPanel(); } } }); }
                 },
 
                 initMasonryForBlock(blockId) {
@@ -3223,20 +3408,13 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                     button.title = isLocked ? '预览模式 (点击切换为编辑模式)' : '编辑模式 (点击切换为预览模式)';
                     
                     const shouldDisable = isLocked;
-
-                    // Unified control for all sortable instances
-                    if (this.sortableLayers) {
-                        this.sortableLayers.option('disabled', shouldDisable);
-                    }
-                    if (this.sortablePreview) {
-                        this.sortablePreview.option('disabled', shouldDisable);
-                    }
-                    Object.values(this.cardSortables).forEach(s => {
-                        if (s) s.option('disabled', shouldDisable);
-                    });
-                    Object.values(this.imageCardSortables).forEach(s => {
-                        if (s) s.option('disabled', shouldDisable);
-                    });
+                    
+                    if (this.sortableLayers) this.sortableLayers.option('disabled', shouldDisable);
+                    if (this.sortablePreview) this.sortablePreview.option('disabled', shouldDisable);
+                    if (this.sortableTags) this.sortableTags.option('disabled', shouldDisable);
+                    Object.values(this.cardLayerSortables).forEach(s => { if (s) s.option('disabled', shouldDisable); });
+                    Object.values(this.cardSortables).forEach(s => { if (s) s.option('disabled', shouldDisable); });
+                    Object.values(this.imageCardSortables).forEach(s => { if (s) s.option('disabled', shouldDisable); });
                 },
                 
                 renderTagManager() {
@@ -3422,14 +3600,20 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                     this.renderInspector();
                 },
                 updateHighlights() {
-                    document.querySelectorAll('.layer-item.selected, .preview-block-wrapper.selected, .preview-header.selected').forEach(el => el.classList.remove('selected'));
-                    const { type, id } = this.selection;
+                    document.querySelectorAll('.layer-item.selected, .card-layer-item.selected, .preview-block-wrapper.selected, .preview-header.selected, .editor-card.is-active').forEach(el => el.classList.remove('selected', 'is-active'));
+                    
+                    const { type, id, cardId } = this.selection;
+
                     if (type === 'personalInfo') {
                         document.querySelector('.layer-item[data-type="personalInfo"]')?.classList.add('selected');
                         this.elements.previewHeader.classList.add('selected');
                     } else if (type === 'block' && id) {
                         document.querySelector(`.layer-item[data-id="${id}"]`)?.classList.add('selected');
                         document.querySelector(`.preview-block-wrapper[data-block-id="${id}"]`)?.classList.add('selected');
+                        if (cardId) {
+                            document.querySelector(`.card-layer-item[data-card-id="${cardId}"]`)?.classList.add('selected');
+                            document.querySelector(`.editor-card[data-card-id="${cardId}"]`)?.classList.add('is-active');
+                        }
                     }
                 },
                 
@@ -3438,7 +3622,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                     img.onload = () => {
                         try {
                             const palette = this.colorThief.getPalette(img, 8);
-                            this.lastPalette = palette; // BUGFIX: Store palette
+                            this.lastPalette = palette;
                             this.renderPalette(palette);
                             this.showToast('颜色提取成功！', 'success');
                         } catch(e) {
@@ -3490,7 +3674,6 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                     this.elements.colorContextMenu.style.display = 'none';
                 },
                 
-                // MODIFICATION: Added helper function to switch tabs programmatically
                 switchTab(sectionSelector, desiredTabId) {
                     const section = this.elements.inspectorPanel.querySelector(sectionSelector);
                     if (!section) return;
@@ -3508,7 +3691,6 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                     }
                 },
 
-                // MODIFICATION: Enhanced function to apply colors and switch tabs
                 applyQuickColor(action, color) {
                     const actionMap = {
                         'apply-page-bg-solid': 'pageStyles.pageBgSolidColor',
@@ -3528,7 +3710,6 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                         this.updateState(actionMap[action], color, true);
                         this.showToast('颜色已应用', 'info');
 
-                        // Logic: Automatically switch tabs based on the applied color type
                         if (action.includes('gradient')) {
                             if (action.startsWith('apply-page-bg')) {
                                 this.updateState('pageStyles.pageBgMode', 'gradient', false);
@@ -3575,23 +3756,41 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                 escapeHTML(str){ return (str || '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'})[m]) },
                 sleep(ms){ return new Promise(resolve => setTimeout(resolve, ms)) },
 
-                async addBlock(type) {
+                async addBlock(type, sourceBlock = null) {
                     this.pushHistory();
                     let newBlock;
-                    const defaultState = this.getDefaultState();
-                    const blockTemplate = defaultState.blocks.find(b => b.type === type);
-                    newBlock = this.deepClone(blockTemplate);
+                    
+                    if (sourceBlock) {
+                        newBlock = this.deepClone(sourceBlock);
+                        newBlock.title = `${sourceBlock.title} (副本)`;
+                        if (newBlock.cards) {
+                            newBlock.cards.forEach(card => {
+                                card.title = "";
+                                card.content = "";
+                                card.description = "";
+                            });
+                        }
+                    } else {
+                        const defaultState = this.getDefaultState();
+                        const blockTemplate = defaultState.blocks.find(b => b.type === type);
+                        newBlock = this.deepClone(blockTemplate);
+                    }
+
                     newBlock.id = this.generateId('b');
                     if (newBlock.cards) {
                         newBlock.cards.forEach(c => c.id = this.generateId('c'));
                     }
-                    this.state.blocks.push(newBlock);
-                    this.debouncedSaveToLocal();
 
+                    const insertIndex = sourceBlock ? this.findBlockIndex(sourceBlock.id) + 1 : this.state.blocks.length;
+                    this.state.blocks.splice(insertIndex, 0, newBlock);
+                    
+                    this.debouncedSaveToLocal();
                     this.renderLayerPanel();
                     this.renderPreviewBlocks();
                     await this.sleep(10);
                     this.setSelection({ type: 'block', id: newBlock.id });
+                    
+                    if (sourceBlock) this.showToast('样式已复制', 'success');
                 },
                 async deleteBlock(blockId) {
                     if (await this.showConfirm('删除区块', '确定要删除这个区块吗？')) {
@@ -3602,12 +3801,26 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                         
                         if (this.selection.type === 'block' && this.selection.id === blockId) {
                             this.setSelection({type: 'global'});
-                        } else {
-                            this.renderLayerPanel();
-                        }
+                        } 
                         
+                        this.renderLayerPanel();
                         this.renderPreviewBlocks();
                         this.showToast('区块已删除', 'info');
+                    }
+                },
+                
+                toggleBlockVisibility(blockId) {
+                    const blockIndex = this.findBlockIndex(blockId);
+                    if (blockIndex > -1) {
+                        const currentVisibility = this.state.blocks[blockIndex].isVisible;
+                        this.updateState(`blocks.${blockIndex}.isVisible`, currentVisibility === false ? true : false, true);
+                    }
+                },
+                
+                duplicateBlock(blockId) {
+                    const block = this.findBlock(blockId);
+                    if (block) {
+                        this.addBlock(block.type, block);
                     }
                 },
                 
@@ -3651,7 +3864,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                     randomState.pageStyles.pageBgSolidColor = randColor();
                     randomState.globalCardStyles.bgColor = randColor();
                     randomState.globalCardStyles.textColor = randColor();
-                    randomState.globalCardStyles.shadowEnabled = randBool();
+                    randomState.globalCardStyles.shadowEnabled = false;
 
                     randomState.blocks = [];
                     const blockTypes = ['text', 'image', 'separator', 'spacer'];
@@ -3660,16 +3873,16 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                         let newBlock;
                         switch(type) {
                             case 'text':
-                                newBlock = { id: this.generateId('b'), type: 'text', title: `随机文本区块 ${i+1}`, settings: { layout: randChoice(['single', 'dual', 'triple']), masonryEnabled: randBool() }, cards: Array.from({length: rand(2, 5)}, (_, j) => ({ id: this.generateId('c'), icon: '', title: `随机卡片 ${j+1}`, content: `随机内容 - ${Math.random().toString(36).substring(2)}`, opacity: 1.0, followGlobalOpacity: true })) };
+                                newBlock = { id: this.generateId('b'), isVisible: true, type: 'text', title: `随机文本区块 ${i+1}`, settings: { layout: randChoice(['single', 'dual', 'triple']), masonryEnabled: randBool() }, cards: Array.from({length: rand(2, 5)}, (_, j) => ({ id: this.generateId('c'), icon: '', title: `随机卡片 ${j+1}`, content: `随机内容 - ${Math.random().toString(36).substring(2)}`, opacity: 1.0, followGlobalOpacity: true })) };
                                 break;
                             case 'image':
-                                newBlock = { id: this.generateId('b'), type: 'image', title: `随机图片区块 ${i+1}`, settings: { layout: randChoice(['single', 'dual', 'triple']), masonryEnabled: randBool(), textColor: randColor() }, cards: [] };
+                                newBlock = { id: this.generateId('b'), isVisible: true, type: 'image', title: `随机图片区块 ${i+1}`, settings: { layout: randChoice(['single', 'dual', 'triple']), masonryEnabled: randBool(), textColor: randColor() }, cards: [] };
                                 break;
                             case 'separator':
-                                newBlock = { id: this.generateId('b'), type: 'separator', title: `随机分割线 ${i+1}`, settings: { style: randChoice(['solid', 'dashed', 'dotted']), color: randColor(), thickness: rand(1, 5), margin: rand(10, 40), text: 'Random Text', icon: null, textColor: randColor() }};
+                                newBlock = { id: this.generateId('b'), isVisible: true, type: 'separator', title: `随机分割线 ${i+1}`, settings: { style: randChoice(['solid', 'dashed', 'dotted']), color: randColor(), thickness: rand(1, 5), margin: rand(10, 40), text: 'Random Text', icon: null, textColor: randColor() }};
                                 break;
                             case 'spacer':
-                                newBlock = { id: this.generateId('b'), type: 'spacer', title: `随机留白 ${i+1}`, settings: { height: rand(20, 100) }};
+                                newBlock = { id: this.generateId('b'), isVisible: true, type: 'spacer', title: `随机留白 ${i+1}`, settings: { height: rand(20, 100) }};
                                 break;
                         }
                         randomState.blocks.push(newBlock);
@@ -3681,4 +3894,4 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         });
     </script>
 </body>
-			</html>
+</html>
