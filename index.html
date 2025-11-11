@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Blokko v1.5.4 (Internal): -->
-    <title>Blokko-个人简介生成器！ (v1.5.4)-来玩《赛博朋克：2077》吧！</title>
+    <!-- Blokko v1.5.5 (Internal): -->
+    <title>Blokko-个人简介生成器！ (v1.5.5)-来玩《赛博朋克：2077》吧！</title>
     
     <script>
         // Anti-FOUC (Flash of Unstyled Content) Script
@@ -211,7 +211,7 @@
         .preview-wrapper::before { content: none; }
         .preview-overlay { display: none; }
         .preview-header, .preview-blocks-container { position: relative; z-index: 2; word-wrap: break-word; overflow-wrap: break-word; width: 100%; box-sizing: border-box; }
-        [data-state-key]:hover, [data-card-key]:hover, [data-separator-text-key]:hover, .tag-pill:hover { outline: 1px dashed var(--color-primary); cursor: text; }
+        [data-state-key]:hover, [data-card-key]:hover, [data-separator-text-key]:hover, .tag-pill span[data-tag-id]:hover { outline: 1px dashed var(--color-primary); cursor: text; }
         [contenteditable="true"] { outline: 2px solid var(--color-primary); box-shadow: 0 0 8px rgba(0, 122, 255, 0.5); background-color: rgba(0, 122, 255, 0.1); border-radius: 4px; }
         .btn { display: inline-block; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; transition: background-color var(--transition-short) ease, transform var(--transition-short) ease, box-shadow var(--transition-short) ease; text-align: center; width: 100%; color: var(--text-on-primary); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .btn-primary { background: var(--color-primary); } .btn-primary:hover:not(:disabled) { background: var(--color-primary-hover); box-shadow: 0 4px 8px rgba(0,122,255,0.3); }
@@ -261,7 +261,7 @@
         .gradient-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         .gradient-angle-control { grid-column: 1 / -1; }
         .preview-header { padding: 30px 15px; text-align: center; border-radius: 16px; transition: all var(--transition-speed) ease; overflow-wrap: break-word; }
-        #preview-avatar { width: 90px; height: 90px; border: 4px solid var(--bg-preview-page); box-shadow: 0 4px 12px var(--shadow-light); object-fit: cover; background-color: #fff; transition: all var(--transition-speed) ease; }
+        #preview-avatar { width: 90px; height: 90px; border: 4px solid var(--bg-preview-page); box-shadow: 0 4px 12px var(--shadow-light); object-fit: cover; background-color: #fff; transition: all var(--transition-speed) ease; cursor: pointer; }
         #preview-nickname { margin: 12px 0 5px; font-size: 1.6rem; font-weight: 700; color: var(--text-primary); transition: color var(--transition-speed) ease; }
         #preview-subtitle { margin: 0 0 8px; font-size: 1rem; font-weight: 400; color: var(--text-primary); opacity: 0.7; transition: color var(--transition-speed) ease, margin var(--transition-speed) ease; }
         #preview-bio { margin: 0; font-size: 0.9rem; line-height: 1.4; color: var(--text-primary); opacity: 0.8; transition: color var(--transition-speed) ease; white-space: pre-wrap; }
@@ -281,7 +281,6 @@
         .up-down-btns { display: flex; gap: 2px; }
         .up-down-btns button { font-size: 1rem; width: 28px; height: 28px; padding: 0; line-height: 28px; }
         .block-settings { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding-left: 10px; flex-shrink: 0; }
-        .block-settings label { font-size: 0.9rem; margin: 0; color: var(--text-secondary); cursor: pointer; }
         .block-delete-btn { width: auto; padding: 6px 10px; font-size: 0.9rem; flex-shrink: 0; }
         .editor-block-content { padding: 15px; overflow-x: hidden; }
         .card-editors-list .empty-placeholder, .image-card-editors-list .empty-placeholder { text-align: center; padding: 15px; color: var(--text-placeholder); font-size: 0.9rem; }
@@ -321,7 +320,7 @@
         .masonry-active.preview-cards-dual .preview-card, .masonry-active.preview-cards-dual figure { width: calc(50% - 7.5px); margin-bottom: 15px; }
         .masonry-active.preview-cards-triple .preview-card, .masonry-active.preview-cards-triple figure { width: calc(33.333% - 10px); margin-bottom: 15px; }
         .preview-card { box-sizing: box; width: 100%; view-transition-name: var(--card-transition-name); }
-        .preview-card-inner { width: 100%; height: 100%; box-sizing: border-box; position: relative; overflow: hidden; color: var(--card-text-color, var(--g-card-text-color)); border-radius: var(--g-card-border-radius); box-shadow: var(--active-card-shadow, none); border: var(--active-card-border, none); font-weight: var(--card-font-weight, normal); text-shadow: var(--active-card-text-shadow, none); padding: 15px; word-wrap: break-word; transition: all var(--transition-short) ease; -webkit-text-stroke: var(--g-card-text-stroke); line-height: var(--g-card-line-height); background-clip: padding-box; }
+        .preview-card-inner { width: 100%; height: 100%; box-sizing: border-box; position: relative; overflow: hidden; color: var(--card-text-color, var(--g-card-text-color)); border-radius: var(--g-card-border-radius); box-shadow: var(--active-card-shadow, none); border: var(--active-card-border, none); font-weight: var(--card-font-weight, normal); text-shadow: var(--active-card-text-shadow, none); padding: 15px; word-wrap: break-word; transition: all var(--transition-short) ease; -webkit-text-stroke: var(--g-card-text-stroke); line-height: var(--g-card-line-height); /* background-clip: padding-box; */ }
         .preview-card-inner::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 0; background-size: cover; background-position: center; border-radius: inherit; background: var(--card-bg-final); transition: background var(--transition-speed) ease; }
         .preview-card-inner::after { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--card-overlay-color, transparent); opacity: var(--card-overlay-opacity, 0); border-radius: inherit; z-index: 1; pointer-events: none; transition: all var(--transition-short) ease; }
         .preview-card:hover .preview-card-inner { transform: scale(1.02); box-shadow: 0 6px 16px var(--shadow-medium); }
@@ -448,7 +447,7 @@
 
     <header class="app-header">
         <button id="mobile-layer-toggle" class="btn btn-default btn-icon" style="width: auto; padding: 6px 12px;"><span class="iconify" data-icon="mdi:layers-outline"></span> 内容</button>
-        <div class="app-header-title">Blokko (v1.5.4)</div>
+        <div class="app-header-title">Blokko (v1.5.5)</div>
         <div class="header-actions-wrapper">
             <button id="lock-mode-toggle" class="btn btn-default" style="width: auto; padding: 6px 12px;" title="切换编辑/预览模式">编辑中</button>
             <button id="show-help-btn" class="btn btn-default btn-icon" style="width: auto; padding: 6px 12px;"><span class="iconify" data-icon="mdi:help-circle-outline"></span> 帮助</button>
@@ -478,7 +477,7 @@
             <div class="preview-wrapper" id="preview-wrapper">
                 <div class="preview-overlay" id="preview-overlay"></div>
                 <header class="preview-header" id="preview-header">
-                    <img id="preview-avatar" src="" alt="Avatar">
+                    <img id="preview-avatar" src="" alt="Avatar" title="点击更换头像">
                     <h1 id="preview-nickname" data-state-key="personalInfo.nickname"></h1>
                     <h2 id="preview-subtitle" data-state-key="personalInfo.subtitle"></h2>
                     <p id="preview-bio" data-state-key="personalInfo.bio"></p>
@@ -533,7 +532,7 @@
                 <p>Blokko 最便捷的操作就是“双击”。在预览区域，你看到的所有文字（比如昵称、简介、卡片标题和内容），直接双击它们就可以立刻开始编辑，非常方便！（请确保页面顶部的按钮处于“编辑中”状态）</p>
                 
                 <h4>第二步：调整你的个人信息</h4>
-                <p>在左侧的“内容图层”面板，点击 “👤 个人信息” 图层，右侧的“样式”面板就会显示出所有相关设置。你可以在那里上传头像、修改昵称、添加标签等。</p>
+                <p>在左侧的“内容图层”面板，点击 “👤 个人信息” 图层，右侧的“样式”面板就会显示出所有相关设置。你可以在那里上传头像（也可以直接点击预览区的头像）、修改昵称、添加标签等。</p>
                 
                 <h4>第三步：添加和管理内容</h4>
                 <p>点击左下角的“➕”系列按钮可以添加不同类型的展示模块。在“内容图层”面板，你可以通过拖拽来排序所有区块。</p>
@@ -1050,7 +1049,7 @@ Monitor of this License or out of the use or inability to use the
                 lastPalette: [],
 
                 init() {
-                    console.log("Blokko 初始化 v1.5.4 ...");
+                    console.log("Blokko 初始化 v1.5.5 ...");
                     this.elements = this.queryElements();
                     this.presets = this.getPresets();
                     this.state = this.getDefaultState();
@@ -1076,7 +1075,7 @@ Monitor of this License or out of the use or inability to use the
                     this.setSelection({ type: 'global' });
                     this.updateUndoRedoButtons();
                     
-                    const hasVisited = localStorage.getItem('blokkoFirstVisit_v1_5');
+                    const hasVisited = localStorage.getItem('blokkoFirstVisit_v1_5_5');
                     if (!hasVisited) {
                         this.elements.helpModal.classList.add('visible');
                         const helpModal = this.elements.helpModal;
@@ -1084,7 +1083,7 @@ Monitor of this License or out of the use or inability to use the
                         if (tutorialTabBtn) {
                            tutorialTabBtn.click();
                         }
-                        localStorage.setItem('blokkoFirstVisit_v1_5', 'true');
+                        localStorage.setItem('blokkoFirstVisit_v1_5_5', 'true');
                     }
                     if (window.ColorThief) {
                         this.colorThief = new ColorThief();
@@ -1101,6 +1100,8 @@ Monitor of this License or out of the use or inability to use the
                             bio: "这是简介，双击可编辑", bioColor: lightTheme.pBioColor,
                             avatarDataUrl: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23cccccc'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E", 
                             avatarShape: '50%', avatarBorderSize: 4, avatarBorderColor: '#ffffff',
+                            avatarSize: 100,
+                            avatarOffsetX: 0,
                             headerShadowEnabled: false, // Compatibility
                             tags: [
                                 { id: this.generateId('t'), icon: 'mdi:palette', text: '设计师' },
@@ -1244,8 +1245,11 @@ Monitor of this License or out of the use or inability to use the
                     
                     this.elements.mobileLayerToggle.addEventListener('click', () => this.togglePanelDrawer('layer-panel'));
                     this.elements.mobileInspectorToggle.addEventListener('click', () => this.togglePanelDrawer('inspector-panel'));
+
+                    /** v1.5.5 Fix */
+                    // Changed the click listener to correctly close panels when clicking on the overlay/preview area.
                     this.elements.previewPanel.addEventListener('click', (e) => {
-                        if (e.target === this.elements.previewPanel && this.elements.body.classList.contains('panels-open')) {
+                        if (e.target.closest('.preview-wrapper') && this.elements.body.classList.contains('panels-open')) {
                             this.togglePanelDrawer(false);
                         }
                     });
@@ -1401,6 +1405,11 @@ Monitor of this License or out of the use or inability to use the
                         if (this.isRestoringState) return;
                         const target = e.target;
                         
+                        if (target.matches('.tag-manager-item .tag-text-input')) {
+                            const tagItem = target.closest('.tag-manager-item');
+                            if (tagItem) this.updateTag(tagItem.dataset.tagId, 'text', target.value, false);
+                        }
+
                         if (target.matches('#font-search-input')) {
                             this.populateFontList(target.value);
                             return;
@@ -1438,19 +1447,16 @@ Monitor of this License or out of the use or inability to use the
                             this.updateState(stateKey, value, false);
                         } else if (blockIdForTitle) {
                             this.updateBlockTitle(blockIdForTitle, value, false);
-                            this.renderLayerPanel();
+                            // This now uses precise rendering, so no full re-render.
                         } else if (blockEl && settingKey) {
                              this.updateBlockSettings(blockEl.dataset.blockId, settingKey, value, false);
                         } else if (blockEl && cardKey) {
                             const cardEl = keySource.closest('.editor-card');
                             if (cardEl) this.updateCard(blockEl.dataset.blockId, cardEl.dataset.cardId, cardKey, value, false);
-                        } else if (target.matches('.tag-manager-item .tag-text-input')) {
-                            const tagItem = target.closest('.tag-manager-item');
-                            if (tagItem) this.updateTag(tagItem.dataset.tagId, 'text', target.value, false);
                         }
 
                         if (target.type === 'range') {
-                            const valueDisplay = target.closest('.form-group').querySelector('.angle-value, .spacer-height-value, #gCardRadiusValue');
+                            const valueDisplay = target.closest('.form-group').querySelector('.angle-value, .spacer-height-value, #gCardRadiusValue, .avatar-size-value');
                             if (valueDisplay) valueDisplay.textContent = value;
                         }
                     });
@@ -1468,7 +1474,6 @@ Monitor of this License or out of the use or inability to use the
                             this.pushHistory();
                         }
                         
-                        // v1.5.4 BUG FIX: Re-render inspector for radio buttons inside cards to sync UI state
                         if (target.type === 'radio' && target.closest('.editor-card')) {
                             this.renderInspector();
                         }
@@ -1565,6 +1570,12 @@ Monitor of this License or out of the use or inability to use the
                                 this.showToast('背景图已清除', 'info');
                             },
                             '#pick-color-btn': () => panel.querySelector('#color-thief-upload')?.click(),
+                            '#reset-avatar-transform-btn': () => {
+                                this.pushHistory();
+                                this.updateState('personalInfo.avatarSize', 100, false);
+                                this.updateState('personalInfo.avatarOffsetX', 0, false);
+                                this.showToast('头像位置与大小已重置', 'info');
+                            },
                         };
                         for(const selector in actions) {
                             if (actionButton.matches(selector)) {
@@ -1652,6 +1663,22 @@ Monitor of this License or out of the use or inability to use the
 
                 bindPreviewEvents(){
                      this.elements.previewPanel.addEventListener('click', e => {
+                        /** v1.5.5 Update */
+                        // Added logic to handle quick avatar change
+                        if (e.target.closest('#preview-avatar')) {
+                            if (this.selection.type !== 'personalInfo') {
+                                this.setSelection({ type: 'personalInfo' });
+                            }
+                            // Use a timeout to ensure the inspector panel has rendered before triggering the click
+                            setTimeout(() => {
+                                const avatarUploadInput = this.elements.inspectorPanel.querySelector('#avatar-upload');
+                                if (avatarUploadInput) {
+                                    avatarUploadInput.click();
+                                }
+                            }, 50);
+                            return; // Stop further processing
+                        }
+
                         if (this.isEditingText) return;
                         
                         const header = e.target.closest('.preview-header');
@@ -1680,7 +1707,7 @@ Monitor of this License or out of the use or inability to use the
 
                      this.elements.previewWrapper.addEventListener('dblclick', e => {
                         if (this.elements.previewBlocksContainer.classList.contains('locked-mode')) return;
-                        const target = e.target.closest('[data-state-key], [data-card-key], [data-tag-id], [data-separator-text-key]');
+                        const target = e.target.closest('[data-state-key], [data-card-key], [data-tag-text-id], [data-separator-text-key]');
                         if (target && !this.isEditingText) {
                             this.isEditingText = true;
                             target.contentEditable = true;
@@ -1719,6 +1746,7 @@ Monitor of this License or out of the use or inability to use the
                             const stateKey = target.dataset.stateKey;
                             const cardKey = target.dataset.cardKey;
                             const separatorKey = target.dataset.separatorTextKey;
+                            const tagId = target.dataset.tagTextId;
                             const value = target.innerText;
 
                             const updateStateObject = (path, val) => {
@@ -1747,6 +1775,13 @@ Monitor of this License or out of the use or inability to use the
                                 if(block) block.settings.text = value;
                                 const editorInput = this.elements.inspectorPanel.querySelector(`.editor-block[data-block-id="${separatorKey}"] [data-setting-key="text"]`);
                                 if(editorInput) editorInput.value = value;
+                            } else if (tagId) { /** v1.5.5 Fix: Handle tag text editing */
+                                const tag = this.state.personalInfo.tags.find(t => t.id === tagId);
+                                if (tag) {
+                                    tag.text = value;
+                                    const inspectorInput = this.elements.inspectorPanel.querySelector(`.tag-manager-item[data-tag-id="${tagId}"] .tag-text-input`);
+                                    if (inspectorInput) inspectorInput.value = value;
+                                }
                             }
                         }
                     });
@@ -1810,6 +1845,13 @@ Monitor of this License or out of the use or inability to use the
                     this.elements.previewSubtitle.style.color = info.subtitleColor;
                     this.elements.previewBio.style.color = info.bioColor;
 
+                    const baseSize = 90;
+                    const newSize = baseSize * ((info.avatarSize || 100) / 100);
+                    const offsetX = info.avatarOffsetX || 0;
+                    this.elements.previewAvatar.style.width = `${newSize}px`;
+                    this.elements.previewAvatar.style.height = `${newSize}px`;
+                    this.elements.previewAvatar.style.transform = `translateX(${offsetX}%)`;
+
                     this.elements.previewAvatar.style.borderRadius = info.avatarShape;
                     this.elements.previewAvatar.style.borderWidth = `${info.avatarBorderSize}px`;
                     this.elements.previewAvatar.style.borderColor = info.avatarBorderColor;
@@ -1819,7 +1861,8 @@ Monitor of this License or out of the use or inability to use the
                     this.elements.previewTagsContainer.innerHTML = (info.tags || [])
                         .map(tag => {
                             const iconHTML = tag.icon ? `<span class="iconify" data-icon="${tag.icon}"></span>` : '';
-                            return `<span class="tag-pill" data-tag-id="${tag.id}" style="background-color:${info.tagBgColor}; color:${info.tagTextColor};">${iconHTML}<span>${this.escapeHTML(tag.text)}</span></span>`;
+                            /** v1.5.5 Fix: Added data-tag-text-id for live editing */
+                            return `<span class="tag-pill" style="background-color:${info.tagBgColor}; color:${info.tagTextColor};">${iconHTML}<span data-tag-text-id="${tag.id}">${this.escapeHTML(tag.text)}</span></span>`;
                         }).join('');
                 },
                 
@@ -1883,10 +1926,6 @@ Monitor of this License or out of the use or inability to use the
                     this.elements.previewNickname.style.color = this.state.personalInfo.nicknameColor;
                     this.elements.previewSubtitle.style.color = this.state.personalInfo.subtitleColor;
                     this.elements.previewBio.style.color = this.state.personalInfo.bioColor;
-                    
-                    // v1.5.4 BUG FIX: This logic is now handled in syncAllControls to ensure inspector is rendered first.
-                    // const pageImageControls = document.getElementById('page-image-controls');
-                    // if (pageImageControls) pageImageControls.style.display = styles.pageBgImageDataUrl ? 'block' : 'none';
                 },
 
                 renderLayerPanel() {
@@ -2034,7 +2073,7 @@ Monitor of this License or out of the use or inability to use the
                                     <div id="card-bg-gradient" class="tab-content"><div class="gradient-controls"><div class="form-group"><label>起始颜色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.bgGradientStart"><input type="text" class="color-hex-input" data-state-key="globalCardStyles.bgGradientStart"></div></div><div class="form-group"><label>结束颜色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.bgGradientEnd"><input type="text" class="color-hex-input" data-state-key="globalCardStyles.bgGradientEnd"></div></div><div class="gradient-angle-control form-group advanced-setting"><label>角度 (<span class="angle-value">135</span>°):</label><input type="range" data-state-key="globalCardStyles.bgGradientAngle" min="0" max="360" step="1"></div></div></div>
                                     <div class="form-group"><label>不透明度:</label><input type="range" data-state-key="globalCardStyles.opacity" min="0" max="1" step="0.05"></div>
                                     <div class="form-group"><label>圆角 (px): <span id="gCardRadiusValue">12</span></label><input type="range" data-state-key="globalCardStyles.radius" min="0" max="40" step="1"></div>
-                                    <div class="advanced-setting"><hr class="separator"><label>卡片边框:</label><div class="form-group inset-controls"><div class="form-group"><label>样式:</label><select data-state-key="globalCardStyles.borderStyle"><option value="none">无</option><option value="solid">实线</option><option value="dashed">虚线</option><option value="dotted">点状</option></select></div><div class="color-control-row"><div class="color-control-group"><label>粗细(px):</label><div class="input-group simple"><input type="range" data-state-key="globalCardStyles.borderWidth" min="0" max="10" step="1"></div></div><div class="color-control-group"><label>颜色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.borderColor"><input type="text" class="color-hex-input" data-state-key="globalCardStyles.borderColor"></div></div></div></div></div>
+                                    <div class="advanced-setting"><hr class="separator"><label>卡片边框:</label><div class="form-group inset-controls"><div class="form-group"><label>样式:</label><select data-state-key="globalCardStyles.borderStyle"><option value="none">无</option><option value="solid">实线</option><option value="dashed">虚线</option><option value="dotted">点状</option><option value="double">双实线</option></select></div><div class="color-control-row"><div class="color-control-group"><label>粗细(px):</label><div class="input-group simple"><input type="range" data-state-key="globalCardStyles.borderWidth" min="0" max="10" step="1"></div></div><div class="color-control-group"><label>颜色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.borderColor"><input type="text" class="color-hex-input" data-state-key="globalCardStyles.borderColor"></div></div></div></div></div>
                                     <hr class="separator"><div class="form-group"><label>对齐:</label><div class="radio-group"><label><input type="radio" name="gCardAlign" value="left" data-state-key="globalCardStyles.textAlign">居左</label><label><input type="radio" name="gCardAlign" value="center" data-state-key="globalCardStyles.textAlign">居中</label><label><input type="radio" name="gCardAlign" value="right" data-state-key="globalCardStyles.textAlign">居右</label></div></div>
                                     <div class="form-group"><label>行高:</label><div class="radio-group"><label><input type="radio" name="gCardLineHeight" value="1.4" data-state-key="globalCardStyles.lineHeight">紧凑</label><label><input type="radio" name="gCardLineHeight" value="1.5" data-state-key="globalCardStyles.lineHeight">中等</label><label><input type="radio" name="gCardLineHeight" value="1.6" data-state-key="globalCardStyles.lineHeight">宽松</label></div></div>
                                     <hr class="separator"><div class="form-group"><label>字体:</label><div class="font-controls"><input type="text" id="font-search-input" placeholder="搜索本地字体..." style="margin-bottom: 5px;"><select id="font-family-select" data-state-key="globalCardStyles.fontFamily"></select><div class="buttons"><button id="load-local-fonts-btn" class="btn btn-default">加载本地</button><button id="upload-font-btn" class="btn btn-default">上传字体</button></div><input type="file" id="font-upload-input" accept=".ttf,.woff,.woff2,.otf" style="display: none;"></div></div>
@@ -2059,12 +2098,21 @@ Monitor of this License or out of the use or inability to use the
 
                 createPersonalInfoInspectorHTML() {
                     const backBtn = this.selection.type !== 'global' ? `<button class="back-to-global-btn">← 返回全局</button>` : '';
+                    /** v1.5.5 Update: Reordered elements to place avatar settings at the top. */
                     return `
                         <h3 class="panel-header">个人信息设置 ${backBtn}</h3>
                         <div class="inspector-state active">
                              <fieldset class="editor-section">
                                 <legend>个人信息</legend>
                                 <div class="section-content">
+                                    <div class="form-group"><label>头像上传 (点击左侧预览区的头像也可上传):</label><input type="file" id="avatar-upload" accept="image/*"></div>
+                                    <div class="form-group"><label>头像形状:</label><div class="radio-group"><label><input type="radio" name="avatarShape" value="50%" data-state-key="personalInfo.avatarShape">圆形</label><label><input type="radio" name="avatarShape" value="16px" data-state-key="personalInfo.avatarShape">圆角</label><label><input type="radio" name="avatarShape" value="0px" data-state-key="personalInfo.avatarShape">方形</label></div></div>
+                                    <div class="form-group"><label>头像边框:</label><div class="color-control-row"><div class="color-control-group"><label>粗细(px):</label><div class="input-group simple"><input type="range" data-state-key="personalInfo.avatarBorderSize" min="0" max="10" step="1"></div></div><div class="color-control-group"><label>颜色:</label><div class="input-group"><input type="color" data-state-key="personalInfo.avatarBorderColor"><input type="text" class="color-hex-input" data-state-key="personalInfo.avatarBorderColor"></div></div></div></div>
+                                    <hr class="separator">
+                                    <div class="form-group"><label>头像大小 (%): <span class="avatar-size-value">100</span></label><input type="range" data-state-key="personalInfo.avatarSize" min="50" max="200" step="1"></div>
+                                    <div class="form-group"><label>头像水平位置:</label><input type="range" data-state-key="personalInfo.avatarOffsetX" min="-100" max="100" step="1"></div>
+                                    <div class="form-group"><button id="reset-avatar-transform-btn" class="btn btn-default btn-small">恢复默认位置与大小</button></div>
+                                    <hr class="separator">
                                     <div class="form-group"><label>昵称:</label><input type="text" data-state-key="personalInfo.nickname" data-preview-target="#preview-nickname"></div>
                                     <div class="form-group"><label>昵称颜色:</label><div class="input-group"><input type="color" data-state-key="personalInfo.nicknameColor"><input type="text" class="color-hex-input" data-state-key="personalInfo.nicknameColor"><button class="btn btn-default btn-small" data-reset-key="personalInfo.nicknameColor">重置</button></div></div>
                                     <div class="form-group"><label>副标题 (可选):</label><input type="text" data-state-key="personalInfo.subtitle" data-preview-target="#preview-subtitle"></div>
@@ -2074,10 +2122,6 @@ Monitor of this License or out of the use or inability to use the
                                     <hr class="separator">
                                     <div class="form-group"><label>标签管理器 (可拖拽排序):</label><div id="tag-manager-list"></div><div class="input-group simple" style="margin-top: 10px;"><input type="text" id="new-tag-text-input" placeholder="输入新标签文字..."><button id="add-new-tag-btn" class="btn btn-default btn-small">添加标签</button></div></div>
                                     <div class="form-group"><label>标签样式:</label><div class="color-control-row"><div class="color-control-group"><label>背景</label><div class="input-group"><input type="color" data-state-key="personalInfo.tagBgColor"><input type="text" class="color-hex-input" data-state-key="personalInfo.tagBgColor"><button class="btn btn-default btn-small" data-reset-key="personalInfo.tagBgColor">重置</button></div></div><div class="color-control-group"><label>文字</label><div class="input-group"><input type="color" data-state-key="personalInfo.tagTextColor"><input type="text" class="color-hex-input" data-state-key="personalInfo.tagTextColor"><button class="btn btn-default btn-small" data-reset-key="personalInfo.tagTextColor">重置</button></div></div></div></div>
-                                    <hr class="separator">
-                                    <div class="form-group"><label>头像上传:</label><input type="file" id="avatar-upload" accept="image/*"></div>
-                                    <div class="form-group"><label>头像形状:</label><div class="radio-group"><label><input type="radio" name="avatarShape" value="50%" data-state-key="personalInfo.avatarShape">圆形</label><label><input type="radio" name="avatarShape" value="16px" data-state-key="personalInfo.avatarShape">圆角</label><label><input type="radio" name="avatarShape" value="0px" data-state-key="personalInfo.avatarShape">方形</label></div></div>
-                                    <div class="form-group"><label>头像边框:</label><div class="color-control-row"><div class="color-control-group"><label>粗细(px):</label><div class="input-group simple"><input type="range" data-state-key="personalInfo.avatarBorderSize" min="0" max="10" step="1"></div></div><div class="color-control-group"><label>颜色:</label><div class="input-group"><input type="color" data-state-key="personalInfo.avatarBorderColor"><input type="text" class="color-hex-input" data-state-key="personalInfo.avatarBorderColor"></div></div></div></div>
                                 </div>
                             </fieldset>
                         </div>
@@ -2287,52 +2331,114 @@ Monitor of this License or out of the use or inability to use the
                     this.syncControl(keyPath);
                 },
 
-                /**
-                 * @zh-CN 根据更新的state key来决定重新渲染哪个部分的UI。
-                 * @description 这是一个核心的调度函数，用于提高渲染效率，避免不必要的全局刷新。
-                 * @param {string} keyPath - 状态对象中的路径，例如 'personalInfo.nickname'。
-                 */
                 triggerRender(keyPath) {
                     const mainKey = keyPath.split('.')[0];
-                    
-                    // v1.5.4 BUG FIX: 精确更新，避免左侧面板闪烁
                     const keyParts = keyPath.split('.');
-                    if (mainKey === 'blocks' && keyParts.length > 3 && keyParts[2] === 'cards') {
-                        // 这是一个对卡片内部属性的更新 (e.g., blocks.0.cards.1.title)
-                        const blockIndex = parseInt(keyParts[1], 10);
-                        const cardIndex = parseInt(keyParts[3], 10);
-                        const cardProp = keyParts[4];
-                        const blockId = this.state.blocks[blockIndex]?.id;
-                        const cardId = this.state.blocks[blockIndex]?.cards[cardIndex]?.id;
-                        
-                        if (blockId && cardId) {
-                            if (cardProp === 'title') {
-                                // 只更新左侧图层面板中对应卡片的标题，不重绘整个面板
-                                const cardLayerItem = this.elements.layerList.querySelector(`.card-layer-item[data-card-id="${cardId}"]`);
-                                if (cardLayerItem) {
-                                    cardLayerItem.textContent = this.state.blocks[blockIndex].cards[cardIndex].title || '无标题卡片';
-                                }
-                            }
-                            this.renderPreviewBlockById(blockId); // 仅重绘受影响的预览区块
-                            return; // 结束，不再执行后续的全局渲染
-                        }
-                    }
 
                     if (mainKey === 'personalInfo') {
-                        this.renderPersonalInfo();
-                        if (keyPath.includes('tags')) this.renderTagManager();
-                    } else if (mainKey === 'pageStyles' || mainKey === 'globalCardStyles') {
+                        const subKey = keyParts[1];
+
+                        if (subKey === 'tags' && keyParts.length > 3 && keyParts[3] === 'text') {
+                            this.renderPersonalInfo();
+                            return; 
+                        }
+
+                        switch (subKey) {
+                            case 'nickname':
+                                this.elements.previewNickname.textContent = this.state.personalInfo.nickname;
+                                break;
+                            case 'subtitle':
+                                this.elements.previewSubtitle.textContent = this.state.personalInfo.subtitle;
+                                break;
+                            case 'bio':
+                                this.elements.previewBio.textContent = this.state.personalInfo.bio;
+                                break;
+                            case 'nicknameColor':
+                                this.elements.previewNickname.style.color = this.state.personalInfo.nicknameColor;
+                                break;
+                            case 'subtitleColor':
+                                this.elements.previewSubtitle.style.color = this.state.personalInfo.subtitleColor;
+                                break;
+                            case 'bioColor':
+                                this.elements.previewBio.style.color = this.state.personalInfo.bioColor;
+                                break;
+                            case 'avatarDataUrl':
+                                this.elements.previewAvatar.src = this.state.personalInfo.avatarDataUrl;
+                                break;
+                            case 'avatarShape':
+                            case 'avatarBorderSize':
+                            case 'avatarBorderColor':
+                            case 'avatarSize':
+                            case 'avatarOffsetX':
+                                this.renderPersonalInfo();
+                                break;
+                            case 'tags':
+                            case 'tagBgColor':
+                            case 'tagTextColor':
+                                this.renderPersonalInfo(); 
+                                if (subKey === 'tags') this.renderTagManager();
+                                break;
+                            default:
+                                this.renderPersonalInfo();
+                        }
+                        return;
+                    }
+
+                    if (mainKey === 'pageStyles' || mainKey === 'globalCardStyles') {
                         if (mainKey === 'globalCardStyles') this.updateGlobalCardStyleVars();
                         this.renderPageStyles();
                         this.renderPreviewBlocks();
-						// HOTFIX: 当页面样式（如背景图）更新时，需要同步检查器UI以显示/隐藏相关控件。
                         if (this.selection.type === 'global') {
                             this.syncAllControls();
                         }
-                    } else if (mainKey === 'blocks') {
-                        // 对区块本身或卡片列表的增删改，依然需要重绘
-                        this.renderLayerPanel();
-                        this.renderPreviewBlocks();
+                        return;
+                    }
+
+                    if (mainKey === 'blocks') {
+                        if (keyParts.length <= 2) { 
+                            this.renderLayerPanel();
+                            this.renderPreviewBlocks();
+                            return;
+                        }
+
+                        const blockIndex = parseInt(keyParts[1], 10);
+                        const block = this.state.blocks[blockIndex];
+                        if (!block) return;
+
+                        const updatedProperty = keyParts[2];
+                        
+                        if (updatedProperty === 'title') {
+                            const layerItem = this.elements.layerList.querySelector(`.layer-item[data-id="${block.id}"] .layer-name`);
+                            if (layerItem) layerItem.textContent = block.title;
+                            return;
+                        }
+
+                        if (updatedProperty === 'isVisible' || updatedProperty === 'settings') {
+                            this.renderPreviewBlockById(block.id);
+                            const layerItem = this.elements.layerList.querySelector(`.layer-item[data-id="${block.id}"]`);
+                            if(layerItem) layerItem.classList.toggle('is-hidden', block.isVisible === false);
+                            return;
+                        }
+
+                        if (updatedProperty === 'cards') {
+                             if (keyParts.length <= 4) { 
+                                this.renderLayerPanel();
+                                this.renderPreviewBlockById(block.id);
+                                return;
+                            }
+                            
+                            const cardIndex = parseInt(keyParts[3], 10);
+                            const cardProp = keyParts[4];
+                            const card = block.cards[cardIndex];
+                            if (!card) return;
+                            
+                            if (cardProp === 'title') {
+                                const cardLayerItem = this.elements.layerList.querySelector(`.card-layer-item[data-card-id="${card.id}"]`);
+                                if (cardLayerItem) cardLayerItem.textContent = card.title || '无标题卡片';
+                            }
+                            this.renderPreviewBlockById(block.id);
+                            return;
+                        }
                     }
                 },
                 
@@ -2526,7 +2632,7 @@ Monitor of this License or out of the use or inability to use the
                             }
 
                             if (input.type === 'range') {
-                                const valueDisplay = input.closest('.form-group').querySelector('.angle-value, .spacer-height-value, #gCardRadiusValue');
+                                const valueDisplay = input.closest('.form-group').querySelector('.angle-value, .spacer-height-value, #gCardRadiusValue, .avatar-size-value');
                                 if (valueDisplay) valueDisplay.textContent = value;
                             }
                         });
@@ -2570,7 +2676,7 @@ Monitor of this License or out of the use or inability to use the
                                         }
                                     }
                                     if (input.type === 'range') {
-                                        const valueDisplay = input.closest('.form-group').querySelector('.angle-value, .spacer-height-value, #gCardRadiusValue');
+                                        const valueDisplay = input.closest('.form-group').querySelector('.angle-value, .spacer-height-value, #gCardRadiusValue, .avatar-size-value');
                                         if(valueDisplay) valueDisplay.textContent = value;
                                     }
                                 }
@@ -2594,7 +2700,6 @@ Monitor of this License or out of the use or inability to use the
                             pageSection.querySelectorAll('#header-bg-solid, #header-bg-gradient').forEach(c => c.classList.toggle('active', c.id === headerActiveTab));
                         }
                         
-                        // v1.5.4 BUG FIX: Sync texture and image overlay controls visibility on load/render
                         const pageImageControls = this.elements.inspectorPanel.querySelector('#page-image-controls');
                         if (pageImageControls) {
                             pageImageControls.style.display = this.state.pageStyles.pageBgImageDataUrl ? 'block' : 'none';
@@ -2649,26 +2754,34 @@ Monitor of this License or out of the use or inability to use the
                         this.updateUndoRedoButtons(); 
                 },
                 undo(){
-                    if (this.historyIndex <= 0) return; 
-                        this.isRestoringState = true; 
-                        this.historyIndex--; 
-                        this.state = this.deepClone(this.history[this.historyIndex]); 
-                        this.renderAll(); 
-                        this.syncAllControls(); 
-                        this.updateUndoRedoButtons(); 
-                        this.isRestoringState = false; 
-                        this.showToast('已撤销', 'info');
+                    /** v1.5.5 Fix: Blur active element before undo to save pending changes */
+                    if (document.activeElement && document.activeElement.isContentEditable) {
+                        document.activeElement.blur();
+                    }
+                    if (this.historyIndex <= 0) return;
+                    this.isRestoringState = true; 
+                    this.historyIndex--; 
+                    this.state = this.deepClone(this.history[this.historyIndex]); 
+                    this.renderAll(); 
+                    this.syncAllControls(); 
+                    this.updateUndoRedoButtons(); 
+                    this.isRestoringState = false; 
+                    this.showToast('已撤销', 'info');
                 },
                 redo(){
-                     if (this.historyIndex >= this.history.length - 1) return; 
-                        this.isRestoringState = true; 
-                        this.historyIndex++; 
-                        this.state = this.deepClone(this.history[this.historyIndex]); 
-                        this.renderAll(); 
-                        this.syncAllControls(); 
-                        this.updateUndoRedoButtons(); 
-                        this.isRestoringState = false; 
-                        this.showToast('已重做', 'info');
+                    /** v1.5.5 Fix: Blur active element before redo */
+                    if (document.activeElement && document.activeElement.isContentEditable) {
+                        document.activeElement.blur();
+                    }
+                    if (this.historyIndex >= this.history.length - 1) return; 
+                    this.isRestoringState = true; 
+                    this.historyIndex++; 
+                    this.state = this.deepClone(this.history[this.historyIndex]); 
+                    this.renderAll(); 
+                    this.syncAllControls(); 
+                    this.updateUndoRedoButtons(); 
+                    this.isRestoringState = false; 
+                    this.showToast('已重做', 'info');
                 },
                 updateUndoRedoButtons(){
                     const undoBtn = this.elements.inspectorPanel.querySelector('#undo-btn');
@@ -2689,9 +2802,9 @@ Monitor of this License or out of the use or inability to use the
                                     this.analyzeColorsFromImage(dataUrl);
                                     return; // analyzeColorsFromImage will hide loading
                                 }
-                                const compressedUrl = await this.compressImage(dataUrl, 0.85, 1200);
+                                const compressedUrl = await this.compressImage(dataUrl, 0.9, 1200);
                                 if (['avatar', 'pageBg', 'cardBg', 'imageCard'].includes(target)) {
-                                    this.showCropper(compressedUrl, { type: target, ...cardInfo }); 
+                                    this.showCropper(compressedUrl, { type: target, ...cardInfo, originalType: file.type }); 
                                 }
                                 this.hideLoading();
                             }; 
@@ -2716,7 +2829,7 @@ Monitor of this License or out of the use or inability to use the
                         this.showLoading(`正在上传 ${files.length} 张图片...`);
                         try {
                             this.pushHistory(); 
-                            const newImages = await Promise.all(Array.from(files).map(f => this.readFileAsDataURL(f).then(this.compressImage)));
+                            const newImages = await Promise.all(Array.from(files).map(f => this.readFileAsDataURL(f).then(url => this.compressImage(url, 0.9, 1200, f.type))));
                             const newCards = newImages.map(url => ({ id: this.generateId('ic'), url, title: '', description: '' }));
                             block.cards.push(...newCards);
                             this.debouncedSaveToLocal();
@@ -2735,7 +2848,7 @@ Monitor of this License or out of the use or inability to use the
                     const block = this.findBlock(blockId);
                     const card = block?.cards.find(c => c.id === cardId);
                     if (card && card.url) {
-                        this.showCropper(card.url, { type: 'imageCard', blockId, cardId });
+                        this.showCropper(card.url, { type: 'imageCard', blockId, cardId, originalType: 'image/png' }); // Assume png to be safe
                     }
                 },
                 
@@ -2757,18 +2870,19 @@ Monitor of this License or out of the use or inability to use the
                      if (!this.cropper || !this.currentCropTarget) return;
                         this.showLoading('正在压缩裁剪后的图片...');
                         try {
+                            // Cropper.js toDataURL defaults to PNG, preserving transparency.
                             const dataUrl = this.cropper.getCroppedCanvas()?.toDataURL();
                             if (!dataUrl) {
                                 this.showErrorModal('裁剪失败', '无法获取裁剪后的图片数据。');
                                 return;
                             }
 
-                            const { type, blockId, cardId } = this.currentCropTarget;
+                            const { type, blockId, cardId, originalType } = this.currentCropTarget;
                             let maxWidth = 1024;
                             if (type === 'pageBg') maxWidth = 1920;
                             if (type === 'avatar' || type === 'cardBg') maxWidth = 400;
                             
-                            const finalDataUrl = await this.compressImage(dataUrl, 0.85, maxWidth);
+                            const finalDataUrl = await this.compressImage(dataUrl, 0.9, maxWidth, originalType);
 
                             this.pushHistory();
                             if (type === 'avatar') {
@@ -2965,7 +3079,7 @@ Monitor of this License or out of the use or inability to use the
                         reader.onerror = reject;
                         reader.readAsArrayBuffer(file);
                     })},
-                compressImage(dataUrl, quality = 0.8, maxWidth = 1024){return new Promise((resolve, reject) => {
+                compressImage(dataUrl, quality = 0.9, maxWidth = 1024, originalType = 'image/jpeg'){return new Promise((resolve, reject) => {
                         const img = new Image();
                         img.onload = () => {
                             let { width, height } = img;
@@ -2978,7 +3092,9 @@ Monitor of this License or out of the use or inability to use the
                             canvas.height = height;
                             const ctx = canvas.getContext('2d');
                             ctx.drawImage(img, 0, 0, width, height);
-                            resolve(canvas.toDataURL('image/jpeg', quality));
+                            /** v1.5.5 Fix: Preserve transparency by exporting as PNG if the original was a PNG. */
+                            const outputType = originalType === 'image/png' ? 'image/png' : 'image/jpeg';
+                            resolve(canvas.toDataURL(outputType, quality));
                         };
                         img.onerror = (err) => reject(new Error('图片加载失败，请检查文件是否损坏。'));
                         img.src = dataUrl;
@@ -3045,7 +3161,9 @@ Monitor of this License or out of the use or inability to use the
                             });
                             this.showToast('模板已导出', 'success');
                         } else {
+                            /** v1.5.5 Fix: Include customIcons in the export. */
                             stateToSave.uploadedFonts = this.uploadedFonts;
+                            stateToSave.customIcons = this.state.customIcons;
                             this.showToast('配置已导出', 'success');
                         }
                         
@@ -3054,12 +3172,6 @@ Monitor of this License or out of the use or inability to use the
                         this.showDownloadModal(URL.createObjectURL(blob), filename, isTemplate ? '模板已生成' : '配置已生成');
                 },
                 
-                /**
-                 * @zh-CN 处理配置文件的导入。
-                 * @description 用户选择.json文件后，此函数会弹出确认框，然后读取、解析文件内容，并用其覆盖当前应用状态。
-                 * @param {Event} e - 文件输入框的change事件对象。
-                 * @async
-                 */
                 async handleConfigFile(e){
                     const file = e.target.files[0]; 
                         if (!file) return;
@@ -3188,11 +3300,9 @@ Monitor of this License or out of the use or inability to use the
                         const cardWrapper = cardInner.closest('.preview-card');
                         if (cardWrapper) {
                             const cardId = cardWrapper.dataset.cardId;
-                            // Find the block and card data associated with this element
                             const block = this.state.blocks.find(b => b.cards && b.cards.some(c => c.id === cardId));
                             const cardData = block ? block.cards.find(c => c.id === cardId) : null;
 
-                            // **FIX**: If the card has its own background image, bake it specifically
                             if (cardData && cardData.bgImageDataUrl) {
                                 let cardBgLayers = [];
                                 const overlayOpacity = cardData.overlayOpacity ?? 0.5;
@@ -3204,9 +3314,8 @@ Monitor of this License or out of the use or inability to use the
                                 cardInner.style.backgroundImage = cardBgLayers.join(', ');
                                 cardInner.style.backgroundSize = 'cover';
                                 cardInner.style.backgroundPosition = 'center';
-                                cardInner.style.backgroundColor = 'transparent'; // Prevent base color from showing
+                                cardInner.style.backgroundColor = 'transparent';
                             } else {
-                                // Original logic for cards using global or solid color styles
                                 const computed = getComputedStyle(cardInner);
                                 const beforeComputed = getComputedStyle(cardInner, '::before');
                                 const afterComputed = getComputedStyle(cardInner, '::after');
@@ -3231,12 +3340,6 @@ Monitor of this License or out of the use or inability to use the
                     style.innerHTML += `#${clone.id} .preview-card-inner::before, #${clone.id} .preview-card-inner::after { content: none !important; background: none !important; display: none !important; }`;
                 },
                 
-                /**
-                 * @zh-CN 将预览区导出为PNG图片。
-                 * @description 此函数负责整个截图流程：克隆预览区DOM，处理瀑布流和样式“烘焙”（将伪元素样式应用到主元素），
-                 * 最后调用html2canvas库生成图片，并处理可选的圆角效果。
-                 * @async
-                 */
                 async exportPNG(){
                     this.showLoading('正在准备导出...');
                     
@@ -3298,8 +3401,6 @@ Monitor of this License or out of the use or inability to use the
                             await this.sleep(200);
                         }
                         
-                        // 核心修复：由于html2canvas无法直接渲染伪元素(:before, :after)的背景和蒙版，
-                        // 我们需要手动计算这些样式，并将它们“烘焙”到克隆出的主元素上，以便正确导出。
                         this.showLoading('正在处理样式 (烘焙)...');
                         await this.bakeOverlaysForExport(clone);
                         await this.sleep(100);
@@ -3466,27 +3567,20 @@ Monitor of this License or out of the use or inability to use the
                 
                 updateGlobalCardStyleVars(){
                      const g = this.state.globalCardStyles;
-                        const r = document.documentElement.style; 
+                     const r = document.documentElement.style; 
                         
-                        r.setProperty('--g-card-bg-color', g.bgColor);
-                        r.setProperty('--g-card-text-color',g.textColor); 
-                        r.setProperty('--g-card-opacity',g.opacity); 
-                        r.setProperty('--g-card-border-radius',`${g.radius}px`); 
-                        r.setProperty('--g-card-text-align',g.textAlign); 
-                        r.setProperty('--g-card-line-height',g.lineHeight); 
-                        r.setProperty('--active-card-font-family',g.fontFamily?`'${g.fontFamily}', sans-serif`:''); 
-                        r.setProperty('--active-card-font-size',g.fontSize);
-                        r.setProperty('--g-card-text-stroke', g.textStrokeWidth > 0 ? `${g.textStrokeWidth}px ${g.textStrokeColor}` : '0px transparent');
-                        
-                        const regularShadow = 'none';
-                        if (g.borderStyle === 'solid' && g.borderWidth > 0) {
-                            const borderShadow = `0 0 0 ${g.borderWidth}px ${g.borderColor}`;
-                            r.setProperty('--active-card-shadow', `${borderShadow}, ${regularShadow}`);
-                            r.setProperty('--active-card-border', 'none');
-                        } else {
-                            r.setProperty('--active-card-border', g.borderWidth > 0 ? `${g.borderWidth}px ${g.borderStyle} ${g.borderColor}` : 'none');
-                            r.setProperty('--active-card-shadow', regularShadow);
-                        }
+                     r.setProperty('--g-card-bg-color', g.bgColor);
+                     r.setProperty('--g-card-text-color',g.textColor); 
+                     r.setProperty('--g-card-opacity',g.opacity); 
+                     r.setProperty('--g-card-border-radius',`${g.radius}px`); 
+                     r.setProperty('--g-card-text-align',g.textAlign); 
+                     r.setProperty('--g-card-line-height',g.lineHeight); 
+                     r.setProperty('--active-card-font-family',g.fontFamily?`'${g.fontFamily}', sans-serif`:''); 
+                     r.setProperty('--active-card-font-size',g.fontSize);
+                     r.setProperty('--g-card-text-stroke', g.textStrokeWidth > 0 ? `${g.textStrokeWidth}px ${g.textStrokeColor}` : '0px transparent');
+                     
+                     r.setProperty('--active-card-border', g.borderWidth > 0 && g.borderStyle !== 'none' ? `${g.borderWidth}px ${g.borderStyle} ${g.borderColor}` : 'none');
+                     r.setProperty('--active-card-shadow', 'none');
                 },
                 
                 initAllSortables(){
@@ -3617,11 +3711,12 @@ Monitor of this License or out of the use or inability to use the
                     }
                     const panel = document.getElementById(panelId);
                     const isOpen = panel.classList.toggle('is-open');
-                    this.elements.body.classList.toggle('panels-open', isOpen || this.elements.layerPanel.classList.contains('is-open') || this.elements.inspectorPanel.classList.contains('is-open'));
+                    const anyPanelOpen = this.elements.layerPanel.classList.contains('is-open') || this.elements.inspectorPanel.classList.contains('is-open');
+                    this.elements.body.classList.toggle('panels-open', anyPanelOpen);
                     
                     if(isOpen) {
-                        if (panelId === 'layer-panel') this.elements.inspectorPanel.classList.remove('is-open');
-                        if (panelId === 'inspector-panel') this.elements.layerPanel.classList.remove('is-open');
+                        if (panelId === 'layer-panel' && this.elements.inspectorPanel.classList.contains('is-open')) this.elements.inspectorPanel.classList.remove('is-open');
+                        if (panelId === 'inspector-panel' && this.elements.layerPanel.classList.contains('is-open')) this.elements.layerPanel.classList.remove('is-open');
                     }
                 },
                 async resetToDefault() {
@@ -3703,18 +3798,11 @@ Monitor of this License or out of the use or inability to use the
                     this.loadIcons();
                     this.iconPickerInitialized = true;
                 },
-                /**
-                 * @zh-CN 初始化并显示纹理选择器模态框。
-                 * @description 首次调用时会渲染纹理网格，后续调用仅显示模态框。
-                 */
                 initTexturePicker() {
-                    // v1.5.4 BUG FIX: 调整逻辑，确保每次都能显示Modal
-                    // 仅在首次调用时渲染内容
                     if (!this.texturePickerInitialized) {
                         this.renderTexturePicker();
                         this.texturePickerInitialized = true;
                     }
-                    // 每次调用都确保 Modal 是可见的
                     this.elements.texturePickerModal.classList.add('visible');
                 },
                 async loadIcons(){
@@ -3803,6 +3891,7 @@ Monitor of this License or out of the use or inability to use the
                     try {
                         const dataUrl = await this.readFileAsDataURL(file);
                         this.pushHistory();
+                        if (!this.state.customIcons) this.state.customIcons = [];
                         this.state.customIcons.push({ name: file.name, dataUrl: dataUrl });
                         this.debouncedSaveToLocal();
                         this.renderIconGrid(this.elements.iconSearch.value);
@@ -3814,13 +3903,15 @@ Monitor of this License or out of the use or inability to use the
                     }
                 },
                 deleteCustomIcon(iconName) {
-                    if (window.confirm(`确定要删除自定义图标 "${iconName}" 吗？`)) {
-                        this.pushHistory();
-                        this.state.customIcons = this.state.customIcons.filter(icon => icon.name !== iconName);
-                        this.debouncedSaveToLocal();
-                        this.renderIconGrid(this.elements.iconSearch.value);
-                        this.showToast(`图标 "${iconName}" 已删除`, 'info');
-                    }
+                    this.showConfirm('删除自定义图标', `确定要删除自定义图标 "${iconName}" 吗？`).then(confirmed => {
+                        if (confirmed) {
+                            this.pushHistory();
+                            this.state.customIcons = this.state.customIcons.filter(icon => icon.name !== iconName);
+                            this.debouncedSaveToLocal();
+                            this.renderIconGrid(this.elements.iconSearch.value);
+                            this.showToast(`图标 "${iconName}" 已删除`, 'info');
+                        }
+                    });
                 },
 
                 renderTexturePicker() {
@@ -3917,6 +4008,19 @@ Monitor of this License or out of the use or inability to use the
                 showColorContextMenu(x, y, color) {
                     const menu = this.elements.colorContextMenu;
                     menu.style.display = 'block';
+
+                    /** v1.5.5 Fix: Add boundary detection for the context menu. */
+                    const menuRect = menu.getBoundingClientRect();
+                    const viewportWidth = window.innerWidth;
+                    const viewportHeight = window.innerHeight;
+
+                    if (x + menuRect.width > viewportWidth) {
+                        x = viewportWidth - menuRect.width - 5;
+                    }
+                    if (y + menuRect.height > viewportHeight) {
+                        y = viewportHeight - menuRect.height - 5;
+                    }
+                    
                     menu.style.left = `${x}px`;
                     menu.style.top = `${y}px`;
                     menu.dataset.color = color;
