@@ -3,23 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Blokko v1.5.5 (Internal): -->
-    <title>Blokko-个人简介生成器！ (v1.5.5)-来玩《赛博朋克：2077》吧！</title>
+    <!-- Blokko v1.5.6 (Internal): -->
+    <title>Blokko-个人简介生成器！ (v1.5.6)-来玩《赛博朋克：2077》吧！</title>
     
     <script>
-        // Anti-FOUC (Flash of Unstyled Content) Script
+        // Anti-FOUC (Flash of Unstyled Content) 脚本，防止加载时样式闪烁
         try {
             if (localStorage.getItem('blokkoTheme') === 'dark') {
                 document.documentElement.classList.add('dark-mode');
             }
         } catch (e) {
-            console.error('Failed to apply theme from localStorage', e);
+            console.error('从 localStorage 应用主题失败', e);
         }
     </script>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" />
 
-    <!-- v1.3.1: Add Recommended Fonts via reliable CDN -->
+    <!-- 推荐字体 CDN -->
     <link rel="stylesheet" href="https://fontsapi.zeoseven.com/69/main/result.css">
     <link rel="stylesheet" href="https://fontsapi.zeoseven.com/285/main/result.css">
     <link rel="stylesheet" href="https://fontsapi.zeoseven.com/47/main/result.css">
@@ -42,7 +42,7 @@
             --color-danger-hover: #e03c48; --color-secondary: #8e8e93; --color-secondary-hover: #636366;
             --header-height: 55px; --transition-speed: 0.3s; --transition-short: 0.2s;
             --layer-panel-width: 280px; --inspector-panel-width: 380px;
-            /* Global Card Styles */
+            /* 全局卡片样式变量 */
             --g-card-bg-color: var(--bg-card); --g-card-text-color: var(--text-primary); --g-card-opacity: 1;
             --g-card-shadow: none;
             --g-card-border-radius: 12px; --g-card-text-align: left;
@@ -50,7 +50,7 @@
             --g-card-font-size: 1rem;
             --g-card-text-stroke: 0px transparent;
             --g-card-border: 1px solid transparent;
-            /* Active Card Styles */
+            /* 活动卡片样式变量 (用于预览) */
             --active-card-shadow: var(--g-card-shadow); --active-card-border: var(--g-card-border);
             --active-card-text-shadow: none; --active-card-font-family: var(--g-card-font-family);
             --active-card-font-size: var(--g-card-font-size); 
@@ -71,25 +71,58 @@
         * { box-sizing: border-box; }
         html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; }
         body { font-family: var(--g-card-font-family, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif); background-color: var(--bg-preview-pane); color: var(--text-primary); transition: background-color var(--transition-speed) ease, color var(--transition-speed) ease; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
-        .app-header { width: 100%; height: var(--header-height); background: var(--bg-editor); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; position: fixed; top: 0; left: 0; z-index: 100; box-shadow: 0 2px 8px var(--shadow-light); transition: background-color var(--transition-speed) ease, border-color var(--transition-speed) ease; }
-        .header-actions-wrapper { display: flex; align-items: center; gap: 15px; }
-        .app-header-title { font-size: 1.25rem; font-weight: 700; }
-        .theme-switch-wrapper { display: flex; align-items: center; gap: 10px; }
-        .app-container { display: flex; height: 100vh; padding-top: var(--header-height); }
+        
+        #storage-warning-banner {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: var(--color-danger);
+            color: white;
+            padding: 8px 20px;
+            text-align: center;
+            font-size: 0.9rem;
+            z-index: 9999;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        #storage-warning-banner a {
+            color: white;
+            font-weight: bold;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+        body.storage-warning .app-header, body.storage-warning .app-container {
+            top: 35px; /* 为警告条腾出空间 */
+        }
+        body.storage-warning .app-container {
+             height: calc(100vh - 35px);
+        }
+        body.storage-warning .layer-panel, body.storage-warning .inspector-panel, body.storage-warning .resizer {
+            top: calc(var(--header-height) + 35px);
+            height: calc(100vh - var(--header-height) - 35px);
+        }
 
-        .layer-panel, .inspector-panel {
+        。app-header { width: 100%; height: var(--header-height); background: var(--bg-editor); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; position: fixed; top: 0; left: 0; z-index: 100; box-shadow: 0 2px 8px var(--shadow-light); transition: all var(--transition-speed) ease; }
+        。header-actions-wrapper { display: flex; align-items: center; gap: 15px; }
+        。app-header-title { font-size: 1.25rem; font-weight: 700; }
+        。theme-switch-wrapper { display: flex; align-items: center; gap: 10px; }
+        。app-container { display: flex; height: 100vh; padding-top: var(--header-height); position: relative; top: 0; transition: top 0.3s ease; }
+
+        。layer-panel, .inspector-panel {
             background: var(--bg-editor);
             height: calc(100vh - var(--header-height));
             overflow-y: auto;
             flex-shrink: 0;
-            transition: background-color var(--transition-speed) ease, border-color var(--transition-speed) ease;
+            transition: all var(--transition-speed) ease;
+            position: relative;
         }
-        .layer-panel {
+        。layer-panel {
             width: var(--layer-panel-width);
             border-right: 1px solid var(--border-color);
             padding: 15px;
         }
-        .inspector-panel {
+        。inspector-panel {
             width: var(--inspector-panel-width);
             min-width: 350px;
             max-width: 60vw;
@@ -103,6 +136,8 @@
             cursor: col-resize;
             z-index: 50;
             flex-shrink: 0;
+            position: relative;
+            transition: all var(--transition-speed) ease;
         }
         .resizer:hover { background: var(--color-primary); }
         .preview-panel {
@@ -226,11 +261,27 @@
         .editor-section legend::after { content: " ▼"; font-size: 0.8rem; }
         .editor-section.collapsed legend::after { content: " ▶"; }
         .editor-section.collapsed .section-content { display: none; }
-        .section-content { /* padding-top: 15px; -- REMOVED FOR SPACING OPTIMIZATION */ }
-
+        
         .advanced-toggle-label { font-size: 0.85rem; font-weight: normal; color: var(--text-action); }
+        /* 默认隐藏所有高级设置 */
         .advanced-setting { display: none; }
-        .show-advanced .advanced-setting { display: block; animation: fadeIn 0.3s; }
+
+        /* 当勾选高级时，显示对应的设置 */
+        .show-advanced .advanced-setting { 
+            display: block; 
+            animation: fadeIn 0.3s; 
+        }
+        
+        /* 特别处理 flex 布局中的 tab 按钮 */
+        .tabs.show-advanced .tab-btn.advanced-setting,
+        .show-advanced .tabs .tab-btn.advanced-setting {
+            display: inline-flex;
+        }
+        
+        /* 关键修复：确保非激活的标签页内容即使是高级选项，也保持隐藏 */
+        .tab-content.advanced-setting:not(.active) {
+            display: none !important;
+        }
         .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .section-header h4 { margin: 0; }
 
@@ -319,8 +370,8 @@
         .masonry-active { display: block; position: relative; } /* Override grid */
         .masonry-active.preview-cards-dual .preview-card, .masonry-active.preview-cards-dual figure { width: calc(50% - 7.5px); margin-bottom: 15px; }
         .masonry-active.preview-cards-triple .preview-card, .masonry-active.preview-cards-triple figure { width: calc(33.333% - 10px); margin-bottom: 15px; }
-        .preview-card { box-sizing: box; width: 100%; view-transition-name: var(--card-transition-name); }
-        .preview-card-inner { width: 100%; height: 100%; box-sizing: border-box; position: relative; overflow: hidden; color: var(--card-text-color, var(--g-card-text-color)); border-radius: var(--g-card-border-radius); box-shadow: var(--active-card-shadow, none); border: var(--active-card-border, none); font-weight: var(--card-font-weight, normal); text-shadow: var(--active-card-text-shadow, none); padding: 15px; word-wrap: break-word; transition: all var(--transition-short) ease; -webkit-text-stroke: var(--g-card-text-stroke); line-height: var(--g-card-line-height); /* background-clip: padding-box; */ }
+        .preview-card { box-sizing: border-box; width: 100%; view-transition-name: var(--card-transition-name); }
+        .preview-card-inner { width: 100%; height: 100%; box-sizing: border-box; position: relative; overflow: hidden; color: var(--card-text-color, var(--g-card-text-color)); border-radius: var(--g-card-border-radius); box-shadow: var(--active-card-shadow, none); border: var(--active-card-border, none); font-weight: var(--card-font-weight, normal); text-shadow: var(--active-card-text-shadow, none); padding: 15px; word-wrap: break-word; transition: all var(--transition-short) ease; -webkit-text-stroke: var(--g-card-text-stroke); line-height: var(--g-card-line-height); }
         .preview-card-inner::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 0; background-size: cover; background-position: center; border-radius: inherit; background: var(--card-bg-final); transition: background var(--transition-speed) ease; }
         .preview-card-inner::after { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--card-overlay-color, transparent); opacity: var(--card-overlay-opacity, 0); border-radius: inherit; z-index: 1; pointer-events: none; transition: all var(--transition-short) ease; }
         .preview-card:hover .preview-card-inner { transform: scale(1.02); box-shadow: 0 6px 16px var(--shadow-medium); }
@@ -369,7 +420,7 @@
         .toast-notification.success { border-left: 4px solid #2ecc71; }
         .toast-notification.error { border-left: 4px solid var(--color-danger); }
         .toast-notification.info { border-left: 4px solid var(--color-primary); }
-        #icon-picker-modal .modal-container, #texture-picker-modal .modal-container { max-width: 700px; }
+        #icon-picker-modal .modal-container, #texture-picker-modal .modal-container, #font-manager-modal .modal-container { max-width: 700px; }
         #icon-grid, #texture-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(50px, 1fr)); gap: 10px; max-height: 50vh; overflow-y: auto; padding: 10px; border: 1px solid var(--border-input); border-radius: 8px; background: var(--bg-input); }
         #texture-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
         .icon-grid-item { display: flex; align-items: center; justify-content: center; height: 50px; font-size: 1.5rem; color: var(--text-primary); border-radius: 6px; cursor: pointer; transition: background-color var(--transition-short); position: relative; }
@@ -379,12 +430,14 @@
         .texture-grid-item { display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 6px; cursor: pointer; transition: background-color var(--transition-short); padding: 5px; }
         .texture-preview { width: 100%; height: 80px; border: 1px solid var(--border-color); border-radius: 4px; background-size: 20px; }
         .texture-name { font-size: 0.75rem; margin-top: 5px; color: var(--text-secondary); text-align: center; }
-        #tag-manager-list { display: flex; flex-direction: column; gap: 10px; max-height: 250px; overflow-y: auto; padding: 10px; border: 1px solid var(--border-input); border-radius: 6px; background-color: var(--bg-input); margin-bottom: 15px; }
-        .tag-manager-item { display: flex; align-items: center; gap: 8px; background-color: var(--bg-section); padding: 8px; border-radius: 4px; border: 1px solid var(--border-color); cursor: grab; }
+        #tag-manager-list, #font-manager-list { display: flex; flex-direction: column; gap: 10px; max-height: 250px; overflow-y: auto; padding: 10px; border: 1px solid var(--border-input); border-radius: 6px; background-color: var(--bg-input); margin-bottom: 15px; }
+        .tag-manager-item, .font-manager-item { display: flex; align-items: center; gap: 8px; background-color: var(--bg-section); padding: 8px; border-radius: 4px; border: 1px solid var(--border-color); }
+        .tag-manager-item { cursor: grab; }
         .tag-manager-item .tag-icon-btn { flex-shrink: 0; width: 32px; height: 32px; padding: 0; font-size: 1.2rem; cursor: pointer; }
         .tag-manager-item .tag-text-input { flex-grow: 1; border: none; background: transparent; padding: 4px 6px; cursor: text; }
-        .tag-manager-item .tag-delete-btn { flex-shrink: 0; width: 32px; height: 32px; padding: 0; cursor: pointer; }
-        .empty-tag-list { text-align: center; color: var(--text-placeholder); padding: 20px 0; }
+        .tag-manager-item .tag-delete-btn, .font-manager-item .font-delete-btn { flex-shrink: 0; width: 32px; height: 32px; padding: 0; cursor: pointer; }
+        .font-manager-item-name { flex-grow: 1; }
+        .empty-tag-list, .empty-font-list { text-align: center; color: var(--text-placeholder); padding: 20px 0; }
         .inset-controls { border: 1px solid var(--border-input); border-radius: 6px; padding: 15px; margin-top: 10px; background: var(--bg-input); }
         #help-modal .tab-content { max-height: 60vh; overflow-y: auto; padding: 15px; }
         #help-thanks .thanks-item { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid var(--border-color); }
@@ -424,7 +477,7 @@
                 position: fixed; top: var(--header-height);
                 width: 85%; max-width: 350px;
                 height: calc(100vh - var(--header-height)); z-index: 200;
-                transition: transform 0.3s ease-in-out;
+                transition: transform 0.3s ease-in-out, top 0.3s ease;
                 overflow-x: hidden;
             }
             .layer-panel { left: 0; transform: translateX(-100%); border-right: 1px solid var(--border-color); }
@@ -437,6 +490,10 @@
                 height: calc(100vh - var(--header-height)); background: rgba(0,0,0,0.4); z-index: 199;
                 opacity: 1; pointer-events: auto; transition: opacity 0.3s ease-in-out;
             }
+            body.storage-warning.panels-open::after {
+                top: calc(var(--header-height) + 35px);
+                height: calc(100vh - var(--header-height) - 35px);
+            }
             .color-control-row, .gradient-controls { flex-direction: column; gap: 10px; }
             .gradient-controls { grid-template-columns: 1fr; }
             .color-control-group { width: 100%; min-width: 0; }
@@ -444,10 +501,13 @@
     </style>
 </head>
 <body>
+    <div id="storage-warning-banner">
+        警告：浏览器存储空间已满，自动保存功能已暂停。请<a id="storage-warning-export-link">导出配置</a>以备份您的工作，并尝试删除一些已经上传的图片来恢复功能。
+    </div>
 
     <header class="app-header">
         <button id="mobile-layer-toggle" class="btn btn-default btn-icon" style="width: auto; padding: 6px 12px;"><span class="iconify" data-icon="mdi:layers-outline"></span> 内容</button>
-        <div class="app-header-title">Blokko (v1.5.5)</div>
+        <div class="app-header-title">Blokko (v1.5.6)</div>
         <div class="header-actions-wrapper">
             <button id="lock-mode-toggle" class="btn btn-default" style="width: auto; padding: 6px 12px;" title="切换编辑/预览模式">编辑中</button>
             <button id="show-help-btn" class="btn btn-default btn-icon" style="width: auto; padding: 6px 12px;"><span class="iconify" data-icon="mdi:help-circle-outline"></span> 帮助</button>
@@ -514,6 +574,7 @@
                 <button class="tab-btn active" data-tab="help-tutorial">新手教程</button>
                 <button class="tab-btn" data-tab="help-instructions">使用说明</button>
                 <button class="tab-btn" data-tab="help-thanks">感谢信息</button>
+                <button class="tab-btn" data-tab="help-changelog">更新日志</button>
                 <button class="tab-btn" data-tab="help-about">关于</button>
             </div>
             <div id="help-tutorial" class="tab-content active">
@@ -547,7 +608,7 @@
                 <p><strong><span class="iconify" data-icon="mdi:view-dashboard-variant-outline" style="vertical-align: -0.2em;"></span> 瀑布流布局：</strong> 对于多列区块（双排/三排），可以在右侧检查器中勾选“启用瀑布流”，使卡片/图片高度自适应，布局更紧凑。</p>
                 <p><strong><span class="iconify" data-icon="mdi:lock-open-variant-outline" style="vertical-align: -0.2em;"></span> 锁定模式：</strong> 点击右上角的 "编辑中" 按钮可切换到 "预览中"，此模式下禁用双击编辑，方便在手机上顺畅滑动浏览。</p>
                 <p><strong><span class="iconify" data-icon="mdi:import" style="vertical-align: -0.2em;"></span> 导入/导出：</strong> 在右侧检查器的“全局与导出”设置中，可以导入/导出 .json 配置文件，方便备份和分享。</p>
-                <p><strong><span class="iconify" data-icon="mdi:content-save" style="vertical-align: -0.2em;"></span> 本地保存：</strong> 你的所有修改都会自动保存在当前浏览器中，刷新页面不会丢失进度（请勿使用无痕模式）。</p>
+                <p><strong><span class="iconify" data-icon="mdi:database" style="vertical-align: -0.2em;"></span> 浏览器存储：</strong> 您的所有修改都会自动保存在当前浏览器中（非无痕模式），刷新页面不会丢失进度。字体等大文件将使用IndexedDB存储，容量更大更可靠。</p>
                 
                 <hr class="separator">
                 <h4>🔒 隐私与数据安全</h4>
@@ -926,6 +987,24 @@ Monitor of this License or out of the use or inability to use the
 </details>
                 </div>
             </div>
+            <div id="help-changelog" class="tab-content">
+                <h4>v1.5.6 更新日志</h4>
+                <ul>
+                    <li><strong>【核心】字体存储升级:</strong> 弃用 `localStorage`，全面改用 **`IndexedDB`** 存储字体文件，彻底解决了5MB的存储上限问题，现在您可以上传更多、更大的字体。</li>
+                    <li><strong>【新增】字体管理功能:</strong> 您现在可以在“全局样式” -> “字体”部分点击“管理上传的字体”来删除不再需要的字体。</li>
+                    <li><strong>【新增】智能存储警告:</strong> 当因极少数情况（如磁盘空间耗尽）导致存储失败时，会在页面顶部显示一个常驻警告条。一旦后续任何保存操作成功，该警告条会自动消失。</li>
+                    <li><strong>【新增】自定义导出比例:</strong> 在“自定义宽度”模式下，新增 **“锁定长宽比”** 选项。取消勾选后，您可以独立改变导出图片的宽度而保持高度不变，实现更自由的构图。</li>
+                    <li><strong>【优化】UI状态持久化:</strong> 修复了添加区块或撤销/重做时，左侧内容图层展开状态被重置的问题。</li>
+                    <li><strong>【优化】“高级”设置:</strong>
+                        <ul>
+                            <li>默认使用“纯色”背景模式，界面更简洁。</li>
+                            <li>更多选项（如渐变、圆角、边框等）被归入“高级”折叠项中。</li>
+                            <li>应用会记住您对“高级”选项的展开/折叠偏好。</li>
+                        </ul>
+                    </li>
+                    <li><strong>【优化】颜色输入器:</strong> 现在可以智能识别并自动补全3位 (`f0c`) 和无`#`的6位 (`ff00cc`) HEX颜色代码。</li>
+                </ul>
+            </div>
             <div id="help-about" class="tab-content">
                 <h4>关于 Blokko</h4>
                 <p>Blokko是一个方便大家快速制作扩列/自荐/置顶图的小工具！</p>
@@ -933,7 +1012,7 @@ Monitor of this License or out of the use or inability to use the
                 <p>如果你在使用中遇到BUG，可以通过链接私信我！如果觉得好用，也希望能点击链接去置顶评论区留下评论或转发，或者是在自己的制作的图评论区或正文里贴上原博链接（就是置顶那一条，当然这些都不是强制要求的，但是如果可以的话会让我很开心！），最后感谢您使用Blokko!</p>
                 <p style="display: flex; gap: 10px; flex-wrap: wrap;">
                     <a href="https://weibo.com/u/5095783616" target="_blank" rel="noopener noreferrer" class="btn btn-default" style="width: auto; text-decoration: none;">我的微博主页</a>
-                    <a href="https://weibo.com/5095783616/QcM8qwmLs" target="_blank" rel="noopener noreferrer" class="btn btn-default" style="width: auto; text-decoration: none;">查看更新日志</a>
+                    <a href="https://weibo.com/5095783616/QcM8qwmLs" target="_blank" rel="noopener noreferrer" class="btn btn-default" style="width: auto; text-decoration: none;">查看历史更新日志</a>
                 </p>
             </div>
             <div class="modal-actions" style="justify-content: center; margin-top: 20px;">
@@ -965,6 +1044,16 @@ Monitor of this License or out of the use or inability to use the
             <div class="modal-actions">
                 <button id="remove-texture-btn" class="btn btn-danger">移除纹理</button>
                 <button id="texture-picker-close-btn" class="btn btn-default">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="font-manager-modal">
+        <div class="modal-container">
+            <h3>管理上传的字体</h3>
+            <div id="font-manager-list"></div>
+            <div class="modal-actions" style="justify-content: center;">
+                <button id="font-manager-close-btn" class="btn btn-primary">关闭</button>
             </div>
         </div>
     </div>
@@ -1021,6 +1110,8 @@ Monitor of this License or out of the use or inability to use the
 
         document.addEventListener('DOMContentLoaded', () => {
             const App = {
+                db: null, // IndexedDB 数据库实例
+                isStorageFull: false, // 标记存储是否已满
                 state: {},
                 selection: { type: 'global', cardId: null },
                 history: [],
@@ -1039,7 +1130,7 @@ Monitor of this License or out of the use or inability to use the
                 masonryInstances: {},
                 debouncedSaveToLocal: null,
                 localFonts: [],
-                uploadedFonts: [],
+                uploadedFonts: [], // 现在只存储字体元信息 { family, fullName }
                 presets: {},
                 icons: [], 
                 texturePickerInitialized: false,
@@ -1049,45 +1140,49 @@ Monitor of this License or out of the use or inability to use the
                 lastPalette: [],
 
                 init() {
-                    console.log("Blokko 初始化 v1.5.5 ...");
+                    console.log("Blokko 初始化 v1.5.6 ...");
                     this.elements = this.queryElements();
                     this.presets = this.getPresets();
                     this.state = this.getDefaultState();
                     this.debouncedSaveToLocal = this.debounce(this.saveToLocal, 500);
                     
-                    this.bindCoreEvents();
-                    this.bindEditorEvents();
-                    this.bindPreviewEvents();
-                    this.initResizer();
-                    
-                    this.loadPreferences();
-                    this.loadFromLocal();
-                    
-                    this.history = [this.deepClone(this.state)];
-                    this.historyIndex = 0;
-                    
-                    this.renderAll(true); 
-                    this.syncAllControls();
-                    this.populateFontList(); 
-                    this.initAllSortables();
-                    this.updateExportSizePreview();
-                    
-                    this.setSelection({ type: 'global' });
-                    this.updateUndoRedoButtons();
-                    
-                    const hasVisited = localStorage.getItem('blokkoFirstVisit_v1_5_5');
-                    if (!hasVisited) {
-                        this.elements.helpModal.classList.add('visible');
-                        const helpModal = this.elements.helpModal;
-                        const tutorialTabBtn = helpModal.querySelector('[data-tab="help-tutorial"]');
-                        if (tutorialTabBtn) {
-                           tutorialTabBtn.click();
+                    this.initDB().then(() => {
+                        this.bindCoreEvents();
+                        this.bindEditorEvents();
+                        this.bindPreviewEvents();
+                        this.initResizer();
+                        
+                        this.loadPreferences();
+                        this.loadFromLocal();
+                        
+                        this.history = [this.deepClone(this.state)];
+                        this.historyIndex = 0;
+                        
+                        this.renderAll(true); 
+                        this.syncAllControls();
+                        this.populateFontList(); 
+                        this.initAllSortables();
+                        this.updateExportSizePreview();
+                        
+                        this.setSelection({ type: 'global' });
+                        this.updateUndoRedoButtons();
+                        
+                        const currentVersion = '1.5.6';
+                        const lastVisitedVersion = localStorage.getItem('blokkoLastVersion');
+                        if (currentVersion !== lastVisitedVersion) {
+                            setTimeout(() => {
+                                this.showToast(`已更新到 v${currentVersion}！点击“帮助”查看更新日志。`, 'success');
+                            }, 1500);
+                            localStorage.setItem('blokkoLastVersion', currentVersion);
                         }
-                        localStorage.setItem('blokkoFirstVisit_v1_5_5', 'true');
-                    }
-                    if (window.ColorThief) {
-                        this.colorThief = new ColorThief();
-                    }
+                        
+                        if (window.ColorThief) {
+                            this.colorThief = new ColorThief();
+                        }
+                    }).catch(err => {
+                        console.error("数据库初始化失败:", err);
+                        this.showErrorModal('初始化失败', '无法初始化本地数据库，部分功能（如字体上传）可能无法使用。');
+                    });
                 },
 
                 getDefaultState() {
@@ -1102,7 +1197,6 @@ Monitor of this License or out of the use or inability to use the
                             avatarShape: '50%', avatarBorderSize: 4, avatarBorderColor: '#ffffff',
                             avatarSize: 100,
                             avatarOffsetX: 0,
-                            headerShadowEnabled: false, // Compatibility
                             tags: [
                                 { id: this.generateId('t'), icon: 'mdi:palette', text: '设计师' },
                                 { id: this.generateId('t'), icon: 'mdi:github', text: '代码爱好者' }
@@ -1110,35 +1204,34 @@ Monitor of this License or out of the use or inability to use the
                             tagBgColor: lightTheme.pTagBgColor, tagTextColor: lightTheme.pTagTextColor
                         },
                         pageStyles: {
-                            pageBgMode: 'gradient',
+                            pageBgMode: 'solid', // 默认纯色
                             pageBgSolidColor: lightTheme.pageBgSolidColor, pageBgImageDataUrl: null, 
                             pageBgGradientStart: lightTheme.pageBgGradientStart, pageBgGradientEnd: lightTheme.pageBgGradientEnd,
                             pageBgGradientAngle: 135,
                             pageOverlayColor: "#000000", pageOverlayOpacity: 0.3,
                             pageBgPattern: '', pageBgPatternColor: '#000000', pageBgPatternOpacity: 0.1, pageBgPatternDensity: 30,
-                            headerBgMode: 'gradient',
+                            headerBgMode: 'solid', // 默认纯色
                             headerBgColor: lightTheme.headerBgColor, headerTextColor: lightTheme.headerTextColor, headerOpacity: 1.0, 
                             headerBgGradientStart: lightTheme.headerBgGradientStart, headerBgGradientEnd: lightTheme.headerBgGradientEnd,
                             headerBgGradientAngle: 135,
                         },
                         blocks: [
-                            { id: this.generateId('b'), type: 'text', title: "单排卡片区块", isVisible: true, settings: { layout: 'single', masonryEnabled: false }, cards: [
+                            { id: this.generateId('b'), type: 'text', title: "单排卡片区块", isVisible: true, isExpanded: false, settings: { layout: 'single', masonryEnabled: false }, cards: [
                                 { id: this.generateId('c'), icon: '', title: "这是单排卡片", content: "双击这里进行编辑", opacity: 1.0, followGlobalOpacity: true, textShadowEnabled: false }
                             ]},
-                            { id: this.generateId('b'), type: 'text', title: "双排卡片区块", isVisible: true, settings: { layout: 'dual', masonryEnabled: false }, cards: [
+                            { id: this.generateId('b'), type: 'text', title: "双排卡片区块", isVisible: true, isExpanded: false, settings: { layout: 'dual', masonryEnabled: false }, cards: [
                                 { id: this.generateId('c'), icon: '', title: "这是双排卡片 1", content: "双击这里进行编辑", opacity: 1.0, followGlobalOpacity: true, textShadowEnabled: false },
                                 { id: this.generateId('c'), icon: '', title: "这是双排卡片 2", content: "双击这里进行编辑", opacity: 1.0, followGlobalOpacity: true, textShadowEnabled: false }
                             ]},
-                            { id: this.generateId('b'), type: 'separator', title: "分割线", isVisible: true, settings: { style: 'solid', color: '#dddddd', thickness: 1, margin: 20, text: '', icon: null, textColor: '#555555' }},
-                            { id: this.generateId('b'), type: 'image', title: "图片区块", isVisible: true, settings: { layout: 'dual', masonryEnabled: false, textColor: '' }, cards: [] },
-                            { id: this.generateId('b'), type: 'spacer', title: "留白块", isVisible: true, settings: { height: 20 }},
+                            { id: this.generateId('b'), type: 'separator', title: "分割线", isVisible: true, isExpanded: false, settings: { style: 'solid', color: '#dddddd', thickness: 1, margin: 20, text: '', icon: null, textColor: '#555555' }},
+                            { id: this.generateId('b'), type: 'image', title: "图片区块", isVisible: true, isExpanded: false, settings: { layout: 'dual', masonryEnabled: false, textColor: '' }, cards: [] },
+                            { id: this.generateId('b'), type: 'spacer', title: "留白块", isVisible: true, isExpanded: false, settings: { height: 20 }},
                         ],
                         globalCardStyles: { 
-                            bgMode: 'solid', 
+                            bgMode: 'solid', // 默认纯色
                             bgColor: lightTheme.gCardBgColor, textColor: lightTheme.gCardTextColor, opacity: 1.0,
                             bgGradientStart: lightTheme.gCardBgGradientStart, bgGradientEnd: lightTheme.gCardBgGradientEnd,
                             bgGradientAngle: 135,
-                            shadowEnabled: false, // Compatibility
                             radius: 12, textAlign: "left", lineHeight: "1.5", 
                             fontFamily: "", fontSize: "1rem",
                             textStrokeWidth: 0, textStrokeColor: "#000000",
@@ -1229,6 +1322,8 @@ Monitor of this License or out of the use or inability to use the
                         texturePickerCloseBtn: q('#texture-picker-close-btn'),
                         confirmModal: q('#confirm-modal'),
                         colorContextMenu: q('#color-context-menu'),
+                        fontManagerModal: q('#font-manager-modal'),
+                        storageWarningBanner: q('#storage-warning-banner'),
                     };
                 },
 
@@ -1246,8 +1341,6 @@ Monitor of this License or out of the use or inability to use the
                     this.elements.mobileLayerToggle.addEventListener('click', () => this.togglePanelDrawer('layer-panel'));
                     this.elements.mobileInspectorToggle.addEventListener('click', () => this.togglePanelDrawer('inspector-panel'));
 
-                    /** v1.5.5 Fix */
-                    // Changed the click listener to correctly close panels when clicking on the overlay/preview area.
                     this.elements.previewPanel.addEventListener('click', (e) => {
                         if (e.target.closest('.preview-wrapper') && this.elements.body.classList.contains('panels-open')) {
                             this.togglePanelDrawer(false);
@@ -1256,6 +1349,11 @@ Monitor of this License or out of the use or inability to use the
 
                     this.elements.showHelpBtn.addEventListener('click', () => this.elements.helpModal.classList.add('visible'));
                     this.elements.helpModalCloseBtn.addEventListener('click', () => this.elements.helpModal.classList.remove('visible'));
+                    
+                    this.elements.storageWarningBanner.querySelector('#storage-warning-export-link').addEventListener('click', () => {
+                        this.setSelection({ type: 'global' });
+                        setTimeout(() => this.exportConfig(false), 50);
+                    });
                     
                     let aboutClickCount = 0;
                     let aboutClickTimer = null;
@@ -1322,7 +1420,7 @@ Monitor of this License or out of the use or inability to use the
                                 if (block.type === 'text') this.addCard(blockId, true);
                                 else if (block.type === 'image') this.addImageCard(blockId);
                             } else if (actionBtn.matches('.layer-toggle')) {
-                                layerItemContainer.classList.toggle('is-expanded');
+                                this.toggleLayerExpansion(blockId);
                             }
                             return; // Prevent selection change on button click
                         }
@@ -1421,12 +1519,21 @@ Monitor of this License or out of the use or inability to use the
                         let value = target.type === 'checkbox' ? target.checked : (target.type === 'number' || target.type === 'range') ? parseFloat(target.value) : target.value;
                         
                         if (target.matches('.color-hex-input')) {
-                            if (target.value !== '' && !/^#([0-9A-F]{3,8})$/i.test(target.value)) {
-                                return;
-                            }
+                            let hexValue = target.value.replace(/[^#0-9a-fA-F]/g, '');
                             const colorInput = target.previousElementSibling;
+
                             if (colorInput) {
-                                colorInput.value = value;
+                                let validHexForPicker = hexValue.startsWith('#') ? hexValue : '#' + hexValue;
+
+                                // 如果是 3 位，则扩展为 6 位来更新颜色选择器
+                                if (/^#[0-9a-fA-F]{3}$/.test(validHexForPicker)) {
+                                    validHexForPicker = '#' + validHexForPicker[1] + validHexForPicker[1] + validHexForPicker[2] + validHexForPicker[2] + validHexForPicker[3] + validHexForPicker[3];
+                                    colorInput.value = validHexForPicker;
+                                } 
+                                // 如果是 6 位，直接更新
+                                else if (/^#[0-9a-fA-F]{6}$/.test(validHexForPicker)) {
+                                    colorInput.value = validHexForPicker;
+                                }
                             }
                         } 
                         else if (target.type === 'color') {
@@ -1447,7 +1554,6 @@ Monitor of this License or out of the use or inability to use the
                             this.updateState(stateKey, value, false);
                         } else if (blockIdForTitle) {
                             this.updateBlockTitle(blockIdForTitle, value, false);
-                            // This now uses precise rendering, so no full re-render.
                         } else if (blockEl && settingKey) {
                              this.updateBlockSettings(blockEl.dataset.blockId, settingKey, value, false);
                         } else if (blockEl && cardKey) {
@@ -1461,12 +1567,31 @@ Monitor of this License or out of the use or inability to use the
                         }
                     });
 
+                    panel.addEventListener('blur', e => {
+                        const target = e.target;
+                        if (target.matches('.color-hex-input')) {
+                            let value = target.value.replace(/#/g, '');
+                            if (/^[0-9a-fA-F]{3}$/.test(value)) {
+                                value = value.split('').map(char => char + char).join('');
+                            }
+                            if (/^[0-9a-fA-F]{6}$/.test(value)) {
+                                target.value = '#' + value;
+                                target.dispatchEvent(new Event('input', { bubbles: true }));
+                                target.dispatchEvent(new Event('change', { bubbles: true }));
+                            }
+                        }
+                    }, true);
+
                     panel.addEventListener('change', e => {
                         if (this.isRestoringState) return;
                         const target = e.target;
                         
                         if (target.matches('.advanced-toggle')) {
-                            target.closest('.editor-section, .editor-card-content').classList.toggle('show-advanced');
+                            const section = target.closest('.editor-section, .editor-card-content');
+                            const isOpen = section.classList.toggle('show-advanced');
+                            if (section.id) {
+                                localStorage.setItem(`blokko-advanced-${section.id}`, isOpen);
+                            }
                             return;
                         }
 
@@ -1500,21 +1625,24 @@ Monitor of this License or out of the use or inability to use the
                             }
                         }
                         
-                        if (target.matches('#hd-export-toggle, #custom-width-toggle, #custom-width-input, #export-rounded-corners-toggle, #export-corner-radius-input')) {
+                        if (target.matches('#hd-export-toggle, #custom-width-toggle, #custom-width-input, #export-rounded-corners-toggle, #export-corner-radius-input, #lock-aspect-ratio-toggle')) {
                             const customWidthToggle = panel.querySelector('#custom-width-toggle');
                             const customWidthInput = panel.querySelector('#custom-width-input');
                             const hdExportToggle = panel.querySelector('#hd-export-toggle');
                             const exportRoundedToggle = panel.querySelector('#export-rounded-corners-toggle');
                             const cornerRadiusInput = panel.querySelector('#export-corner-radius-input');
-
+                            const aspectRatioControl = panel.querySelector('#aspect-ratio-control');
+    
                             if (target.id === 'custom-width-toggle') {
                                 customWidthInput.disabled = !target.checked;
+                                aspectRatioControl.style.display = target.checked ? 'block' : 'none';
                                 if (target.checked) hdExportToggle.checked = false;
                             }
                             
                             if (target.id === 'hd-export-toggle' && target.checked) {
                                 customWidthToggle.checked = false;
                                 customWidthInput.disabled = true;
+                                aspectRatioControl.style.display = 'none';
                             }
     
                             if (target.id === 'export-rounded-corners-toggle') {
@@ -1560,6 +1688,7 @@ Monitor of this License or out of the use or inability to use the
                             '#export-png-btn': () => this.exportPNG(),
                             '#load-local-fonts-btn': () => this.loadLocalFonts(),
                             '#upload-font-btn': () => panel.querySelector('#font-upload-input')?.click(),
+                            '#manage-fonts-btn': () => this.showFontManager(),
                             '#add-new-tag-btn': () => this.addNewTag(),
                             '#show-texture-picker-btn': () => this.initTexturePicker(),
                             '#clear-texture-btn': () => this.selectTexture(null),
@@ -1659,24 +1788,37 @@ Monitor of this License or out of the use or inability to use the
                             }
                         }
                     });
+
+                    // 字体管理器 Modal 的事件
+                    const fontManagerModal = this.elements.fontManagerModal;
+                    fontManagerModal.querySelector('#font-manager-close-btn').addEventListener('click', () => {
+                        fontManagerModal.classList.remove('visible');
+                    });
+                    fontManagerModal.addEventListener('click', e => {
+                        const deleteBtn = e.target.closest('.font-delete-btn');
+                        if (deleteBtn) {
+                            const item = deleteBtn.closest('.font-manager-item');
+                            if (item) {
+                                this.deleteFont(item.dataset.fontFamily);
+                            }
+                        }
+                    });
                 },
 
                 bindPreviewEvents(){
                      this.elements.previewPanel.addEventListener('click', e => {
-                        /** v1.5.5 Update */
-                        // Added logic to handle quick avatar change
                         if (e.target.closest('#preview-avatar')) {
                             if (this.selection.type !== 'personalInfo') {
                                 this.setSelection({ type: 'personalInfo' });
                             }
-                            // Use a timeout to ensure the inspector panel has rendered before triggering the click
+                            // 使用 timeout 确保检查器面板已渲染
                             setTimeout(() => {
                                 const avatarUploadInput = this.elements.inspectorPanel.querySelector('#avatar-upload');
                                 if (avatarUploadInput) {
                                     avatarUploadInput.click();
                                 }
                             }, 50);
-                            return; // Stop further processing
+                            return; // 停止进一步处理
                         }
 
                         if (this.isEditingText) return;
@@ -1768,14 +1910,14 @@ Monitor of this License or out of the use or inability to use the
                                     if(card) card[cardKey] = value;
                                     const editorInput = this.elements.inspectorPanel.querySelector(`.editor-card[data-card-id="${cardEl.dataset.cardId}"] [data-card-key="${cardKey}"]`);
                                     if(editorInput) editorInput.value = value;
-                                    this.renderLayerPanel(); // Update card title in layer panel
+                                    this.renderLayerPanel();
                                 }
                             } else if (separatorKey) {
                                 const block = this.findBlock(separatorKey);
                                 if(block) block.settings.text = value;
                                 const editorInput = this.elements.inspectorPanel.querySelector(`.editor-block[data-block-id="${separatorKey}"] [data-setting-key="text"]`);
                                 if(editorInput) editorInput.value = value;
-                            } else if (tagId) { /** v1.5.5 Fix: Handle tag text editing */
+                            } else if (tagId) {
                                 const tag = this.state.personalInfo.tags.find(t => t.id === tagId);
                                 if (tag) {
                                     tag.text = value;
@@ -1861,7 +2003,6 @@ Monitor of this License or out of the use or inability to use the
                     this.elements.previewTagsContainer.innerHTML = (info.tags || [])
                         .map(tag => {
                             const iconHTML = tag.icon ? `<span class="iconify" data-icon="${tag.icon}"></span>` : '';
-                            /** v1.5.5 Fix: Added data-tag-text-id for live editing */
                             return `<span class="tag-pill" style="background-color:${info.tagBgColor}; color:${info.tagTextColor};">${iconHTML}<span data-tag-text-id="${tag.id}">${this.escapeHTML(tag.text)}</span></span>`;
                         }).join('');
                 },
@@ -1944,6 +2085,7 @@ Monitor of this License or out of the use or inability to use the
                         const iconMap = { text: 'mdi:format-text-variant-outline', image: 'mdi:image-multiple-outline', separator: 'mdi:minus', spacer: 'mdi:arrow-expand-vertical' };
                         const isHidden = b.isVisible === false;
                         const isExpandable = (b.type === 'text' || b.type === 'image') && b.cards && b.cards.length > 0;
+                        const isExpanded = b.isExpanded ? 'is-expanded' : '';
                         const hasQuickAdd = (b.type === 'text' || b.type === 'image');
                         
                         const cardsListHTML = isExpandable ? `<ul class="card-layer-list" data-block-id="${b.id}">
@@ -1952,7 +2094,7 @@ Monitor of this License or out of the use or inability to use the
 
                         const quickAddBtn = hasQuickAdd ? `<button class="btn-icon add-card-to-block-btn" title="添加卡片/图片"><span class="iconify" data-icon="mdi:plus"></span></button>` : '';
 
-                        return `<div class="layer-item-container ${isExpandable ? 'is-expandable' : ''}" data-block-id="${b.id}">
+                        return `<div class="layer-item-container ${isExpandable ? 'is-expandable' : ''} ${isExpanded}" data-block-id="${b.id}">
                                     <div class="layer-item ${type === 'block' && id === b.id ? 'selected' : ''} ${isHidden ? 'is-hidden': ''}" data-type="block" data-id="${b.id}">
                                         <button class="layer-toggle"><span class="iconify" data-icon="mdi:chevron-right"></span></button>
                                         <span class="layer-icon iconify" data-icon="${iconMap[b.type]}"></span>
@@ -1989,6 +2131,17 @@ Monitor of this License or out of the use or inability to use the
                     }
 
                     panel.innerHTML = html;
+
+                    panel.querySelectorAll('.editor-section').forEach(section => {
+                        if (section.id) {
+                            const isOpen = localStorage.getItem(`blokko-advanced-${section.id}`) === 'true';
+                            if (isOpen) {
+                                section.classList.add('show-advanced');
+                                const toggle = section.querySelector('.advanced-toggle');
+                                if (toggle) toggle.checked = true;
+                            }
+                        }
+                    });
                     
                     if (this.selection.type === 'global') {
                         this.populateFontList();
@@ -2027,16 +2180,16 @@ Monitor of this License or out of the use or inability to use the
                                             <h4 style="margin: 0;">页面背景</h4>
                                             <label class="checkbox-group advanced-toggle-label"><input type="checkbox" class="advanced-toggle"> 高级</label>
                                         </div>
-                                        <div class="tabs"><button class="tab-btn" data-tab="page-bg-solid">纯色/图片</button><button class="tab-btn" data-tab="page-bg-gradient">渐变</button></div>
+                                        <div class="tabs"><button class="tab-btn" data-tab="page-bg-solid">纯色/图片</button><button class="tab-btn advanced-setting" data-tab="page-bg-gradient">渐变</button></div>
                                         <div id="page-bg-solid" class="tab-content">
                                             <div class="form-group"><label>页面背景颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.pageBgSolidColor"><input type="text" class="color-hex-input" data-state-key="pageStyles.pageBgSolidColor"></div></div>
                                             <div class="form-group"><label>背景图 (可选):</label><div class="input-group simple"><input type="file" id="page-bg-upload" accept="image/*" style="width:100%"><button id="clear-page-bg-btn" class="btn btn-default btn-small">清除</button></div></div>
-                                            <div id="page-image-controls">
+                                            <div id="page-image-controls" class="advanced-setting">
                                                 <div class="form-group"><label>图片遮罩颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.pageOverlayColor"><input type="text" class="color-hex-input" data-state-key="pageStyles.pageOverlayColor"></div></div>
                                                 <div class="form-group"><label>图片遮罩不透明度:</label><input type="range" data-state-key="pageStyles.pageOverlayOpacity" min="0" max="1" step="0.05"></div>
                                             </div>
                                         </div>
-                                        <div id="page-bg-gradient" class="tab-content"><div class="gradient-controls"><div class="form-group"><label>起始颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.pageBgGradientStart"><input type="text" class="color-hex-input" data-state-key="pageStyles.pageBgGradientStart"></div></div><div class="form-group"><label>结束颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.pageBgGradientEnd"><input type="text" class="color-hex-input" data-state-key="pageStyles.pageBgGradientEnd"></div></div><div class="gradient-angle-control form-group advanced-setting"><label>角度 (<span class="angle-value">135</span>°):</label><input type="range" data-state-key="pageStyles.pageBgGradientAngle" min="0" max="360" step="1"></div></div></div>
+                                        <div id="page-bg-gradient" class="tab-content advanced-setting"><div class="gradient-controls"><div class="form-group"><label>起始颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.pageBgGradientStart"><input type="text" class="color-hex-input" data-state-key="pageStyles.pageBgGradientStart"></div></div><div class="form-group"><label>结束颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.pageBgGradientEnd"><input type="text" class="color-hex-input" data-state-key="pageStyles.pageBgGradientEnd"></div></div><div class="gradient-angle-control form-group"><label>角度 (<span class="angle-value">135</span>°):</label><input type="range" data-state-key="pageStyles.pageBgGradientAngle" min="0" max="360" step="1"></div></div></div>
                                         <div class="advanced-setting" style="margin-top: 10px;">
                                             <div class="form-group"><button id="show-texture-picker-btn" class="btn btn-default">🎨 添加纹理</button></div>
                                             <div id="page-texture-controls" class="inset-controls"><div class="form-group"><label>当前纹理: <span id="current-texture-name">无</span></label><button id="clear-texture-btn" class="btn btn-default btn-small">清除纹理</button></div><div class="color-control-row"><div class="color-control-group"><label>纹理颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.pageBgPatternColor"><input type="text" class="color-hex-input" data-state-key="pageStyles.pageBgPatternColor"></div></div><div class="color-control-group"><label>纹理不透明度:</label><input type="range" data-state-key="pageStyles.pageBgPatternOpacity" min="0" max="1" step="0.05"></div></div><div class="form-group"><label>纹理密度:</label><input type="range" data-state-key="pageStyles.pageBgPatternDensity" min="10" max="100" step="2"></div></div>
@@ -2045,9 +2198,9 @@ Monitor of this License or out of the use or inability to use the
                                     <hr class="separator">
                                     <div class="tab-group-wrapper">
                                         <h4>头部背景</h4>
-                                        <div class="tabs"><button class="tab-btn" data-tab="header-bg-solid">纯色</button><button class="tab-btn" data-tab="header-bg-gradient">渐变</button></div>
+                                        <div class="tabs"><button class="tab-btn" data-tab="header-bg-solid">纯色</button><button class="tab-btn advanced-setting" data-tab="header-bg-gradient">渐变</button></div>
                                         <div id="header-bg-solid" class="tab-content"><div class="form-group"><label>头部背景颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.headerBgColor"><input type="text" class="color-hex-input" data-state-key="pageStyles.headerBgColor"></div></div></div>
-                                        <div id="header-bg-gradient" class="tab-content"><div class="gradient-controls"><div class="form-group"><label>起始颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.headerBgGradientStart"><input type="text" class="color-hex-input" data-state-key="pageStyles.headerBgGradientStart"></div></div><div class="form-group"><label>结束颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.headerBgGradientEnd"><input type="text" class="color-hex-input" data-state-key="pageStyles.headerBgGradientEnd"></div></div><div class="gradient-angle-control form-group advanced-setting"><label>角度 (<span class="angle-value">135</span>°):</label><input type="range" data-state-key="pageStyles.headerBgGradientAngle" min="0" max="360" step="1"></div></div></div>
+                                        <div id="header-bg-gradient" class="tab-content advanced-setting"><div class="gradient-controls"><div class="form-group"><label>起始颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.headerBgGradientStart"><input type="text" class="color-hex-input" data-state-key="pageStyles.headerBgGradientStart"></div></div><div class="form-group"><label>结束颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.headerBgGradientEnd"><input type="text" class="color-hex-input" data-state-key="pageStyles.headerBgGradientEnd"></div></div><div class="gradient-angle-control form-group"><label>角度 (<span class="angle-value">135</span>°):</label><input type="range" data-state-key="pageStyles.headerBgGradientAngle" min="0" max="360" step="1"></div></div></div>
                                         <div class="form-group"><label>头部文字颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.headerTextColor"><input type="text" class="color-hex-input" data-state-key="pageStyles.headerTextColor"></div></div>
                                         <div class="form-group advanced-setting"><label>头部不透明度:</label><input type="range" data-state-key="pageStyles.headerOpacity" min="0" max="1" step="0.05"></div>
                                     </div>
@@ -2068,25 +2221,32 @@ Monitor of this License or out of the use or inability to use the
                                     <div style="text-align: right; margin-bottom: 10px;">
                                         <label class="checkbox-group advanced-toggle-label"><input type="checkbox" class="advanced-toggle"> 高级</label>
                                     </div>
-                                    <div class="tabs"><button class="tab-btn" data-tab="card-bg-solid">纯色</button><button class="tab-btn" data-tab="card-bg-gradient">渐变</button></div>
+                                    <div class="tabs"><button class="tab-btn" data-tab="card-bg-solid">纯色</button><button class="tab-btn advanced-setting" data-tab="card-bg-gradient">渐变</button></div>
                                     <div id="card-bg-solid" class="tab-content"><div class="color-control-row"><div class="color-control-group"><label>背景色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.bgColor"><input type="text" class="color-hex-input" data-state-key="globalCardStyles.bgColor"></div></div><div class="color-control-group"><label>文字颜色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.textColor"><input type="text" class="color-hex-input" data-state-key="globalCardStyles.textColor"></div></div></div></div>
-                                    <div id="card-bg-gradient" class="tab-content"><div class="gradient-controls"><div class="form-group"><label>起始颜色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.bgGradientStart"><input type="text" class="color-hex-input" data-state-key="globalCardStyles.bgGradientStart"></div></div><div class="form-group"><label>结束颜色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.bgGradientEnd"><input type="text" class="color-hex-input" data-state-key="globalCardStyles.bgGradientEnd"></div></div><div class="gradient-angle-control form-group advanced-setting"><label>角度 (<span class="angle-value">135</span>°):</label><input type="range" data-state-key="globalCardStyles.bgGradientAngle" min="0" max="360" step="1"></div></div></div>
+                                    <div id="card-bg-gradient" class="tab-content advanced-setting"><div class="gradient-controls"><div class="form-group"><label>起始颜色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.bgGradientStart"><input type="text" class="color-hex-input" data-state-key="globalCardStyles.bgGradientStart"></div></div><div class="form-group"><label>结束颜色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.bgGradientEnd"><input type="text" class="color-hex-input" data-state-key="globalCardStyles.bgGradientEnd"></div></div><div class="gradient-angle-control form-group"><label>角度 (<span class="angle-value">135</span>°):</label><input type="range" data-state-key="globalCardStyles.bgGradientAngle" min="0" max="360" step="1"></div></div></div>
                                     <div class="form-group"><label>不透明度:</label><input type="range" data-state-key="globalCardStyles.opacity" min="0" max="1" step="0.05"></div>
-                                    <div class="form-group"><label>圆角 (px): <span id="gCardRadiusValue">12</span></label><input type="range" data-state-key="globalCardStyles.radius" min="0" max="40" step="1"></div>
-                                    <div class="advanced-setting"><hr class="separator"><label>卡片边框:</label><div class="form-group inset-controls"><div class="form-group"><label>样式:</label><select data-state-key="globalCardStyles.borderStyle"><option value="none">无</option><option value="solid">实线</option><option value="dashed">虚线</option><option value="dotted">点状</option><option value="double">双实线</option></select></div><div class="color-control-row"><div class="color-control-group"><label>粗细(px):</label><div class="input-group simple"><input type="range" data-state-key="globalCardStyles.borderWidth" min="0" max="10" step="1"></div></div><div class="color-control-group"><label>颜色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.borderColor"><input type="text" class="color-hex-input" data-state-key="globalCardStyles.borderColor"></div></div></div></div></div>
+                                    <div class="form-group advanced-setting"><label>圆角 (px): <span id="gCardRadiusValue">12</span></label><input type="range" data-state-key="globalCardStyles.radius" min="0" max="40" step="1"></div>
+                                    <div class="advanced-setting"><hr class="separator"><label>卡片边框（预览区会出现空隙，导出是正常的）:</label><div class="form-group inset-controls"><div class="form-group"><label>样式:</label><select data-state-key="globalCardStyles.borderStyle"><option value="none">无</option><option value="solid">实线</option><option value="dashed">虚线</option><option value="dotted">点状</option><option value="double">双实线</option></select></div><div class="color-control-row"><div class="color-control-group"><label>粗细(px):</label><div class="input-group simple"><input type="range" data-state-key="globalCardStyles.borderWidth" min="0" max="10" step="1"></div></div><div class="color-control-group"><label>颜色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.borderColor"><input type="text" class="color-hex-input" data-state-key="globalCardStyles.borderColor"></div></div></div></div></div>
                                     <hr class="separator"><div class="form-group"><label>对齐:</label><div class="radio-group"><label><input type="radio" name="gCardAlign" value="left" data-state-key="globalCardStyles.textAlign">居左</label><label><input type="radio" name="gCardAlign" value="center" data-state-key="globalCardStyles.textAlign">居中</label><label><input type="radio" name="gCardAlign" value="right" data-state-key="globalCardStyles.textAlign">居右</label></div></div>
                                     <div class="form-group"><label>行高:</label><div class="radio-group"><label><input type="radio" name="gCardLineHeight" value="1.4" data-state-key="globalCardStyles.lineHeight">紧凑</label><label><input type="radio" name="gCardLineHeight" value="1.5" data-state-key="globalCardStyles.lineHeight">中等</label><label><input type="radio" name="gCardLineHeight" value="1.6" data-state-key="globalCardStyles.lineHeight">宽松</label></div></div>
-                                    <hr class="separator"><div class="form-group"><label>字体:</label><div class="font-controls"><input type="text" id="font-search-input" placeholder="搜索本地字体..." style="margin-bottom: 5px;"><select id="font-family-select" data-state-key="globalCardStyles.fontFamily"></select><div class="buttons"><button id="load-local-fonts-btn" class="btn btn-default">加载本地</button><button id="upload-font-btn" class="btn btn-default">上传字体</button></div><input type="file" id="font-upload-input" accept=".ttf,.woff,.woff2,.otf" style="display: none;"></div></div>
+                                    <hr class="separator"><div class="form-group"><label>字体:</label><div class="font-controls"><input type="text" id="font-search-input" placeholder="搜索本地字体..." style="margin-bottom: 5px;"><select id="font-family-select" data-state-key="globalCardStyles.fontFamily"></select><div class="buttons"><button id="load-local-fonts-btn" class="btn btn-default">加载本地</button><button id="upload-font-btn" class="btn btn-default">上传字体</button><button id="manage-fonts-btn" class="btn btn-default">管理</button></div><input type="file" id="font-upload-input" accept=".ttf,.woff,.woff2,.otf" style="display: none;"></div></div>
                                     <div class="form-group"> <label>字号:</label> <select data-state-key="globalCardStyles.fontSize"> <option value="0.9rem">小</option> <option value="1rem" selected>中 (默认)</option> <option value="1.1rem">大</option> </select> </div>
                                     <div class="advanced-setting"><div class="color-control-row"><div class="color-control-group"><label>文字描边(px):</label><div class="input-group simple"><input type="range" data-state-key="globalCardStyles.textStrokeWidth" min="0" max="5" step="0.5"></div></div><div class="color-control-group"><label>描边颜色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.textStrokeColor"><input type="text" class="color-hex-input" data-state-key="globalCardStyles.textStrokeColor"></div></div></div></div>
                                 </div>
                             </fieldset>
-                            <fieldset class="editor-section">
+                            <fieldset class="editor-section" id="export-section">
                                 <legend>操作</legend>
                                 <div class="section-content">
                                     <div class="form-group" style="display: flex; gap: 10px;"> <button id="undo-btn" class="btn btn-default" disabled>撤回</button> <button id="redo-btn" class="btn btn-default" disabled>重做</button> </div>
                                     <div class="form-group" style="display: flex; gap: 10px;"> <button id="import-btn" class="btn btn-secondary">导入配置</button> <button id="export-btn" class="btn btn-secondary">导出配置</button> <button id="export-template-btn" class="btn btn-secondary">存为模板</button></div>
-                                    <div class="form-group"><div class="checkbox-group" style="margin-bottom: 10px;"><label><input type="checkbox" id="hd-export-toggle"> 超清导出 (1800px)</label></div><div class="checkbox-group" style="margin-bottom: 10px;"><label><input type="checkbox" id="custom-width-toggle"> 自定义宽度</label><input type="number" id="custom-width-input" value="1200" style="width: 80px; padding: 4px 8px;" disabled></div><div class="checkbox-group" style="margin-bottom: 10px;"><label><input type="checkbox" id="export-rounded-corners-toggle"> 导出为圆角图片</label><input type="number" id="export-corner-radius-input" value="20" style="width: 60px; padding: 4px 8px;" disabled></div><div id="export-size-preview" style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 5px;"></div><button id="export-png-btn" class="btn btn-primary" style="margin-top:10px;">导出为图片 (1200px)</button></div>
+                                    <div class="form-group">
+                                        <div class="checkbox-group" style="margin-bottom: 10px;"><label><input type="checkbox" id="hd-export-toggle"> 超清导出 (1800px)</label></div>
+                                        <div class="checkbox-group" style="margin-bottom: 10px;"><label><input type="checkbox" id="custom-width-toggle"> 自定义宽度</label><input type="number" id="custom-width-input" value="1200" style="width: 80px; padding: 4px 8px;" disabled></div>
+                                        <div class="checkbox-group" id="aspect-ratio-control" style="display: none; padding-left: 20px; margin-bottom: 10px;"><label><input type="checkbox" id="lock-aspect-ratio-toggle" checked> 锁定长宽比</label></div>
+                                        <div class="checkbox-group" style="margin-bottom: 10px;"><label><input type="checkbox" id="export-rounded-corners-toggle"> 导出为圆角图片</label><input type="number" id="export-corner-radius-input" value="20" style="width: 60px; padding: 4px 8px;" disabled></div>
+                                        <div id="export-size-preview" style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 5px;"></div>
+                                        <button id="export-png-btn" class="btn btn-primary" style="margin-top:10px;">导出为图片 (1200px)</button>
+                                    </div>
                                     <hr class="separator"><div class="form-group"><label>预设主题:</label><div class="input-group simple"> <button data-preset="light" class="btn btn-default btn-small">明亮</button> <button data-preset="dark" class="btn btn-default btn-small">暗黑</button> <button data-preset="mint" class="btn btn-default btn-small">薄荷</button> <button data-preset="coffee" class="btn btn-default btn-small">咖啡</button> </div></div>
                                     <div class="form-group"><button id="reset-btn" class="btn btn-danger">恢复默认模板</button></div>
                                     <input type="file" id="config-file-input" accept=".json" style="display: none;">
@@ -2098,30 +2258,32 @@ Monitor of this License or out of the use or inability to use the
 
                 createPersonalInfoInspectorHTML() {
                     const backBtn = this.selection.type !== 'global' ? `<button class="back-to-global-btn">← 返回全局</button>` : '';
-                    /** v1.5.5 Update: Reordered elements to place avatar settings at the top. */
                     return `
                         <h3 class="panel-header">个人信息设置 ${backBtn}</h3>
                         <div class="inspector-state active">
-                             <fieldset class="editor-section">
+                             <fieldset class="editor-section" id="personal-info-section">
                                 <legend>个人信息</legend>
                                 <div class="section-content">
+                                    <div style="text-align: right; margin-bottom: 10px;">
+                                        <label class="checkbox-group advanced-toggle-label"><input type="checkbox" class="advanced-toggle"> 高级</label>
+                                    </div>
                                     <div class="form-group"><label>头像上传 (点击左侧预览区的头像也可上传):</label><input type="file" id="avatar-upload" accept="image/*"></div>
-                                    <div class="form-group"><label>头像形状:</label><div class="radio-group"><label><input type="radio" name="avatarShape" value="50%" data-state-key="personalInfo.avatarShape">圆形</label><label><input type="radio" name="avatarShape" value="16px" data-state-key="personalInfo.avatarShape">圆角</label><label><input type="radio" name="avatarShape" value="0px" data-state-key="personalInfo.avatarShape">方形</label></div></div>
-                                    <div class="form-group"><label>头像边框:</label><div class="color-control-row"><div class="color-control-group"><label>粗细(px):</label><div class="input-group simple"><input type="range" data-state-key="personalInfo.avatarBorderSize" min="0" max="10" step="1"></div></div><div class="color-control-group"><label>颜色:</label><div class="input-group"><input type="color" data-state-key="personalInfo.avatarBorderColor"><input type="text" class="color-hex-input" data-state-key="personalInfo.avatarBorderColor"></div></div></div></div>
-                                    <hr class="separator">
-                                    <div class="form-group"><label>头像大小 (%): <span class="avatar-size-value">100</span></label><input type="range" data-state-key="personalInfo.avatarSize" min="50" max="200" step="1"></div>
-                                    <div class="form-group"><label>头像水平位置:</label><input type="range" data-state-key="personalInfo.avatarOffsetX" min="-100" max="100" step="1"></div>
-                                    <div class="form-group"><button id="reset-avatar-transform-btn" class="btn btn-default btn-small">恢复默认位置与大小</button></div>
+                                    <div class="form-group advanced-setting"><label>头像形状:</label><div class="radio-group"><label><input type="radio" name="avatarShape" value="50%" data-state-key="personalInfo.avatarShape">圆形</label><label><input type="radio" name="avatarShape" value="16px" data-state-key="personalInfo.avatarShape">圆角</label><label><input type="radio" name="avatarShape" value="0px" data-state-key="personalInfo.avatarShape">方形</label></div></div>
+                                    <div class="form-group advanced-setting"><label>头像边框:</label><div class="color-control-row"><div class="color-control-group"><label>粗细(px):</label><div class="input-group simple"><input type="range" data-state-key="personalInfo.avatarBorderSize" min="0" max="10" step="1"></div></div><div class="color-control-group"><label>颜色:</label><div class="input-group"><input type="color" data-state-key="personalInfo.avatarBorderColor"><input type="text" class="color-hex-input" data-state-key="personalInfo.avatarBorderColor"></div></div></div></div>
+                                    <hr class="separator advanced-setting">
+                                    <div class="form-group advanced-setting"><label>头像大小 (%): <span class="avatar-size-value">100</span></label><input type="range" data-state-key="personalInfo.avatarSize" min="50" max="200" step="1"></div>
+                                    <div class="form-group advanced-setting"><label>头像水平位置:</label><input type="range" data-state-key="personalInfo.avatarOffsetX" min="-100" max="100" step="1"></div>
+                                    <div class="form-group advanced-setting"><button id="reset-avatar-transform-btn" class="btn btn-default btn-small">恢复默认位置与大小</button></div>
                                     <hr class="separator">
                                     <div class="form-group"><label>昵称:</label><input type="text" data-state-key="personalInfo.nickname" data-preview-target="#preview-nickname"></div>
                                     <div class="form-group"><label>昵称颜色:</label><div class="input-group"><input type="color" data-state-key="personalInfo.nicknameColor"><input type="text" class="color-hex-input" data-state-key="personalInfo.nicknameColor"><button class="btn btn-default btn-small" data-reset-key="personalInfo.nicknameColor">重置</button></div></div>
                                     <div class="form-group"><label>副标题 (可选):</label><input type="text" data-state-key="personalInfo.subtitle" data-preview-target="#preview-subtitle"></div>
-                                    <div class="form-group"><label>副标题颜色:</label><div class="input-group"><input type="color" data-state-key="personalInfo.subtitleColor"><input type="text" class="color-hex-input" data-state-key="personalInfo.subtitleColor"><button class="btn btn-default btn-small" data-reset-key="personalInfo.subtitleColor">重置</button></div></div>
+                                    <div class="form-group advanced-setting"><label>副标题颜色:</label><div class="input-group"><input type="color" data-state-key="personalInfo.subtitleColor"><input type="text" class="color-hex-input" data-state-key="personalInfo.subtitleColor"><button class="btn btn-default btn-small" data-reset-key="personalInfo.subtitleColor">重置</button></div></div>
                                     <div class="form-group"><label>简介 (可选):</label><textarea data-state-key="personalInfo.bio" rows="3" data-preview-target="#preview-bio"></textarea></div>
-                                    <div class="form-group"><label>简介颜色:</label><div class="input-group"><input type="color" data-state-key="personalInfo.bioColor"><input type="text" class="color-hex-input" data-state-key="personalInfo.bioColor"><button class="btn btn-default btn-small" data-reset-key="personalInfo.bioColor">重置</button></div></div>
+                                    <div class="form-group advanced-setting"><label>简介颜色:</label><div class="input-group"><input type="color" data-state-key="personalInfo.bioColor"><input type="text" class="color-hex-input" data-state-key="personalInfo.bioColor"><button class="btn btn-default btn-small" data-reset-key="personalInfo.bioColor">重置</button></div></div>
                                     <hr class="separator">
                                     <div class="form-group"><label>标签管理器 (可拖拽排序):</label><div id="tag-manager-list"></div><div class="input-group simple" style="margin-top: 10px;"><input type="text" id="new-tag-text-input" placeholder="输入新标签文字..."><button id="add-new-tag-btn" class="btn btn-default btn-small">添加标签</button></div></div>
-                                    <div class="form-group"><label>标签样式:</label><div class="color-control-row"><div class="color-control-group"><label>背景</label><div class="input-group"><input type="color" data-state-key="personalInfo.tagBgColor"><input type="text" class="color-hex-input" data-state-key="personalInfo.tagBgColor"><button class="btn btn-default btn-small" data-reset-key="personalInfo.tagBgColor">重置</button></div></div><div class="color-control-group"><label>文字</label><div class="input-group"><input type="color" data-state-key="personalInfo.tagTextColor"><input type="text" class="color-hex-input" data-state-key="personalInfo.tagTextColor"><button class="btn btn-default btn-small" data-reset-key="personalInfo.tagTextColor">重置</button></div></div></div></div>
+                                    <div class="form-group advanced-setting"><label>标签样式:</label><div class="color-control-row"><div class="color-control-group"><label>背景</label><div class="input-group"><input type="color" data-state-key="personalInfo.tagBgColor"><input type="text" class="color-hex-input" data-state-key="personalInfo.tagBgColor"><button class="btn btn-default btn-small" data-reset-key="personalInfo.tagBgColor">重置</button></div></div><div class="color-control-group"><label>文字</label><div class="input-group"><input type="color" data-state-key="personalInfo.tagTextColor"><input type="text" class="color-hex-input" data-state-key="personalInfo.tagTextColor"><button class="btn btn-default btn-small" data-reset-key="personalInfo.tagTextColor">重置</button></div></div></div></div>
                                 </div>
                             </fieldset>
                         </div>
@@ -2413,10 +2575,13 @@ Monitor of this License or out of the use or inability to use the
                             return;
                         }
 
-                        if (updatedProperty === 'isVisible' || updatedProperty === 'settings') {
+                        if (updatedProperty === 'isVisible' || updatedProperty === 'settings' || updatedProperty === 'isExpanded') {
                             this.renderPreviewBlockById(block.id);
-                            const layerItem = this.elements.layerList.querySelector(`.layer-item[data-id="${block.id}"]`);
-                            if(layerItem) layerItem.classList.toggle('is-hidden', block.isVisible === false);
+                            const layerItemContainer = this.elements.layerList.querySelector(`.layer-item-container[data-block-id="${block.id}"]`);
+                            if(layerItemContainer) {
+                                layerItemContainer.querySelector('.layer-item').classList.toggle('is-hidden', block.isVisible === false);
+                                layerItemContainer.classList.toggle('is-expanded', block.isExpanded === true);
+                            }
                             return;
                         }
 
@@ -2460,7 +2625,7 @@ Monitor of this License or out of the use or inability to use the
                             newCardLayerItem.dataset.cardId = newCard.id;
                             newCardLayerItem.textContent = newCard.title || '无标题卡片';
                             cardListEl.appendChild(newCardLayerItem);
-                            cardListEl.closest('.layer-item-container').classList.add('is-expanded');
+                            this.toggleLayerExpansion(blockId, true);
                         }
                     } else {
                         this.renderLayerPanel();
@@ -2541,15 +2706,18 @@ Monitor of this License or out of the use or inability to use the
                     }
                 },
 
-                loadFromLocal() { 
+                async loadFromLocal() { 
                     const json = localStorage.getItem('blokkoState'); 
                     if (!json) {
                         this.showToast('欢迎使用 Blokko！已为您加载默认模板。', 'info');
+                        // 即使没有本地存档，也需要加载DB中的字体
+                        await this.loadFontsFromDB();
                         return;
                     };
                     try { 
                         let saved = JSON.parse(json);
                         if (saved && saved.personalInfo) {
+                            // 旧数据迁移逻辑
                             if (typeof saved.personalInfo.tags === 'string') {
                                 saved.personalInfo.tags = saved.personalInfo.tags.split(/[,，、]/).map(t => t.trim()).filter(Boolean)
                                     .map(text => ({ id: this.generateId('t'), icon: null, text }));
@@ -2563,34 +2731,36 @@ Monitor of this License or out of the use or inability to use the
                                     delete block.images;
                                     migrated = true;
                                 }
-                                if (block.isVisible === undefined) {
-                                    block.isVisible = true;
-                                }
+                                if (block.isVisible === undefined) block.isVisible = true;
+                                if (block.isExpanded === undefined) block.isExpanded = false;
                             });
-                            if (migrated) {
-                                this.showToast('旧版图片区块已自动升级', 'info');
-                            }
-
+                            if (migrated) this.showToast('旧版图片区块已自动升级', 'info');
+                            
+                            // 合并默认状态和已保存状态
                             const defaultState = this.getDefaultState();
                             this.state = this.mergeDeep(defaultState, saved);
-
+                            
+                            // 处理字体（从旧的localStorage格式迁移到IndexedDB）
                             if (saved.uploadedFonts) {
-                                this.uploadedFonts = saved.uploadedFonts;
-                                this.uploadedFonts.forEach(font => {
+                                for (const font of saved.uploadedFonts) {
                                     if (font.data) {
                                         try {
-                                           const fontFace = new FontFace(font.family, this.base64ToArrayBuffer(font.data));
-                                           fontFace.load().then(f => document.fonts.add(f)).catch(console.error);
-                                        } catch(e) { console.error("Error loading font:", e)}
+                                           const fontBuffer = this.base64ToArrayBuffer(font.data);
+                                           await this.saveFontToDB({ family: font.family, fullName: font.fullName, data: fontBuffer });
+                                        } catch(e) { console.error("从localStorage迁移字体失败:", e)}
                                     }
-                                });
+                                }
+                                delete saved.uploadedFonts; // 从localStorage中移除，防止下次重复迁移
+                                localStorage.setItem('blokkoState', JSON.stringify(saved));
                             }
                         }
                     } catch (e) { 
                         localStorage.removeItem('blokkoState'); 
                         this.showErrorModal('加载存档失败', '您的本地存档可能已损坏，已为您加载默认模板。错误信息: ' + e.message);
-                        console.error("Failed to load state from localStorage:", e);
-                    } 
+                        console.error("从 localStorage 加载状态失败:", e);
+                    } finally {
+                        await this.loadFontsFromDB();
+                    }
                 },
                 
                 mergeDeep(target, source) {
@@ -2637,7 +2807,7 @@ Monitor of this License or out of the use or inability to use the
                             }
                         });
                     } catch (e) {
-                         console.error(`Error syncing control for ${keyPath}:`, e);
+                         console.error(`同步控件 ${keyPath} 时出错:`, e);
                     } finally {
                         this.isRestoringState = false;
                     }
@@ -2754,7 +2924,6 @@ Monitor of this License or out of the use or inability to use the
                         this.updateUndoRedoButtons(); 
                 },
                 undo(){
-                    /** v1.5.5 Fix: Blur active element before undo to save pending changes */
                     if (document.activeElement && document.activeElement.isContentEditable) {
                         document.activeElement.blur();
                     }
@@ -2769,7 +2938,6 @@ Monitor of this License or out of the use or inability to use the
                     this.showToast('已撤销', 'info');
                 },
                 redo(){
-                    /** v1.5.5 Fix: Blur active element before redo */
                     if (document.activeElement && document.activeElement.isContentEditable) {
                         document.activeElement.blur();
                     }
@@ -2800,7 +2968,7 @@ Monitor of this License or out of the use or inability to use the
                                 const dataUrl = e.target.result;
                                 if(target === 'colorThief') {
                                     this.analyzeColorsFromImage(dataUrl);
-                                    return; // analyzeColorsFromImage will hide loading
+                                    return;
                                 }
                                 const compressedUrl = await this.compressImage(dataUrl, 0.9, 1200);
                                 if (['avatar', 'pageBg', 'cardBg', 'imageCard'].includes(target)) {
@@ -2848,7 +3016,7 @@ Monitor of this License or out of the use or inability to use the
                     const block = this.findBlock(blockId);
                     const card = block?.cards.find(c => c.id === cardId);
                     if (card && card.url) {
-                        this.showCropper(card.url, { type: 'imageCard', blockId, cardId, originalType: 'image/png' }); // Assume png to be safe
+                        this.showCropper(card.url, { type: 'imageCard', blockId, cardId, originalType: 'image/png' });
                     }
                 },
                 
@@ -2870,7 +3038,6 @@ Monitor of this License or out of the use or inability to use the
                      if (!this.cropper || !this.currentCropTarget) return;
                         this.showLoading('正在压缩裁剪后的图片...');
                         try {
-                            // Cropper.js toDataURL defaults to PNG, preserving transparency.
                             const dataUrl = this.cropper.getCroppedCanvas()?.toDataURL();
                             if (!dataUrl) {
                                 this.showErrorModal('裁剪失败', '无法获取裁剪后的图片数据。');
@@ -2896,7 +3063,7 @@ Monitor of this License or out of the use or inability to use the
                             }
                             this.hideCropper();
                         } catch (err) {
-                            console.error('Save crop failed:', err);
+                            console.error('保存裁剪失败:', err);
                             this.showErrorModal('保存裁剪失败', '处理图片时发生错误。');
                         } finally {
                             this.hideLoading();
@@ -2935,12 +3102,14 @@ Monitor of this License or out of the use or inability to use the
                                 this.showErrorModal('字体已存在', `字体 "${fontName}" 已存在!`);
                                 return;
                             }
+                            
+                            await this.saveFontToDB({ family: fontName, fullName: `${fontName} (上传)`, data: fontData });
+                            
                             const fontFace = new FontFace(fontName, fontData.slice(0));
                             await fontFace.load();
                             document.fonts.add(fontFace);
                             
-                            const fontDataBase64 = await this.arrayBufferToBase64(fontData);
-                            this.uploadedFonts.push({ family: fontName, fullName: `${fontName} (上传)`, data: fontDataBase64, type: 'uploaded' });
+                            this.uploadedFonts.push({ family: fontName, fullName: `${fontName} (上传)`, type: 'uploaded' });
                             this.populateFontList();
                             this.updateState('globalCardStyles.fontFamily', fontName, true);
                             this.showToast(`字体 "${fontName}" 上传成功`, 'success');
@@ -3057,8 +3226,8 @@ Monitor of this License or out of the use or inability to use the
                         this.state.personalInfo.tagBgColor = preset.pTagBgColor;
                         this.state.personalInfo.tagTextColor = preset.pTagTextColor;
                         
-                        this.state.pageStyles.pageBgMode = 'gradient';
-                        this.state.pageStyles.headerBgMode = 'gradient';
+                        this.state.pageStyles.pageBgMode = 'solid';
+                        this.state.pageStyles.headerBgMode = 'solid';
                         this.state.globalCardStyles.bgMode = 'solid';
 
                         this.debouncedSaveToLocal();
@@ -3092,7 +3261,7 @@ Monitor of this License or out of the use or inability to use the
                             canvas.height = height;
                             const ctx = canvas.getContext('2d');
                             ctx.drawImage(img, 0, 0, width, height);
-                            /** v1.5.5 Fix: Preserve transparency by exporting as PNG if the original was a PNG. */
+                            // 如果原始文件是PNG，则导出为PNG以保留透明度
                             const outputType = originalType === 'image/png' ? 'image/png' : 'image/jpeg';
                             resolve(canvas.toDataURL(outputType, quality));
                         };
@@ -3115,12 +3284,18 @@ Monitor of this License or out of the use or inability to use the
                 saveToLocal(){
                      try { 
                             const stateToSave = this.deepClone(this.state);
-                            stateToSave.uploadedFonts = this.uploadedFonts;
-                            localStorage.setItem('blokkoState', JSON.stringify(stateToSave)); 
+                            // 不再将字体保存在localStorage中
+                            delete stateToSave.uploadedFonts;
+                            localStorage.setItem('blokkoState', JSON.stringify(stateToSave));
+                            if (this.isStorageFull) {
+                                this.isStorageFull = false;
+                                this.removeStorageFullToast();
+                            }
                         } catch (e) {
-                            console.error("Save to localStorage failed:", e);
+                            console.error("保存到 localStorage 失败:", e);
                             if (e.name === 'QuotaExceededError') {
-                                this.showErrorModal('自动保存失败', '浏览器存储空间已满！您添加的图片或字体文件过大。请立即“导出配置”来备份您的工作，然后尝试移除一些图片或字体以恢复自动保存功能。');
+                                this.isStorageFull = true;
+                                this.showStorageFullToast();
                             }
                         } 
                 },
@@ -3161,8 +3336,6 @@ Monitor of this License or out of the use or inability to use the
                             });
                             this.showToast('模板已导出', 'success');
                         } else {
-                            /** v1.5.5 Fix: Include customIcons in the export. */
-                            stateToSave.uploadedFonts = this.uploadedFonts;
                             stateToSave.customIcons = this.state.customIcons;
                             this.showToast('配置已导出', 'success');
                         }
@@ -3176,7 +3349,7 @@ Monitor of this License or out of the use or inability to use the
                     const file = e.target.files[0]; 
                         if (!file) return;
 
-                        const confirmed = await this.showConfirm('导入配置', '此操作将覆盖当前所有内容，确定要继续吗？');
+                        const confirmed = await this.showConfirm('导入配置', '此操作将覆盖当前所有内容（字体除外），确定要继续吗？');
                         if (!confirmed) {
                             e.target.value = '';
                             return;
@@ -3205,29 +3378,21 @@ Monitor of this License or out of the use or inability to use the
                                         migrated = true;
                                     }
                                 });
-                                if (migrated) {
-                                    this.showToast('旧版图片区块已自动升级', 'info');
-                                }
+                                if (migrated) this.showToast('旧版图片区块已自动升级', 'info');
 
                                 this.state = this.mergeDeep(this.getDefaultState(), importedState);
                                 
-                                this.uploadedFonts = [];
-                                
                                 if (importedState.uploadedFonts) {
-                                    this.uploadedFonts = importedState.uploadedFonts;
-                                    const fontLoadPromises = this.uploadedFonts.map(font => {
+                                    this.showToast('检测到旧版字体数据，正在尝试迁移...', 'info');
+                                    for (const font of importedState.uploadedFonts) {
                                         if (font.data) {
                                             try {
-                                               const fontFace = new FontFace(font.family, this.base64ToArrayBuffer(font.data));
-                                               return fontFace.load().then(f => document.fonts.add(f));
-                                            } catch (fontError) {
-                                                console.error(`Failed to load font ${font.family} from config:`, fontError);
-                                                return Promise.resolve();
-                                            }
+                                               const fontBuffer = this.base64ToArrayBuffer(font.data);
+                                               await this.saveFontToDB({ family: font.family, fullName: font.fullName, data: fontBuffer });
+                                            } catch(fontError) { console.error(`迁移字体 ${font.family} 失败:`, fontError); }
                                         }
-                                        return Promise.resolve();
-                                    });
-                                    await Promise.all(fontLoadPromises);
+                                    }
+                                    await this.loadFontsFromDB();
                                 }
 
                                 this.history = [this.deepClone(this.state)];
@@ -3342,23 +3507,37 @@ Monitor of this License or out of the use or inability to use the
                 
                 async exportPNG(){
                     this.showLoading('正在准备导出...');
-                    
-                    const isCustomWidth = document.getElementById('custom-width-toggle').checked;
-                    const isHD = document.getElementById('hd-export-toggle').checked;
+
+                    const customWidthToggle = document.getElementById('custom-width-toggle');
+                    const hdExportToggle = document.getElementById('hd-export-toggle');
+                    const lockAspectRatioToggle = document.getElementById('lock-aspect-ratio-toggle');
+
+                    const isCustomWidth = customWidthToggle.checked;
+                    const isHD = hdExportToggle.checked;
+                    const lockAspectRatio = lockAspectRatioToggle.checked;
+
                     let targetWidth = 1200;
                     if (isCustomWidth) {
                         targetWidth = parseInt(document.getElementById('custom-width-input').value, 10) || 1200;
                     } else if (isHD) {
                         targetWidth = 1800;
                     }
-                    const sourceWidth = 600;
-                    const scale = targetWidth / sourceWidth;
-
+                    
                     const exportRounded = document.getElementById('export-rounded-corners-toggle').checked;
                     const cornerRadius = parseInt(document.getElementById('export-corner-radius-input').value, 10) || 20;
 
                     const originalElement = this.elements.previewWrapper;
-                    let clone = null;
+                    const originalAspectRatio = originalElement.clientHeight / originalElement.clientWidth;
+                    let targetHeight;
+
+                    // 根据最终逻辑计算目标高度
+                    if (isCustomWidth && !lockAspectRatio) {
+                        targetHeight = Math.round(1200 * originalAspectRatio);
+                    } else {
+                        targetHeight = Math.round(targetWidth * originalAspectRatio);
+                    }
+
+                    const scale = 1200 / originalElement.clientWidth;
                     
                     const wasLayerOpen = this.elements.layerPanel.classList.contains('is-open');
                     const wasInspectorOpen = this.elements.inspectorPanel.classList.contains('is-open');
@@ -3368,6 +3547,9 @@ Monitor of this License or out of the use or inability to use the
                     }
                     
                     document.body.classList.add('export-mode');
+                    
+                    const exportContainer = document.createElement('div');
+                    let clone = null;
 
                     try {
                         clone = originalElement.cloneNode(true);
@@ -3377,13 +3559,30 @@ Monitor of this License or out of the use or inability to use the
                         style.innerHTML = `#${clone.id}, #${clone.id} * { transition: none !important; animation: none !important; } #${clone.id} .preview-card:hover .preview-card-inner { transform: none !important; box-shadow: var(--active-card-shadow, none) !important; }`;
                         clone.appendChild(style);
 
-                        clone.style.position = 'absolute';
-                        clone.style.left = '-9999px';
-                        clone.style.top = '0px';
-                        clone.style.borderRadius = '0';
-                        clone.style.width = `${sourceWidth}px`;
+                        // 设置外部容器的样式
+                        exportContainer.style.position = 'absolute';
+                        exportContainer.style.left = '-9999px';
+                        exportContainer.style.top = '0px';
+                        exportContainer.style.width = `${targetWidth / scale}px`;
+                        exportContainer.style.height = `${targetHeight / scale}px`;
+                        const computedStyle = getComputedStyle(originalElement);
+                        exportContainer.style.backgroundColor = computedStyle.backgroundColor;
+                        exportContainer.style.backgroundImage = computedStyle.backgroundImage;
+                        exportContainer.style.backgroundSize = computedStyle.backgroundSize;
+                        exportContainer.style.backgroundPosition = computedStyle.backgroundPosition;
                         
-                        document.body.appendChild(clone);
+                        // 使用Flexbox将内容(clone)居中
+                        exportContainer.style.display = 'flex';
+                        exportContainer.style.justifyContent = 'center';
+                        exportContainer.style.alignItems = 'center';
+
+                        // 克隆体尺寸固定
+                        clone.style.width = `${originalElement.clientWidth}px`;
+                        clone.style.height = `${originalElement.clientHeight}px`;
+                        clone.style.borderRadius = '0'; 
+                        
+                        exportContainer.appendChild(clone);
+                        document.body.appendChild(exportContainer);
                         await this.sleep(100);
 
                         this.showLoading('正在计算瀑布流布局...');
@@ -3406,7 +3605,13 @@ Monitor of this License or out of the use or inability to use the
                         await this.sleep(100);
 
                         this.showLoading('正在渲染图片...');
-                        const canvas = await html2canvas(clone, { scale: scale, useCORS: true, backgroundColor: null, logging: false });
+                        
+                        const canvas = await html2canvas(exportContainer, {
+                            scale: scale,
+                            useCORS: true,
+                            backgroundColor: null,
+                            logging: false
+                        });
 
                         let finalCanvas = canvas;
                         if (exportRounded && cornerRadius > 0) {
@@ -3437,11 +3642,11 @@ Monitor of this License or out of the use or inability to use the
                         this.showDownloadModal(dataUrl, filename, '图片已生成');
 
                     } catch (err) {
-                        console.error("PNG export failed:", err);
+                        console.error("PNG 导出失败:", err);
                         this.showErrorModal('导出失败', `生成图片时发生错误: ${err.message}.`);
                     } finally {
-                        if (clone && clone.parentNode) {
-                            clone.parentNode.removeChild(clone);
+                        if (exportContainer && exportContainer.parentNode) {
+                            exportContainer.parentNode.removeChild(exportContainer);
                         }
                         if (wasLayerOpen) this.togglePanelDrawer('layer-panel');
                         if (wasInspectorOpen) this.togglePanelDrawer('inspector-panel');
@@ -3460,28 +3665,39 @@ Monitor of this License or out of the use or inability to use the
 
                     const isCustomWidth = customWidthToggle.checked;
                     const isHD = hdExportToggle.checked;
+                    const lockAspectRatio = document.getElementById('lock-aspect-ratio-toggle').checked;
+                    
                     let targetWidth = 1200;
-
                     if (isCustomWidth) {
                         targetWidth = parseInt(document.getElementById('custom-width-input').value, 10) || 1200;
                     } else if (isHD) {
                         targetWidth = 1800;
                     }
                     
-                    const aspectRatio = el.clientHeight / el.clientWidth;
-                    const finalHeight = Math.round(targetWidth * aspectRatio);
+                    const originalAspectRatio = el.clientHeight / el.clientWidth;
+                    let finalHeight;
+
+                    if (isCustomWidth && !lockAspectRatio) {
+                        finalHeight = Math.round(1200 * originalAspectRatio);
+                    } else {
+                        finalHeight = Math.round(targetWidth * originalAspectRatio);
+                    }
 
                     const previewEl = document.getElementById('export-size-preview');
-                    if (previewEl) previewEl.textContent = `导出尺寸: ${targetWidth}x${finalHeight}px`;
-                    
-                    let buttonText = '导出为图片';
-                    if (isCustomWidth) {
-                        buttonText += ` (${targetWidth}px)`;
-                    } else {
-                        buttonText += isHD ? ' (1800px)' : ' (1200px)';
+                    if (previewEl) {
+                        if (isCustomWidth && !lockAspectRatio) {
+                            previewEl.textContent = `导出宽度: ${targetWidth}px (高度将自动计算)`;
+                        } else {
+                            previewEl.textContent = `导出尺寸: ${targetWidth}x${finalHeight}px`;
+                        }
                     }
+                    
                     const exportBtn = document.getElementById('export-png-btn');
-                    if (exportBtn) exportBtn.textContent = buttonText;
+                    if (exportBtn) {
+                        let buttonText = '导出为图片';
+                        buttonText += ` (${targetWidth}px)`;
+                        exportBtn.textContent = buttonText;
+                    }
                 },
                 
                 arrayBufferToBase64(buffer){
@@ -4009,7 +4225,6 @@ Monitor of this License or out of the use or inability to use the
                     const menu = this.elements.colorContextMenu;
                     menu.style.display = 'block';
 
-                    /** v1.5.5 Fix: Add boundary detection for the context menu. */
                     const menuRect = menu.getBoundingClientRect();
                     const viewportWidth = window.innerWidth;
                     const viewportHeight = window.innerHeight;
@@ -4171,6 +4386,17 @@ Monitor of this License or out of the use or inability to use the
                         this.updateState(`blocks.${blockIndex}.isVisible`, currentVisibility === false ? true : false, true);
                     }
                 },
+
+                toggleLayerExpansion(blockId, forceOpen = null) {
+                    const blockIndex = this.findBlockIndex(blockId);
+                    if (blockIndex > -1) {
+                        const currentExpansion = this.state.blocks[blockIndex].isExpanded;
+                        const newExpansion = forceOpen === null ? !currentExpansion : forceOpen;
+                        if (currentExpansion !== newExpansion) {
+                           this.updateState(`blocks.${blockIndex}.isExpanded`, newExpansion, false);
+                        }
+                    }
+                },
                 
                 duplicateBlock(blockId) {
                     const block = this.findBlock(blockId);
@@ -4219,8 +4445,7 @@ Monitor of this License or out of the use or inability to use the
                     randomState.pageStyles.pageBgSolidColor = randColor();
                     randomState.globalCardStyles.bgColor = randColor();
                     randomState.globalCardStyles.textColor = randColor();
-                    randomState.globalCardStyles.shadowEnabled = false;
-
+                    
                     randomState.blocks = [];
                     const blockTypes = ['text', 'image', 'separator', 'spacer'];
                     for (let i = 0; i < rand(5, 8); i++) {
@@ -4228,21 +4453,155 @@ Monitor of this License or out of the use or inability to use the
                         let newBlock;
                         switch(type) {
                             case 'text':
-                                newBlock = { id: this.generateId('b'), isVisible: true, type: 'text', title: `随机文本区块 ${i+1}`, settings: { layout: randChoice(['single', 'dual', 'triple']), masonryEnabled: randBool() }, cards: Array.from({length: rand(2, 5)}, (_, j) => ({ id: this.generateId('c'), icon: '', title: `随机卡片 ${j+1}`, content: `随机内容 - ${Math.random().toString(36).substring(2)}`, opacity: 1.0, followGlobalOpacity: true })) };
+                                newBlock = { id: this.generateId('b'), isVisible: true, isExpanded: randBool(), type: 'text', title: `随机文本区块 ${i+1}`, settings: { layout: randChoice(['single', 'dual', 'triple']), masonryEnabled: randBool() }, cards: Array.from({length: rand(2, 5)}, (_, j) => ({ id: this.generateId('c'), icon: '', title: `随机卡片 ${j+1}`, content: `随机内容 - ${Math.random().toString(36).substring(2)}`, opacity: 1.0, followGlobalOpacity: true })) };
                                 break;
                             case 'image':
-                                newBlock = { id: this.generateId('b'), isVisible: true, type: 'image', title: `随机图片区块 ${i+1}`, settings: { layout: randChoice(['single', 'dual', 'triple']), masonryEnabled: randBool(), textColor: randColor() }, cards: [] };
+                                newBlock = { id: this.generateId('b'), isVisible: true, isExpanded: randBool(), type: 'image', title: `随机图片区块 ${i+1}`, settings: { layout: randChoice(['single', 'dual', 'triple']), masonryEnabled: randBool(), textColor: randColor() }, cards: [] };
                                 break;
                             case 'separator':
-                                newBlock = { id: this.generateId('b'), isVisible: true, type: 'separator', title: `随机分割线 ${i+1}`, settings: { style: randChoice(['solid', 'dashed', 'dotted']), color: randColor(), thickness: rand(1, 5), margin: rand(10, 40), text: 'Random Text', icon: null, textColor: randColor() }};
+                                newBlock = { id: this.generateId('b'), isVisible: true, isExpanded: false, type: 'separator', title: `随机分割线 ${i+1}`, settings: { style: randChoice(['solid', 'dashed', 'dotted']), color: randColor(), thickness: rand(1, 5), margin: rand(10, 40), text: 'Random Text', icon: null, textColor: randColor() }};
                                 break;
                             case 'spacer':
-                                newBlock = { id: this.generateId('b'), isVisible: true, type: 'spacer', title: `随机留白 ${i+1}`, settings: { height: rand(20, 100) }};
+                                newBlock = { id: this.generateId('b'), isVisible: true, isExpanded: false, type: 'spacer', title: `随机留白 ${i+1}`, settings: { height: rand(20, 100) }};
                                 break;
                         }
                         randomState.blocks.push(newBlock);
                     }
                     return randomState;
+                },
+
+                // --- IndexedDB 相关函数 ---
+                initDB() {
+                    return new Promise((resolve, reject) => {
+                        const request = indexedDB.open('BlokkoDB', 1);
+                        request.onupgradeneeded = event => {
+                            const db = event.target.result;
+                            if (!db.objectStoreNames.contains('fonts')) {
+                                db.createObjectStore('fonts', { keyPath: 'family' });
+                            }
+                        };
+                        request.onsuccess = event => {
+                            this.db = event.target.result;
+                            console.log("数据库初始化成功。");
+                            resolve();
+                        };
+                        request.onerror = event => {
+                            console.error("数据库错误:", event.target.error);
+                            reject(event.target.error);
+                        };
+                    });
+                },
+                saveFontToDB(fontData) {
+                    return new Promise((resolve, reject) => {
+                        if (!this.db) return reject("数据库未初始化");
+                        const transaction = this.db.transaction(['fonts'], 'readwrite');
+                        const store = transaction.objectStore('fonts');
+                        const request = store.put(fontData);
+                        request.onsuccess = () => resolve();
+                        request.onerror = event => {
+                            console.error("保存字体到DB失败:", event.target.error);
+                            if (event.target.error.name === 'QuotaExceededError') {
+                                this.isStorageFull = true;
+                                this.showStorageFullToast();
+                            }
+                            reject(event.target.error);
+                        };
+                    });
+                },
+                getFontFromDB(fontFamily) {
+                    return new Promise((resolve, reject) => {
+                        if (!this.db) return reject("数据库未初始化");
+                        const transaction = this.db.transaction(['fonts'], 'readonly');
+                        const store = transaction.objectStore('fonts');
+                        const request = store.get(fontFamily);
+                        request.onsuccess = event => resolve(event.target.result);
+                        request.onerror = event => reject(event.target.error);
+                    });
+                },
+                deleteFontFromDB(fontFamily) {
+                    return new Promise((resolve, reject) => {
+                        if (!this.db) return reject("数据库未初始化");
+                        const transaction = this.db.transaction(['fonts'], 'readwrite');
+                        const store = transaction.objectStore('fonts');
+                        const request = store.delete(fontFamily);
+                        request.onsuccess = () => resolve();
+                        request.onerror = event => reject(event.target.error);
+                    });
+                },
+                getAllFontsFromDB() {
+                    return new Promise((resolve, reject) => {
+                        if (!this.db) return reject("数据库未初始化");
+                        const transaction = this.db.transaction(['fonts'], 'readonly');
+                        const store = transaction.objectStore('fonts');
+                        const request = store.getAll();
+                        request.onsuccess = event => resolve(event.target.result);
+                        request.onerror = event => reject(event.target.error);
+                    });
+                },
+                async loadFontsFromDB() {
+                    try {
+                        const fonts = await this.getAllFontsFromDB();
+                        this.uploadedFonts = [];
+                        for (const font of fonts) {
+                            this.uploadedFonts.push({ family: font.family, fullName: font.fullName, type: 'uploaded' });
+                            try {
+                                const fontFace = new FontFace(font.family, font.data);
+                                await fontFace.load();
+                                document.fonts.add(fontFace);
+                            } catch (e) {
+                                console.error(`从DB加载字体 "${font.family}" 失败:`, e);
+                            }
+                        }
+                        console.log(`从数据库加载了 ${this.uploadedFonts.length} 个字体。`);
+                    } catch (e) {
+                        console.error("从DB加载所有字体失败:", e);
+                    }
+                },
+                async showFontManager() {
+                    const listEl = this.elements.fontManagerModal.querySelector('#font-manager-list');
+                    if (!listEl) return;
+                    listEl.innerHTML = '<div class="spinner" style="margin: 20px auto;"></div>';
+                    this.elements.fontManagerModal.classList.add('visible');
+                    
+                    const fonts = await this.getAllFontsFromDB();
+                    if (!fonts || fonts.length === 0) {
+                        listEl.innerHTML = '<div class="empty-font-list">暂无已上传的字体</div>';
+                        return;
+                    }
+                    
+                    listEl.innerHTML = fonts.map(font => `
+                        <div class="font-manager-item" data-font-family="${this。escapeHTML(font。family)}">
+                            <span class="font-manager-item-name">${this。escapeHTML(font。fullName)}</span>
+                            <button class="btn btn-danger btn-icon font-delete-btn" title="删除字体">
+                                <span class="iconify" data-icon="mdi:delete"></span>
+                            </button>
+                        </div>
+                    `)。join('');
+                },
+                async deleteFont(fontFamily) {
+                    if (await this.showConfirm('删除字体', `确定要删除字体 "${fontFamily}" 吗？此操作不可撤销。`)) {
+                        try {
+                            await this.deleteFontFromDB(fontFamily);
+                            this.uploadedFonts = this.uploadedFonts.filter(f => f.family !== fontFamily);
+                            if (this.state.globalCardStyles.fontFamily === fontFamily) {
+                                this.updateState('globalCardStyles.fontFamily', '', true);
+                            }
+                            this.populateFontList();
+                            this.showFontManager();
+                            this.showToast(`字体 "${fontFamily}" 已删除。`, 'success');
+                        } catch (e) {
+                            this.showErrorModal('删除失败', '从数据库删除字体时出错。');
+                        }
+                    }
+                },
+                
+                showStorageFullToast() {
+                    this.elements.storageWarningBanner.style.display = 'block';
+                    this.elements.body.classList.add('storage-warning');
+                },
+                removeStorageFullToast() {
+                    this.elements.storageWarningBanner.style.display = 'none';
+                    this.elements.body.classList.remove('storage-warning');
                 }
             };
             App.init();
