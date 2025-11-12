@@ -2108,7 +2108,6 @@ Monitor of this License or out of the use or inability to use the
                     } else {
                         this.elements.previewHeader.style.background = this.hexToRgba(styles.headerBgColor, styles.headerOpacity);
                     }
-                    this.elements.previewHeader.style.color = styles.headerTextColor;
 
                     this.elements.previewNickname.style.color = this.state.personalInfo.nicknameColor;
                     this.elements.previewSubtitle.style.color = this.state.personalInfo.subtitleColor;
@@ -2229,7 +2228,6 @@ Monitor of this License or out of the use or inability to use the
                                         <div class="tabs"><button class="tab-btn" data-tab="header-bg-solid">纯色</button><button class="tab-btn advanced-setting" data-tab="header-bg-gradient">渐变</button></div>
                                         <div id="header-bg-solid" class="tab-content"><div class="form-group"><label>头部背景颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.headerBgColor"><input type="text" class="color-hex-input" data-state-key="pageStyles.headerBgColor"></div></div></div>
                                         <div id="header-bg-gradient" class="tab-content advanced-setting"><div class="gradient-controls"><div class="form-group"><label>起始颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.headerBgGradientStart"><input type="text" class="color-hex-input" data-state-key="pageStyles.headerBgGradientStart"></div></div><div class="form-group"><label>结束颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.headerBgGradientEnd"><input type="text" class="color-hex-input" data-state-key="pageStyles.headerBgGradientEnd"></div></div><div class="gradient-angle-control form-group"><label>角度 (<span class="angle-value">135</span>°):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-state-key="pageStyles.headerBgGradientAngle" min="0" max="360" step="1"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div></div></div>
-                                        <div class="form-group"><label>头部文字颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.headerTextColor"><input type="text" class="color-hex-input" data-state-key="pageStyles.headerTextColor"></div></div>
                                         <div class="form-group advanced-setting"><label>头部不透明度:</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-state-key="pageStyles.headerOpacity" min="0" max="1" step="0.05"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div>
                                     </div>
 								<hr class="separator">
