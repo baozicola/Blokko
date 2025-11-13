@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Blokko v1.5.8 (Internal): -->
-    <title>Blokko-个人简介生成器！ (v1.5.8)-来玩《赛博朋克：2077》吧！</title>
+    <!-- Blokko v1.6.0 (Internal): -->
+    <title>Blokko-个人简介生成器！ (v1.6.0)-来玩《赛博朋克：2077》吧！</title>
     
     <script>
         // Anti-FOUC (Flash of Unstyled Content) 脚本，防止加载时样式闪烁
@@ -18,6 +18,9 @@
     </script>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" />
+    <!-- FEATURE: Rich Text Editor - Quill.js CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet">
+
 
     <!-- 推荐字体 CDN -->
     <link rel="stylesheet" href="https://fontsapi.zeoseven.com/69/main/result.css">
@@ -246,6 +249,7 @@
         .preview-wrapper::before { content: none; }
         .preview-overlay { display: none; }
         .preview-header, .preview-blocks-container { position: relative; z-index: 2; word-wrap: break-word; overflow-wrap: break-word; width: 100%; box-sizing: border-box; }
+        [data-state-key], [data-card-key], [data-separator-text-key], .tag-pill span[data-tag-id] { position: relative; } /* For mobile edit icon */
         [data-state-key]:hover, [data-card-key]:hover, [data-separator-text-key]:hover, .tag-pill span[data-tag-id]:hover { outline: 1px dashed var(--color-primary); cursor: text; }
         [contenteditable="true"] { outline: 2px solid var(--color-primary); box-shadow: 0 0 8px rgba(0, 122, 255, 0.5); background-color: rgba(0, 122, 255, 0.1); border-radius: 4px; }
         .btn { display: inline-block; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; transition: background-color var(--transition-short) ease, transform var(--transition-short) ease, box-shadow var(--transition-short) ease; text-align: center; width: 100%; color: var(--text-on-primary); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
@@ -286,6 +290,7 @@
         .section-header h4 { margin: 0; }
 
         .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 0.9rem; color: var(--text-label); }
         .form-group input[type="text"], .form-group input[type="number"], .form-group input[type="file"], .form-group select, .form-group textarea { width: 100%; padding: 10px; font-size: 14px; background: var(--bg-input); border: 1px solid var(--border-input); border-radius: 6px; color: var(--text-primary); transition: all var(--transition-short) ease; max-width: 100%; overflow-wrap: break-word; }
         .form-group input[type="text"]:focus, .form-group input[type="number"]:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.2); }
         .form-group textarea { min-height: 80px; resize: vertical; }
@@ -464,6 +469,75 @@
         #color-context-menu li:hover { background: var(--bg-input); }
         #color-context-menu hr { border: none; border-top: 1px solid var(--border-color); margin: 4px 0; }
         
+        /* --- Contextual Tooltips --- */
+        .tooltip-trigger {
+            display: inline-block;
+            margin-left: 8px;
+            color: var(--text-secondary);
+            cursor: help;
+            position: relative;
+        }
+
+        /* --- Floating Tooltip --- */
+        #floating-tooltip {
+            position: fixed; /* 使用 fixed 定位，脱离所有容器限制 */
+            background-color: var(--bg-card);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 0.85rem;
+            font-weight: normal;
+            white-space: nowrap;
+            z-index: 10001; /* 确保在最顶层 */
+            pointer-events: none; /* 防止 tooltip 本身干扰鼠标事件 */
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            transform: translate(-50%, -100%); /* 默认定位在元素上方中间 */
+        }
+        
+        /* --- Rich Text Editor Trigger in Inspector --- */
+        .rich-text-editor-trigger {
+            position: relative;
+            border: 1px solid var(--border-input);
+            border-radius: 6px;
+            background-color: var(--bg-input);
+            min-height: 80px;
+            padding: 10px;
+            transition: all var(--transition-short);
+        }
+        .rich-text-editor-trigger:hover {
+            border-color: var(--color-primary);
+        }
+        .rich-text-preview {
+            font-size: 0.9em;
+            color: var(--text-secondary);
+            overflow: hidden;
+            max-height: 120px;
+            word-break: break-all;
+        }
+        .rich-text-preview > * {
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        .edit-content-btn {
+            padding: 4px 10px; /* 调整一下内边距让它小巧一些 */
+            font-size: 0.85rem;
+        }
+        
+        /* --- FEATURE: Rich Text Editor --- */
+        #rich-text-editor-modal .modal-container { max-width: 800px; }
+        #rich-text-editor-container { height: 35vh; margin-bottom: 15px; background-color: var(--bg-preview-page); }
+        #rich-text-editor-container .ql-editor { color: var(--text-primary); }
+        #rich-text-editor-container .ql-toolbar { border-color: var(--border-color); }
+        #rich-text-editor-container .ql-toolbar .ql-picker-label,
+        #rich-text-editor-container .ql-toolbar .ql-stroke {
+             color: var(--text-secondary) !important;
+             stroke: var(--text-secondary) !important;
+        }
+        html.dark-mode #rich-text-editor-container .ql-picker-options { background-color: var(--bg-card); border-color: var(--border-color); }
+        /* --- END FEATURE --- */
+        
         @keyframes toast-in { to { opacity: 1; transform: translateX(0); } }
         @keyframes toast-out { to { opacity: 0; transform: translateX(100%); } }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -473,6 +547,7 @@
         .preview-header { animation: fadeIn 0.4s ease forwards; }
         
         #mobile-layer-toggle, #mobile-inspector-toggle { display: none; }
+        .mobile-edit-pencil { display: none; }
 
         @media (max-width: 1024px) {
             .app-header-title { display: none; } 
@@ -503,6 +578,32 @@
             .gradient-controls { grid-template-columns: 1fr; }
             .color-control-group { width: 100%; min-width: 0; }
             .btn-stepper { display: inline-flex; align-items: center; justify-content: center; }
+
+            /* --- NEW: Mobile Edit Pencil --- */
+            .mobile-edit-pencil {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                position: absolute;
+                top: -5px;
+                right: -5px;
+                width: 28px;
+                height: 28px;
+                background-color: var(--color-primary);
+                color: white;
+                border-radius: 50%;
+                border: 2px solid var(--bg-preview-page);
+                box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+                z-index: 10;
+                cursor: pointer;
+                opacity: 0.8;
+                transition: all var(--transition-short);
+                font-size: 1rem;
+            }
+            .mobile-edit-pencil:hover {
+                transform: scale(1.1);
+                opacity: 1;
+            }
         }
     </style>
 </head>
@@ -513,7 +614,7 @@
 
     <header class="app-header">
         <button id="mobile-layer-toggle" class="btn btn-default btn-icon" style="width: auto; padding: 6px 12px;"><span class="iconify" data-icon="mdi:layers-outline"></span> 内容</button>
-        <div class="app-header-title">Blokko (v1.5.8)</div>
+        <div class="app-header-title">Blokko (v1.6.0)</div>
         <div class="header-actions-wrapper">
             <button id="lock-mode-toggle" class="btn btn-default" style="width: auto; padding: 6px 12px;" title="切换编辑/预览模式">编辑中</button>
             <button id="show-help-btn" class="btn btn-default btn-icon" style="width: auto; padding: 6px 12px;"><span class="iconify" data-icon="mdi:help-circle-outline"></span> 帮助</button>
@@ -574,6 +675,18 @@
         </div>
     </div>
     
+    <!-- FEATURE: Rich Text Editor Modal -->
+    <div class="modal-overlay" id="rich-text-editor-modal">
+        <div class="modal-container">
+            <h3>编辑卡片内容</h3>
+            <div id="rich-text-editor-container"></div>
+            <div class="modal-actions">
+                <button id="rich-text-cancel-btn" class="btn btn-default">取消</button>
+                <button id="rich-text-save-btn" class="btn btn-primary">保存</button>
+            </div>
+        </div>
+    </div>
+
     <div class="modal-overlay" id="help-modal">
         <div class="modal-container" style="max-width: 700px;">
             <div class="tabs">
@@ -592,11 +705,11 @@
                 <p>因使用未授权素材而产生的任何版权问题，将由您自行承担。换言之，自己上传的素材，一定要注意版权信息哦！</p>
                 
                 <h4>写在正式开始前</h4>
-                <p>Blokko 是一个免费的、为电脑端编辑而设计的工具。为了最佳体验，建议使用PC端的 Edge 或 Chrome 浏览器。移动端也做了基础适配，竖屏状态下建议使用 Via 浏览器并开启全屏模式。在竖屏下，“内容”和“样式”面板会被折叠，需要手动点击左上角和右上角的按钮来唤出。</p>
+                <p>Blokko 是一个免费的、为电脑端编辑而设计的工具。为了最佳体验，建议使用PC端的 Edge 或 Chrome 浏览器。移动端也做了基础适配，竖屏状态下建议使用 Via 浏览器并开启全屏模式。在竖屏下，“内容”和“样式”面板会被折叠，需要手动点击左上角和右上角的按钮来唤出。（因精力有限，目前移动端只能做到“基础适配”，可能会存在奇怪BUG，比如上传图片黑屏等，可以反馈给作者但是大概率要很久才修，仍然建议使用PC端进行编辑。）</p>
                 <p>Blokko 采用三栏式布局：<b>左侧“内容图层”</b>管理所有区块，<b>中间是“实时预览”</b>，<b>右侧是“样式检查器”</b>。在左侧点击任意图层，右侧就会自动显示其相关设置。默认状态下（未选中任何图层）会显示全局设置。卡片的独立样式优先级高于全局样式哦！</p>
                 
                 <h4>第一步：核心技巧 - 双击编辑！</h4>
-                <p>Blokko 最便捷的操作就是“双击”。在预览区域，你看到的所有文字（比如昵称、简介、卡片标题和内容），直接双击它们就可以立刻开始编辑，非常方便！（请确保页面顶部的按钮处于“编辑中”状态）</p>
+                <p>Blokko 最便捷的操作就是“双击”。在预览区域，你看到的所有文字（比如昵称、简介、卡片标题和内容），直接双击它们就可以立刻开始编辑，非常方便！在手机上，你也可以点击文字右上角出现的铅笔图标 ✏️ 来编辑。（请确保页面顶部的按钮处于“编辑中”状态）</p>
                 
                 <h4>第二步：调整你的个人信息</h4>
                 <p>在左侧的“内容图层”面板，点击 “👤 个人信息” 图层，右侧的“样式”面板就会显示出所有相关设置。你可以在那里上传头像（也可以直接点击预览区的头像）、修改昵称、添加标签等。</p>
@@ -609,11 +722,11 @@
             </div>
             <div id="help-instructions" class="tab-content">
                 <h4>欢迎使用 Blokko！</h4>
-                <p><strong><span class="iconify" data-icon="mdi:cursor-default-click-outline" style="vertical-align: -0.2em;"></span> 双击编辑：</strong> 预览区域的大部分文本内容（如昵称、简介、卡片标题和内容）都可以通过双击直接进行编辑。</p>
-                <p><strong><span class="iconify" data-icon="mdi:keyboard-outline" style="vertical-align: -0.2em;"></span> 快捷键：</strong> 现在支持 `Ctrl/Cmd + Z` 撤销和 `Ctrl/Cmd + Y` 重做。在编辑卡片内容时，也可以使用 `Ctrl/Cmd + B` (加粗) 和 `Ctrl/Cmd + I` (斜体)。</p>
+                <p><strong><span class="iconify" data-icon="mdi:cursor-default-click-outline" style="vertical-align: -0.2em;"></span> 双击/点击编辑：</strong> 预览区域的大部分文本内容都可以通过双击（PC端）或点击右上角铅笔图标（移动端）直接进行编辑。卡片内容现在支持强大的富文本编辑！</p>
+                <p><strong><span class="iconify" data-icon="mdi:keyboard-outline" style="vertical-align: -0.2em;"></span> 快捷键：</strong> 支持 `Ctrl/Cmd + Z` 撤销和 `Ctrl/Cmd + Y` 重做。鼠标悬停在撤销/重做按钮上，可以看到具体的操作历史。在富文本编辑器中，也支持 `Ctrl/Cmd + B` (加粗) 和 `Ctrl/Cmd + I` (斜体) 等常用快捷键。</p>
                 <p><strong><span class="iconify" data-icon="mdi:drag" style="vertical-align: -0.2em;"></span> 拖拽排序：</strong> 在左侧“内容图层”面板，你可以拖动图层来进行排序。现在，预览区的个人信息标签也可以直接拖拽排序了！</p>
                 <p><strong><span class="iconify" data-icon="mdi:view-dashboard-variant-outline" style="vertical-align: -0.2em;"></span> 瀑布流布局：</strong> 对于多列区块（双排/三排），可以在右侧检查器中勾选“启用瀑布流”，使卡片/图片高度自适应，布局更紧凑。</p>
-                <p><strong><span class="iconify" data-icon="mdi:lock-open-variant-outline" style="vertical-align: -0.2em;"></span> 锁定模式：</strong> 点击右上角的 "编辑中" 按钮可切换到 "预览中"，此模式下禁用双击编辑，方便在手机上顺畅滑动浏览。</p>
+                <p><strong><span class="iconify" data-icon="mdi:lock-open-variant-outline" style="vertical-align: -0.2em;"></span> 锁定模式：</strong> 点击右上角的 "编辑中" 按钮可切换到 "预览中"，此模式下禁用所有编辑功能，方便在手机上顺畅滑动浏览。</p>
                 <p><strong><span class="iconify" data-icon="mdi:import" style="vertical-align: -0.2em;"></span> 导入/导出：</strong> 在右侧检查器的“全局与导出”设置中，可以导入/导出 .json 配置文件，方便备份和分享。</p>
                 <p><strong><span class="iconify" data-icon="mdi:database" style="vertical-align: -0.2em;"></span> 浏览器存储：</strong> 您的所有修改都会自动保存在当前浏览器中（非无痕模式），刷新页面不会丢失进度。字体和图片等大文件将使用IndexedDB存储，容量更大更可靠。</p>
                 
@@ -629,16 +742,17 @@
                 </ul>
 		   </div>
             <div id="help-thanks" class="tab-content">
-                <p>本工具的实现离不开以下优秀的开源项目，在此表示诚挚的感谢：</p>
+                <p>本工具的实现离不开以下优秀的开源项目，在此表示诚挚的感谢，欢迎点击名称跳转到对应官网/github仓库去支持他们的工作。：</p>
                 <div class="thanks-item">
                     <h4>核心功能库</h4>
-                    <p>以下项目均基于 <strong>MIT License</strong> 协议，特此感谢。</p>
+                    <p>以下项目均基于对商业友好的开源协议，特此感谢。</p>
                     <ul>
-                        <li><a href="https://github.com/lokesh/color-thief" target="_blank" rel="noopener noreferrer"><strong>Color Thief</strong></a> - 提供了从图片提取主色调和调色板的功能。</li>
-                        <li><a href="https://html2canvas.hertzen.com/" target="_blank" rel="noopener noreferrer"><strong>html2canvas</strong></a> - 实现了将网页内容导出为图片的核心功能。</li>
-                        <li><a href="https://fengyuanchen.github.io/cropperjs/" target="_blank" rel="noopener noreferrer"><strong>Cropper.js</strong></a> - 提供了强大的图片裁剪功能。</li>
-                        <li><a href="https://sortablejs.github.io/Sortable/" target="_blank" rel="noopener noreferrer"><strong>SortableJS</strong></a> - 提供了流畅的拖拽排序体验。</li>
-                        <li><a href="https://masonry.desandro.com/" target="_blank" rel="noopener noreferrer"><strong>Masonry.js</strong></a> - 提供了强大的瀑布流/砌体布局功能。</li>
+                        <li><a href="https://github.com/lokesh/color-thief" target="_blank" rel="noopener noreferrer"><strong>Color Thief</strong></a> - (MIT License) 提供了从图片提取主色调和调色板的功能。</li>
+                        <li><a href="https://html2canvas.hertzen.com/" target="_blank" rel="noopener noreferrer"><strong>html2canvas</strong></a> - (MIT License) 实现了将网页内容导出为图片的核心功能。</li>
+                        <li><a href="https://fengyuanchen.github.io/cropperjs/" target="_blank" rel="noopener noreferrer"><strong>Cropper.js</strong></a> - (MIT License) 提供了强大的图片裁剪功能。</li>
+                        <li><a href="https://sortablejs.github.io/Sortable/" target="_blank" rel="noopener noreferrer"><strong>SortableJS</strong></a> - (MIT License) 提供了流畅的拖拽排序体验。</li>
+                        <li><a href="https://masonry.desandro.com/" target="_blank" rel="noopener noreferrer"><strong>Masonry.js</strong></a> - (MIT License) 提供了强大的瀑布流/砌体布局功能。</li>
+                        <li><a href="https://quilljs.com/" target="_blank" rel="noopener noreferrer"><strong>Quill.js</strong></a> - (BSD 3-Clause License) 提供了强大、稳定且易于扩展的富文本编辑功能。</li>
                     </ul>
                     <details>
                         <summary>查看 MIT 许可证原文</summary>
@@ -662,6 +776,39 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+                        </pre>
+                    </details>
+                    <details>
+                        <summary>查看 BSD 3-Clause 许可证原文</summary>
+                        <pre>
+Copyright (c) 2017, Jason Chen. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+
+* Redistributions of source code must retain the above copyright
+  notice, this list of conditions and the following disclaimer.
+
+* Redistributions in binary form must reproduce the above copyright
+  notice, this list of conditions and the following disclaimer in the
+  documentation and/or other materials provided with the distribution.
+
+* Neither the name of the author nor the names of its contributors may be
+  used to endorse or promote products derived from this software without
+  specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
                         </pre>
                     </details>
                 </div>
@@ -995,30 +1142,52 @@ Monitor of this License or out of the use or inability to use the
                 </div>
             </div>
             <div id="help-changelog" class="tab-content">
-                <h4>v1.5.8 更新日志</h4>
+                <h4>v1.6.0 更新日志</h4>
                 <ul>
-                    <li><strong>【功能】键盘快捷键:</strong>
+                    <li><strong>【新增】富文本编辑:</strong>
                         <ul>
-                            <li>现在支持使用PC端（手机端如果有外置键盘或许也行） <code>Ctrl/Cmd + Z</code> 进行撤销和 <code>Ctrl/Cmd + Y</code> (或 <code>Ctrl/Cmd + Shift + Z</code>) 进行重做。</li>
-                            <li>双击编辑卡片内容时，可以在PC端使用 <code>Ctrl/Cmd + B</code> 加粗和 <code>Ctrl/Cmd + I</code> 斜体选中的文字。</li>
+                            <li>集成了 Quill.js 富文本编辑器。现在双击卡片内容会弹出一个功能强大的编辑器，支持加粗、斜体、列表、链接、颜色等。</li>
+                            <li>为了交互统一，在右侧样式检查器的卡片内容区增加了**“编辑内容”按钮**，PC和移动端均可轻松打开编辑器。</li>
                         </ul>
                     </li>
-                    <li><strong>【功能】简单富文本编辑:</strong> 卡片内容现在支持部分文字的加粗和斜体，让你的表达更具层次感。</li>
-                    <li><strong>【底层】存储引擎升级:</strong> 所有上传的图片（头像、背景、卡片图片）现在都会保存到浏览器的 IndexedDB 数据库中。
+                    <li><strong>【优化】移动端:</strong>
                         <ul>
-                            <li>这彻底解决了因图片过多导致浏览器本地存储 (localStorage) 爆满的问题。</li>
-                            <li>旧的配置（无论是本地缓存还是导入的 .json 文件）中的图片都会被自动、无缝地迁移到新存储中。</li>
+                            <li>在“编辑中”模式下，移动端预览区的所有可编辑文本（昵称、简介、卡片内容等）右上角都会出现一个**铅笔图标 ✏️**，解决了可能存在的双击不灵敏的问题。</li>
                         </ul>
                     </li>
-                    <li><strong>【回退】图片导出功能:</strong> 图片导出功能存在与预期严重不符的问题，因此回退回到更稳定的的1.5.6导出方案。</li>
-                    <li><strong>【健壮性】错误处理:</strong> 当应用因浏览器缓存问题初始化失败时，现在会弹出一个专门的错误提示，并提供一个“重置并重载”按钮，帮助用户一键清空缓存并恢复正常。</li>
+                    <li><strong>【优化/新增】提示:</strong>
+                        <ul>
+                            <li>在“启用瀑布流”、“文字描边”等高级设置旁增加了 `(?)` 图标，鼠标悬停即可查看功能说明，降低了学习成本。</li>
+                        </ul>
+                    </li>
+                    <li><strong>【体验优化】带描述的撤销/重做:</strong>
+                        <ul>
+                            <li>现在鼠标悬停在“撤销”或“重做”按钮上时，会提示具体的操作历史（如“撤销: 添加卡片”），让操作更安全、更可控。</li>
+                        </ul>
+                    </li>
+                     <li><strong>【功能新增】头部圆角设置:</strong>
+                        <ul>
+                            <li>在“页面与头部样式”的高级设置中，增加了“头部圆角”调节滑块，可以自由定义头部背景的圆角大小。</li>
+                        </ul>
+                    </li>
+                    <li><strong>【修复】内容编辑逻辑:</strong>
+                        <ul>
+                            <li>修复了在某些情况下，直接在预览区编辑卡片内容时，瀑布流布局不会自动刷新的问题。</li>
+                            <li>增强了对富文本内容的安全过滤，防止粘贴不必要的样式代码。</li>
+                        </ul>
+                    </li>
+                    <li><strong>【合规】许可证更新:</strong>
+                        <ul>
+                            <li>在“感谢信息”页面中，已添加对新引入的 Quill.js (BSD-3-Clause License) 的致谢。</li>
+                        </ul>
+                    </li>
                 </ul>
             </div>
             <div id="help-about" class="tab-content">
                 <h4>关于 Blokko</h4>
                 <p>Blokko是一个方便大家快速制作扩列/自荐/置顶图的小工具！因为本质上是自用小工具，很多地方都没有细细打磨略显简陋，也缺少完善的新手教程_(:з」∠)_，未来或许会补充一个在线文档，制作的初衷是发现lit.link网站对简体中文支持不完善，很多字体都会缺字导致效果不好看，于是制作了Blokko来替代。</p>
                 <p><strong>作者：</strong> 四十七/baozi_cola</p>
-                <p>如果你在使用中遇到BUG，可以通过链接私信我！如果觉得好用，也希望能点击链接去置顶评论区留下评论或转发，或者是在自己的制作的图评论区或正文里贴上原博链接（就是置顶那一条，当然这些都不是强制要求的，但是如果可以的话会让我很开心！），最后感谢您使用Blokkoദ്ദി˶•̀֊•́)✧希望你可以用这个工具做出满意的效果。</p>
+                <p>如果你在使用中遇到BUG，可以通过链接私信我！如果觉得好用，也希望能点击链接去置顶评论区留下评论或转发，或者是在自己的制作的图评论区或正文里贴上原博链接（就是置顶那一条，当然这些都不是强制要求的，但是如果可以的话会让我很开心！），最后感谢您使用Blokko,希望你可以做出你满意的效果ദ്ദി˶•̀֊•́)✧</p>
                 <p style="display: flex; gap: 10px; flex-wrap: wrap;">
                     <a href="https://weibo.com/u/5095783616" target="_blank" rel="noopener noreferrer" class="btn btn-default" style="width: auto; text-decoration: none;">我的微博主页</a>
                     <a href="https://weibo.com/5095783616/QcM8qwmLs" target="_blank" rel="noopener noreferrer" class="btn btn-default" style="width: auto; text-decoration: none;">查看历史更新日志</a>
@@ -1094,6 +1263,9 @@ Monitor of this License or out of the use or inability to use the
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js" defer></script>
     <script src="https://unpkg.com/masonry-layout@4/dist/masonry.pkgd.min.js" defer></script>
     <script src="https://code.iconify.design/3/3.1.1/iconify.min.js" defer></script>
+    <!-- FEATURE: Rich Text Editor - Quill.js JS -->
+    <script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
+
     
     <script>
         // Hero Patterns data. Source: https://heropatterns.com/
@@ -1130,6 +1302,10 @@ Monitor of this License or out of the use or inability to use the
                 cropper: null,
                 currentCropTarget: null,
                 currentIconTarget: null, 
+                // --- FEATURE: Rich Text Editor ---
+                richTextEditor: null,
+                currentRichTextTarget: null,
+                // --- END FEATURE ---
                 sortableLayers: null,
                 sortablePreview: null,
                 sortableTags: null,
@@ -1150,9 +1326,10 @@ Monitor of this License or out of the use or inability to use the
                 lastPalette: [],
                 easterEggCounter: 0,
                 easterEggTimer: null,
+                tooltipTimeout: null,
 
                 init() {
-                    console.log("Blokko 初始化 v1.5.8 ...");
+                    console.log("Blokko 初始化 v1.6.0 ...");
                     this.elements = this.queryElements();
                     this.presets = this.getPresets();
                     this.state = this.getDefaultState();
@@ -1167,7 +1344,7 @@ Monitor of this License or out of the use or inability to use the
                         this.loadPreferences();
                         await this.loadFromLocal();
                         
-                        this.history = [this.deepClone(this.state)];
+                        this.history = [{ state: this.deepClone(this.state), description: '初始状态' }];
                         this.historyIndex = 0;
                         
                         this.renderAll(true); 
@@ -1179,7 +1356,7 @@ Monitor of this License or out of the use or inability to use the
                         this.setSelection({ type: 'global' });
                         this.updateUndoRedoButtons();
                         
-                        const currentVersion = '1.5.8';
+                        const currentVersion = '1.6.0';
                         const lastVisitedVersion = localStorage.getItem('blokkoLastVersion');
                         if (currentVersion !== lastVisitedVersion) {
                             setTimeout(() => {
@@ -1223,13 +1400,14 @@ Monitor of this License or out of the use or inability to use the
                             pageOverlayColor: "#000000", pageOverlayOpacity: 0.3,
                             pageBgPattern: '', pageBgPatternColor: '#000000', pageBgPatternOpacity: 0.1, pageBgPatternDensity: 30,
                             headerBgMode: 'solid', // 默认纯色
+                            headerBorderRadius: 16, // NEW: Header border radius
                             headerBgColor: lightTheme.headerBgColor, headerTextColor: lightTheme.headerTextColor, headerOpacity: 1.0, 
                             headerBgGradientStart: lightTheme.headerBgGradientStart, headerBgGradientEnd: lightTheme.headerBgGradientEnd,
                             headerBgGradientAngle: 135,
                         },
                         blocks: [
                             { id: this.generateId('b'), type: 'text', title: "单排卡片区块", isVisible: true, isExpanded: false, settings: { layout: 'single', masonryEnabled: false }, cards: [
-                                { id: this.generateId('c'), icon: '', title: "这是单排卡片", content: "双击这里进行编辑，可以使用 <b>Ctrl+B</b> 加粗和 <i>Ctrl+I</i> 斜体哦！", opacity: 1.0, followGlobalOpacity: true, textShadowEnabled: false }
+                                { id: this.generateId('c'), icon: '', title: "这是单排卡片", content: "双击这里进行编辑，现在支持<b>富文本</b>了哦！", opacity: 1.0, followGlobalOpacity: true, textShadowEnabled: false }
                             ]},
                             { id: this.generateId('b'), type: 'text', title: "双排卡片区块", isVisible: true, isExpanded: false, settings: { layout: 'dual', masonryEnabled: false }, cards: [
                                 { id: this.generateId('c'), icon: '', title: "这是双排卡片 1", content: "双击这里进行编辑", opacity: 1.0, followGlobalOpacity: true, textShadowEnabled: false },
@@ -1336,6 +1514,12 @@ Monitor of this License or out of the use or inability to use the
                         colorContextMenu: q('#color-context-menu'),
                         fontManagerModal: q('#font-manager-modal'),
                         storageWarningBanner: q('#storage-warning-banner'),
+                        // --- FEATURE: Rich Text Editor ---
+                        richTextEditorModal: q('#rich-text-editor-modal'),
+                        richTextEditorContainer: q('#rich-text-editor-container'),
+                        richTextSaveBtn: q('#rich-text-save-btn'),
+                        richTextCancelBtn: q('#rich-text-cancel-btn'),
+                        // --- END FEATURE ---
                     };
                 },
 
@@ -1416,6 +1600,11 @@ Monitor of this License or out of the use or inability to use the
                     this.elements.iconUploadInput.addEventListener('change', e => this.handleIconUpload(e));
                     this.elements.lockModeToggle.addEventListener('click', () => this.toggleLockMode());
                     
+                    // --- FEATURE: Rich Text Editor ---
+                    this.elements.richTextSaveBtn.addEventListener('click', () => this.saveRichText());
+                    this.elements.richTextCancelBtn.addEventListener('click', () => this.hideRichTextEditor());
+                    // --- END FEATURE ---
+
                     this.elements.layerList.addEventListener('click', e => {
                         const layerItemContainer = e.target.closest('.layer-item-container');
                         if (!layerItemContainer) return;
@@ -1482,7 +1671,7 @@ Monitor of this License or out of the use or inability to use the
                             layerNameEl.removeEventListener('keydown', handleKeydown);
                             
                             const blockId = layerItem.dataset.id;
-                            this.updateBlockTitle(blockId, layerNameEl.innerText, true);
+                            this.updateBlockTitle(blockId, layerNameEl.innerText, true, `重命名区块为 "${layerNameEl.innerText}"`);
                             const inspectorTitleInput = this.elements.inspectorPanel.querySelector(`.editor-block[data-block-id="${blockId}"] .editor-block-title-input`);
                             if (inspectorTitleInput) inspectorTitleInput.value = layerNameEl.innerText;
                         };
@@ -1528,8 +1717,11 @@ Monitor of this License or out of the use or inability to use the
                         });
                     }
 
-                    // ++ NEW: Keyboard shortcuts for undo/redo
                     document.addEventListener('keydown', e => {
+                        // --- FIX: Prevent shortcuts when Rich Text Editor is active ---
+                        if (this.richTextEditor && this.richTextEditor.hasFocus()) {
+                            return;
+                        }
                         const activeEl = document.activeElement;
                         if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA')) {
                             return;
@@ -1611,7 +1803,7 @@ Monitor of this License or out of the use or inability to use the
                         }
 
                         if (target.type === 'range') {
-                            const valueDisplay = target.closest('.form-group').querySelector('.angle-value, .spacer-height-value, #gCardRadiusValue, .avatar-size-value');
+                            const valueDisplay = target.closest('.form-group').querySelector('.angle-value, .spacer-height-value, #gCardRadiusValue, .avatar-size-value, .header-radius-value');
                             if (valueDisplay) valueDisplay.textContent = value;
                         }
                     });
@@ -1645,7 +1837,10 @@ Monitor of this License or out of the use or inability to use the
                         }
 
                         if (target.dataset.stateKey || target.closest('.editor-block') || target.dataset.colorSyncKey || target.matches('.tag-manager-item .tag-text-input')) {
-                            this.pushHistory();
+                            let description = '修改样式';
+                            if (target.dataset.stateKey) description = `修改 ${target.dataset.stateKey}`;
+                            if (target.closest('.editor-block')) description = `修改区块设置`;
+                            this.pushHistory(description);
                         }
                         
                         if (target.type === 'radio' && target.closest('.editor-card')) {
@@ -1715,6 +1910,20 @@ Monitor of this License or out of the use or inability to use the
                     
                     panel.addEventListener('click', e => {
                         const target = e.target;
+                        
+                        // NEW: Rich Text Editor Trigger
+                        const richTextTrigger = target.closest('.rich-text-editor-trigger, .edit-content-btn');
+                        if (richTextTrigger) {
+                            const cardEl = richTextTrigger.closest('.editor-card');
+                            const blockEl = richTextTrigger.closest('.editor-block');
+                            if (cardEl && blockEl) {
+                                const cardId = cardEl.dataset.cardId;
+                                const previewCardContent = this.elements.previewBlocksContainer
+                                    .querySelector(`.preview-card[data-card-id="${cardId}"] .preview-card-content`);
+                                if (previewCardContent) this.showRichTextEditor(previewCardContent);
+                            }
+                            return;
+                        }
 
                         const stepperBtn = e.target.closest('.btn-stepper');
                         if (stepperBtn) {
@@ -1761,12 +1970,12 @@ Monitor of this License or out of the use or inability to use the
                             '.back-to-global-btn': () => this.setSelection({type: 'global'}),
                             '#reset-btn': () => this.resetToDefault(),
                             '#clear-page-bg-btn': () => {
-                                this.updateState('pageStyles.pageBgImageDataUrl', null, true);
+                                this.updateState('pageStyles.pageBgImageDataUrl', null, true, '清除页面背景图');
                                 this.showToast('背景图已清除', 'info');
                             },
                             '#pick-color-btn': () => panel.querySelector('#color-thief-upload')?.click(),
                             '#reset-avatar-transform-btn': () => {
-                                this.pushHistory();
+                                this.pushHistory('重置头像位置与大小');
                                 this.updateState('personalInfo.avatarSize', 100, false);
                                 this.updateState('personalInfo.avatarOffsetX', 0, false);
                                 this.showToast('头像位置与大小已重置', 'info');
@@ -1787,7 +1996,7 @@ Monitor of this License or out of the use or inability to use the
                             const basePreset = this.presets.light;
                             const key = keyPath.split('.')[1];
                             const defaultValue = basePreset[keyMap[key]] || '#ffffff';
-                            this.updateState(keyPath, defaultValue, true);
+                            this.updateState(keyPath, defaultValue, true, '重置颜色');
                             this.showToast('颜色已重置', 'info');
                         }
                         
@@ -1809,7 +2018,7 @@ Monitor of this License or out of the use or inability to use the
                                 const cardId = cardEl.dataset.cardId;
                                 if (target.closest('.card-delete-btn')) this.deleteCard(blockId, cardId);
                                 else if (target.closest('.card-clear-bg-btn')) {
-                                    this.updateCard(blockId, cardId, 'bgImageDataUrl', null, true);
+                                    this.updateCard(blockId, cardId, 'bgImageDataUrl', null, true, '清除卡片背景图');
                                     this.showToast('卡片背景图已清除', 'info');
                                 }
                                 else if (target.closest('.crop-image-btn')) this.cropImage(blockId, cardId);
@@ -1819,7 +2028,7 @@ Monitor of this License or out of the use or inability to use the
                                 }
                                 else if(target.closest('[data-reset-card-key]')) {
                                     const keyToReset = target.closest('[data-reset-card-key]').dataset.resetCardKey;
-                                    this.updateCard(blockId, cardId, keyToReset, null, true);
+                                    this.updateCard(blockId, cardId, keyToReset, null, true, '重置卡片样式');
                                     this.showToast('已重置为全局样式', 'info');
                                 }
                             } else if (target.closest('.select-icon-btn[data-separator-icon-btn]')) {
@@ -1827,7 +2036,7 @@ Monitor of this License or out of the use or inability to use the
                                 this.showIconPicker('separator', blockId);
                             } else if (target.closest('[data-reset-block-key]')) {
                                 const keyToReset = target.closest('[data-reset-block-key]').dataset.resetBlockKey;
-                                this.updateBlockSettings(blockId, keyToReset, null, true);
+                                this.updateBlockSettings(blockId, keyToReset, null, true, '重置区块样式');
                                 this.showToast('已重置', 'info');
                             }
                         }
@@ -1844,12 +2053,12 @@ Monitor of this License or out of the use or inability to use the
                             
                             const newMode = tabBtn.dataset.tab.includes('gradient') ? 'gradient' : 'solid';
                             if (parent.closest('#global-card-styles-section')) {
-                                this.updateState('globalCardStyles.bgMode', newMode, true);
+                                this.updateState('globalCardStyles.bgMode', newMode, true, '切换全局卡片背景模式');
                             } else if (parent.closest('#page-styles-section')) {
                                 if (tabBtn.dataset.tab.startsWith('page-bg')) {
-                                    this.updateState('pageStyles.pageBgMode', newMode, true);
+                                    this.updateState('pageStyles.pageBgMode', newMode, true, '切换页面背景模式');
                                 } else if (tabBtn.dataset.tab.startsWith('header-bg')) {
-                                    this.updateState('pageStyles.headerBgMode', newMode, true);
+                                    this.updateState('pageStyles.headerBgMode', newMode, true, '切换头部背景模式');
                                 }
                             }
                         }
@@ -1869,10 +2078,62 @@ Monitor of this License or out of the use or inability to use the
                             }
                         }
                     });
+                    
+                    panel.addEventListener('mouseover', e => {
+                        const trigger = e.target.closest('.tooltip-trigger');
+                        if (trigger) {
+                            const tooltipText = trigger.dataset.tooltip;
+                            if (!tooltipText) return;
+                            
+                            this.tooltipTimeout = setTimeout(() => {
+                                let tooltip = document.getElementById('floating-tooltip');
+                                if (!tooltip) {
+                                    tooltip = document.createElement('div');
+                                    tooltip.id = 'floating-tooltip';
+                                    document.body.appendChild(tooltip);
+                                }
+                                tooltip.textContent = tooltipText;
+                                
+                                const triggerRect = trigger.getBoundingClientRect();
+                                tooltip.style.left = `${triggerRect.left + triggerRect.width / 2}px`;
+                                tooltip.style.top = `${triggerRect.top - 8}px`; // 在图标上方留出 8px 间距
+                                tooltip.style.opacity = '1';
+                            }, 300); // 延迟 300ms 显示
+                        }
+                    });
+                
+                    panel.addEventListener('mouseout', e => {
+                        const trigger = e.target.closest('.tooltip-trigger');
+                        if (trigger) {
+                            clearTimeout(this.tooltipTimeout);
+                            let tooltip = document.getElementById('floating-tooltip');
+                            if (tooltip) {
+                                tooltip.style.opacity = '0';
+                                // 动画结束后再移除，避免闪烁
+                                setTimeout(() => {
+                                    if(tooltip) tooltip.remove();
+                                }, 200);
+                            }
+                        }
+                    });
                 },
 
                 bindPreviewEvents(){
                      this.elements.previewPanel.addEventListener('click', e => {
+                        // NEW: Mobile edit pencil handling
+                        const pencil = e.target.closest('.mobile-edit-pencil');
+                        if (pencil) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            const target = pencil.parentElement;
+                             if (target.matches('.preview-card-content[data-card-key="content"]')) {
+                                this.showRichTextEditor(target);
+                            } else if (target.closest('[data-state-key], [data-card-key], [data-tag-text-id], [data-separator-text-key]')) {
+                                this.triggerInlineEdit(target);
+                            }
+                            return;
+                        }
+
                         if (e.target.closest('#preview-avatar')) {
                             if (this.selection.type !== 'personalInfo') {
                                 this.setSelection({ type: 'personalInfo' });
@@ -1913,37 +2174,19 @@ Monitor of this License or out of the use or inability to use the
                      });
 
                      this.elements.previewWrapper.addEventListener('dblclick', e => {
+                        // if (window.innerWidth <= 1024) return; // Allow dblclick on mobile
                         if (this.elements.previewBlocksContainer.classList.contains('locked-mode')) return;
+
+                        // --- FEATURE: Rich Text Editor ---
+                        const cardContentTarget = e.target.closest('.preview-card-content[data-card-key="content"]');
+                        if (cardContentTarget) {
+                            this.showRichTextEditor(cardContentTarget);
+                            return;
+                        }
+                        
                         const target = e.target.closest('[data-state-key], [data-card-key], [data-tag-text-id], [data-separator-text-key]');
-                        if (target && !this.isEditingText) {
-                            this.isEditingText = true;
-                            target.contentEditable = true;
-                            target.focus();
-                            document.execCommand('selectAll', false, null);
-
-                            const handleEditEnd = () => {
-                                target.contentEditable = false;
-                                this.isEditingText = false;
-                                target.removeEventListener('blur', handleEditEnd);
-                                target.removeEventListener('keydown', handleKeydown);
-                                
-                                this.pushHistory();
-
-                                const blockEl = target.closest('.preview-block-wrapper');
-                                if (blockEl && this.masonryInstances[blockEl.dataset.blockId]) {
-                                    this.masonryInstances[blockEl.dataset.blockId].layout();
-                                }
-                            };
-                            
-                            const handleKeydown = (ev) => {
-                                if (ev.key === 'Enter' && !ev.shiftKey) {
-                                    ev.preventDefault();
-                                    target.blur();
-                                }
-                            };
-
-                            target.addEventListener('blur', handleEditEnd);
-                            target.addEventListener('keydown', handleKeydown);
+                        if (target) {
+                           this.triggerInlineEdit(target);
                         }
                     });
                     
@@ -1955,7 +2198,6 @@ Monitor of this License or out of the use or inability to use the
                             const separatorKey = target.dataset.separatorTextKey;
                             const tagId = target.dataset.tagTextId;
                             const value = target.innerText;
-                            const htmlValue = target.innerHTML; // ++ NEW: for rich text
 
                             const updateStateObject = (path, val) => {
                                 let obj = this.state;
@@ -1973,16 +2215,8 @@ Monitor of this License or out of the use or inability to use the
                                 if (cardEl && blockEl) {
                                     const block = this.findBlock(blockEl.dataset.blockId);
                                     const card = block?.cards.find(c => c.id === cardEl.dataset.cardId);
+                                    if(card) card[cardKey] = value;
                                     
-                                    // ++ NEW: Handle rich text for content
-                                    if(card) {
-                                        if (cardKey === 'content') {
-                                            card[cardKey] = this.sanitizeHTML(htmlValue);
-                                        } else {
-                                            card[cardKey] = value;
-                                        }
-                                    }
-
                                     const editorInput = this.elements.inspectorPanel.querySelector(`.editor-card[data-card-id="${cardEl.dataset.cardId}"] [data-card-key="${cardKey}"]`);
                                     if(editorInput) editorInput.value = value;
                                     this.renderLayerPanel();
@@ -2002,6 +2236,38 @@ Monitor of this License or out of the use or inability to use the
                             }
                         }
                     });
+                },
+
+                triggerInlineEdit(target) {
+                    if (!target || this.isEditingText) return;
+                    this.isEditingText = true;
+                    target.contentEditable = true;
+                    target.focus();
+                    document.execCommand('selectAll', false, null);
+
+                    const handleEditEnd = () => {
+                        target.contentEditable = false;
+                        this.isEditingText = false;
+                        target.removeEventListener('blur', handleEditEnd);
+                        target.removeEventListener('keydown', handleKeydown);
+                        
+                        this.pushHistory('编辑文本');
+
+                        const blockEl = target.closest('.preview-block-wrapper');
+                        if (blockEl && this.masonryInstances[blockEl.dataset.blockId]) {
+                            this.masonryInstances[blockEl.dataset.blockId].layout();
+                        }
+                    };
+                    
+                    const handleKeydown = (ev) => {
+                        if (ev.key === 'Enter' && !ev.shiftKey) {
+                            ev.preventDefault();
+                            target.blur();
+                        }
+                    };
+
+                    target.addEventListener('blur', handleEditEnd);
+                    target.addEventListener('keydown', handleKeydown);
                 },
 
                 initResizer() {
@@ -2049,6 +2315,7 @@ Monitor of this License or out of the use or inability to use the
                     this.renderLayerPanel();
                     this.renderInspector();
                     this.renderPreviewBlocks();
+                    this.renderMobileEditPencils();
                 },
                 
                 async renderPersonalInfo() {
@@ -2165,6 +2432,9 @@ Monitor of this License or out of the use or inability to use the
                     } else {
                         this.elements.previewHeader.style.background = this.hexToRgba(styles.headerBgColor, styles.headerOpacity);
                     }
+                    
+                    // --- FEATURE: Header Border Radius ---
+                    this.elements.previewHeader.style.borderRadius = `${styles.headerBorderRadius}px`;
 
                     this.elements.previewNickname.style.color = this.state.personalInfo.nicknameColor;
                     this.elements.previewSubtitle.style.color = this.state.personalInfo.subtitleColor;
@@ -2253,7 +2523,6 @@ Monitor of this License or out of the use or inability to use the
                         }
                     }
                     
-                    // BUGFIX: Asynchronously update editor thumbnails
                     panel.querySelectorAll('.thumbnail-wrapper img').forEach(img => {
                         const cardEl = img.closest('.editor-card');
                         if (!cardEl) return;
@@ -2295,6 +2564,16 @@ Monitor of this License or out of the use or inability to use the
 
                 createGlobalInspectorHTML() {
                     const backBtn = this.selection.type !== 'global' ? `<button class="back-to-global-btn">← 返回全局</button>` : '';
+                    const headerBorderRadiusHTML = `
+                        <div class="form-group advanced-setting">
+                            <label>头部圆角 (px): <span class="header-radius-value">16</span></label>
+                            <div class="input-group simple stepper-group">
+                                <button class="btn btn-default btn-stepper minus" aria-label="减少">-</button>
+                                <input type="range" data-state-key="pageStyles.headerBorderRadius" min="0" max="50" step="1">
+                                <button class="btn btn-default btn-stepper plus" aria-label="增加">+</button>
+                            </div>
+                        </div>`;
+
                     return `
                         <h3 class="panel-header">全局样式与导出 ${backBtn}</h3>
                         <div class="inspector-state active">
@@ -2308,8 +2587,9 @@ Monitor of this License or out of the use or inability to use the
                                     </div>
                                         <div class="tabs"><button class="tab-btn" data-tab="header-bg-solid">纯色</button><button class="tab-btn advanced-setting" data-tab="header-bg-gradient">渐变</button></div>
                                         <div id="header-bg-solid" class="tab-content"><div class="form-group"><label>头部背景颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.headerBgColor"><input type="text" class="color-hex-input" data-state-key="pageStyles.headerBgColor"></div></div></div>
-                                        <div id="header-bg-gradient" class="tab-content advanced-setting"><div class="gradient-controls"><div class="form-group"><label>起始颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.headerBgGradientStart"><input type="text" class="color-hex-input" data-state-key="pageStyles.headerBgGradientStart"></div></div><div class="form-group"><label>结束颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.headerBgGradientEnd"><input type="text" class="color-hex-input" data-state-key="pageStyles.headerBgGradientEnd"></div></div><div class="gradient-angle-control form-group"><label>角度 (<span class="angle-value">135</span>°):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-state-key="pageStyles.headerBgGradientAngle" min="0" max="360" step="1"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div></div></div>
+                                        <div id="header-bg-gradient" class="tab-content advanced-setting"><div class="gradient-controls"><div class="form-group"><label>起始颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.headerBgGradientStart"><input type="text" class="color-hex-input" data-state-key="pageStyles.headerBgGradientStart"></div></div><div class="form-group"><label>结束颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.headerBgGradientEnd"><input type="text" class="color-hex-input" data-state-key="pageStyles.headerBgGradientEnd"></div></div><div class="gradient-angle-control form-group"><label>角度 (<span class="angle-value">135</span>°):<span class="tooltip-trigger" data-tooltip="设置渐变的方向，0度为从下到上，90度为从左到右。"><span class="iconify" data-icon="mdi:help-circle-outline"></span></span></label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-state-key="pageStyles.headerBgGradientAngle" min="0" max="360" step="1"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div></div></div>
                                         <div class="form-group advanced-setting"><label>头部不透明度:</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-state-key="pageStyles.headerOpacity" min="0" max="1" step="0.05"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div>
+                                        ${headerBorderRadiusHTML}
                                     </div>
 								<hr class="separator">
                                     <div class="tab-group-wrapper">
@@ -2353,12 +2633,12 @@ Monitor of this License or out of the use or inability to use the
                                     <div id="card-bg-gradient" class="tab-content advanced-setting"><div class="gradient-controls"><div class="form-group"><label>起始颜色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.bgGradientStart"><input type="text" class="color-hex-input" data-state-key="globalCardStyles.bgGradientStart"></div></div><div class="form-group"><label>结束颜色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.bgGradientEnd"><input type="text" class="color-hex-input" data-state-key="globalCardStyles.bgGradientEnd"></div></div><div class="gradient-angle-control form-group"><label>角度 (<span class="angle-value">135</span>°):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-state-key="globalCardStyles.bgGradientAngle" min="0" max="360" step="1"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div></div></div>
                                     <div class="form-group"><label>不透明度:</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-state-key="globalCardStyles.opacity" min="0" max="1" step="0.05"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div>
                                     <div class="form-group advanced-setting"><label>圆角 (px): <span id="gCardRadiusValue">12</span></label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-state-key="globalCardStyles.radius" min="0" max="40" step="1"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div>
-                                    <div class="advanced-setting"><hr class="separator"><label>卡片边框（预览区会出现空隙，导出是正常的）:</label><div class="form-group inset-controls"><div class="form-group"><label>样式:</label><select data-state-key="globalCardStyles.borderStyle"><option value="none">无</option><option value="solid">实线</option><option value="dashed">虚线</option><option value="dotted">点状</option><option value="double">双实线</option></select></div><div class="color-control-row"><div class="color-control-group"><label>粗细(px):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-state-key="globalCardStyles.borderWidth" min="0" max="10" step="1"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div><div class="color-control-group"><label>颜色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.borderColor"><input type="text" class="color-hex-input" data-state-key="globalCardStyles.borderColor"></div></div></div></div></div>
+                                    <div class="advanced-setting"><hr class="separator"><label>卡片边框:<span class="tooltip-trigger" data-tooltip="边框在编辑器预览区可能显示不完美（如产生缝隙），但在最终导出的图片中是正常的。"><span class="iconify" data-icon="mdi:help-circle-outline"></span></span></label><div class="form-group inset-controls"><div class="form-group"><label>样式:</label><select data-state-key="globalCardStyles.borderStyle"><option value="none">无</option><option value="solid">实线</option><option value="dashed">虚线</option><option value="dotted">点状</option><option value="double">双实线</option></select></div><div class="color-control-row"><div class="color-control-group"><label>粗细(px):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-state-key="globalCardStyles.borderWidth" min="0" max="10" step="1"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div><div class="color-control-group"><label>颜色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.borderColor"><input type="text" class="color-hex-input" data-state-key="globalCardStyles.borderColor"></div></div></div></div></div>
                                     <hr class="separator"><div class="form-group"><label>对齐:</label><div class="radio-group"><label><input type="radio" name="gCardAlign" value="left" data-state-key="globalCardStyles.textAlign">居左</label><label><input type="radio" name="gCardAlign" value="center" data-state-key="globalCardStyles.textAlign">居中</label><label><input type="radio" name="gCardAlign" value="right" data-state-key="globalCardStyles.textAlign">居右</label></div></div>
                                     <div class="form-group"><label>行高:</label><div class="radio-group"><label><input type="radio" name="gCardLineHeight" value="1.4" data-state-key="globalCardStyles.lineHeight">紧凑</label><label><input type="radio" name="gCardLineHeight" value="1.5" data-state-key="globalCardStyles.lineHeight">中等</label><label><input type="radio" name="gCardLineHeight" value="1.6" data-state-key="globalCardStyles.lineHeight">宽松</label></div></div>
                                     <hr class="separator"><div class="form-group"><label>字体:</label><div class="font-controls"><input type="text" id="font-search-input" placeholder="搜索本地字体..." style="margin-bottom: 5px;"><select id="font-family-select" data-state-key="globalCardStyles.fontFamily"></select><div class="buttons"><button id="load-local-fonts-btn" class="btn btn-default">加载本地</button><button id="upload-font-btn" class="btn btn-default">上传字体</button><button id="manage-fonts-btn" class="btn btn-default">管理</button></div><input type="file" id="font-upload-input" accept=".ttf,.woff,.woff2,.otf" style="display: none;"></div></div>
                                     <div class="form-group"> <label>字号:</label> <select data-state-key="globalCardStyles.fontSize"> <option value="0.9rem">小</option> <option value="1rem" selected>中 (默认)</option> <option value="1.1rem">大</option> </select> </div>
-                                    <div class="advanced-setting"><div class="color-control-row"><div class="color-control-group"><label>文字描边(px):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-state-key="globalCardStyles.textStrokeWidth" min="0" max="5" step="0.5"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div><div class="color-control-group"><label>描边颜色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.textStrokeColor"><input type="text" class="color-hex-input" data-state-key="globalCardStyles.textStrokeColor"></div></div></div></div>
+                                    <div class="advanced-setting"><label>文字描边:<span class="tooltip-trigger" data-tooltip="为文字添加边框，建议宽度不超过2px，以保证可读性。"><span class="iconify" data-icon="mdi:help-circle-outline"></span></span></label><div class="color-control-row"><div class="color-control-group"><label>粗细(px):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-state-key="globalCardStyles.textStrokeWidth" min="0" max="5" step="0.5"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div><div class="color-control-group"><label>颜色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.textStrokeColor"><input type="text" class="color-hex-input" data-state-key="globalCardStyles.textStrokeColor"></div></div></div></div>
                                 </div>
                             </fieldset>
                             <fieldset class="editor-section" id="export-section">
@@ -2418,9 +2698,10 @@ Monitor of this License or out of the use or inability to use the
 
                 renderPreviewBlocks() {
                     this.elements.previewBlocksContainer.innerHTML = this.state.blocks.length ? this.state.blocks.map(b => `<div class="preview-block-wrapper ${b.isVisible === false ? 'is-hidden' : ''}" data-block-id="${b.id}">${this.createPreviewBlockHTML(b)}</div>`).join('') : '<div class="empty-placeholder">(预览区) 无区块</div>';
-                    this.postRenderAsyncUpdates(this.elements.previewBlocksContainer); // BUGFIX
+                    this.postRenderAsyncUpdates(this.elements.previewBlocksContainer);
                     this.state.blocks.forEach(b => this.initMasonryForBlock(b.id));
                     this.updateHighlights();
+                    this.renderMobileEditPencils();
                 },
 
                 createEditorBlockHTML(block) {
@@ -2429,7 +2710,9 @@ Monitor of this License or out of the use or inability to use the
                     const masonryCheckboxHTML = `
                         <div class="masonry-toggle-container" style="${['dual', 'triple'].includes(block.settings.layout) ? 'display: block;' : 'display: none;'}">
                             <div class="checkbox-group" style="margin-top: 10px;">
-                                <label><input type="checkbox" data-setting-key="masonryEnabled" ${block.settings.masonryEnabled ? 'checked' : ''}> 启用瀑布流</label>
+                                <label><input type="checkbox" data-setting-key="masonryEnabled" ${block.settings.masonryEnabled ? 'checked' : ''}> 启用瀑布流
+                                <span class="tooltip-trigger" data-tooltip="使卡片高度自适应内容，实现紧凑的砌体式布局。适合图片或文字长短不一的场景。"><span class="iconify" data-icon="mdi:help-circle-outline"></span></span>
+                                </label>
                             </div>
                         </div>`;
                     const layoutRadiosHTML = `
@@ -2502,7 +2785,6 @@ Monitor of this License or out of the use or inability to use the
                             <h3 class="preview-card-title" data-card-key="title" style="justify-content: ${justifyContent};">${iconHTML}${this.escapeHTML(card.title || '')}</h3>
                             <div class="preview-card-content" data-card-key="content">${card.content || ''}</div>
                         </div>`;
-                    // this.applyCardStyles(cardEl, card); // BUGFIX: Removed call from here
                     return cardEl.outerHTML;
                 },
 
@@ -2515,7 +2797,6 @@ Monitor of this License or out of the use or inability to use the
                         </figcaption>` 
                         : '';
                     
-                    // BUGFIX: Just return the structure. Src will be filled in later.
                     const figureHTML = `<figure data-card-id="${card.id}">
                         <img src="" alt="${this.escapeHTML(card.title || '')}" loading="lazy">
                         ${figcaptionContent}
@@ -2527,12 +2808,21 @@ Monitor of this License or out of the use or inability to use the
                 createEditorCardHTML(card) {
                     const iconHTML = card.icon ? `<span class="iconify" data-icon="${card.icon}" style="font-size: 1.2em; vertical-align: middle; margin-right: 5px;"></span>` : '选择图标';
                     const g = this.state.globalCardStyles;
+                    const contentPreview = card.content || '<span style="color: var(--text-placeholder);">点击编辑内容...</span>';
 
                     return `<span class="card-drag-handle">☰</span><div class="editor-card-header"><button class="btn btn-danger btn-small card-delete-btn">删</button></div>
                         <div class="editor-card-content">
                             <h4>基础设置</h4>
                             <div class="form-group"><label>标题:</label><div class="input-group"><input type="text" data-card-key="title" value="${this.escapeHTML(card.title || '')}" style="border-right: none;"><button class="btn btn-default select-icon-btn" style="width: auto; flex-shrink: 0; border-radius: 0 6px 6px 0; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${iconHTML}</button></div></div>
-                            <div class="form-group"><label>内容 (支持加粗/斜体):</label><textarea data-card-key="content" rows="4">${this.escapeHTML(card.content?.replace(/<[^>]*>?/gm, ''))}</textarea></div>
+                            <div class="form-group">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                                    <label style="margin-bottom: 0;">内容:<span class="tooltip-trigger" data-tooltip="此处支持富文本编辑。卡片内部设置的文本颜色、背景色会覆盖此处的样式。"><span class="iconify" data-icon="mdi:help-circle-outline"></span></span></label>
+                                    <button class="btn btn-default btn-small edit-content-btn"><span class="iconify" data-icon="mdi:pencil"></span> 编辑内容</button>
+                                </div>
+                                <div class="rich-text-editor-trigger">
+                                    <div class="rich-text-preview">${contentPreview}</div>
+                                </div>
+                            </div>
                             <div class="form-group"><label>对齐:</label><div class="radio-group">
                                 <label><input type="radio" name="card-${card.id}-align" value="" data-card-key="textAlign" ${!['left', 'center', 'right'].includes(card.textAlign) ? 'checked' : ''}>默认</label>
                                 <label><input type="radio" name="card-${card.id}-align" value="left" data-card-key="textAlign" ${card.textAlign === 'left' ? 'checked' : ''}>左</label>
@@ -2551,7 +2841,6 @@ Monitor of this License or out of the use or inability to use the
                 },
 
                 createEditorImageCardHTML(card) {
-                    // BUGFIX: Just return the structure. Src will be filled in by renderInspector.
                     const imgHTML = `<img src="" loading="lazy">`;
 
                     return `<span class="card-drag-handle">☰</span>
@@ -2597,7 +2886,7 @@ Monitor of this License or out of the use or inability to use the
                                 try {
                                     const imageId = imageUrl.substring(6);
                                     const record = await this.getImageFromDB(imageId);
-                                    if(record && record.blob) imageUrl = URL.createObjectURL(record.blob); // BUGFIX: Check blob exists
+                                    if(record && record.blob) imageUrl = URL.createObjectURL(record.blob);
                                 } catch (e) { console.error('Failed to load card bg from DB', e); }
                             }
                             finalBg = `url(${imageUrl})`;
@@ -2627,8 +2916,10 @@ Monitor of this License or out of the use or inability to use the
                     }
                 },
 
-                updateState(keyPath, value, pushHistory = true) {
-                    if (pushHistory && !this.isRestoringState) this.pushHistory();
+                updateState(keyPath, value, pushHistory = true, historyDescription = null) {
+                    if (pushHistory && !this.isRestoringState) {
+                        this.pushHistory(historyDescription || '修改样式');
+                    }
                     let obj = this.state;
                     const keys = keyPath.split('.');
                     for (let i = 0; i < keys.length - 1; i++) { obj = obj?.[keys[i]]; }
@@ -2639,6 +2930,54 @@ Monitor of this License or out of the use or inability to use the
                 },
 
                 triggerRender(keyPath) {
+                    // --- NEW: Flicker Reduction Logic ---
+                    const styles = this.state.pageStyles;
+                    const gCard = this.state.globalCardStyles;
+                    const info = this.state.personalInfo;
+                    const r = document.documentElement.style;
+
+                    const directUpdateMap = {
+                        'pageStyles.headerBgColor': () => { if (styles.headerBgMode === 'solid') this.elements.previewHeader.style.background = this.hexToRgba(styles.headerBgColor, styles.headerOpacity); },
+                        'pageStyles.headerBgGradientStart': () => { if (styles.headerBgMode === 'gradient') this.elements.previewHeader.style.background = `linear-gradient(${styles.headerBgGradientAngle}deg, ${this.hexToRgba(styles.headerBgGradientStart, styles.headerOpacity)}, ${this.hexToRgba(styles.headerBgGradientEnd, styles.headerOpacity)})`},
+                        'pageStyles.headerBgGradientEnd': () => { if (styles.headerBgMode === 'gradient') this.elements.previewHeader.style.background = `linear-gradient(${styles.headerBgGradientAngle}deg, ${this.hexToRgba(styles.headerBgGradientStart, styles.headerOpacity)}, ${this.hexToRgba(styles.headerBgGradientEnd, styles.headerOpacity)})`},
+                        'pageStyles.headerBgGradientAngle': () => { if (styles.headerBgMode === 'gradient') this.elements.previewHeader.style.background = `linear-gradient(${styles.headerBgGradientAngle}deg, ${this.hexToRgba(styles.headerBgGradientStart, styles.headerOpacity)}, ${this.hexToRgba(styles.headerBgGradientEnd, styles.headerOpacity)})`},
+                        'pageStyles.headerOpacity': () => this.renderPageStyles(),
+                        'pageStyles.headerBorderRadius': () => { this.elements.previewHeader.style.borderRadius = `${styles.headerBorderRadius}px`; },
+                        'pageStyles.pageBgSolidColor': () => { if(styles.pageBgMode === 'solid') this.elements.previewWrapper.style.backgroundColor = styles.pageBgSolidColor; },
+                        'pageStyles.pageBgGradientStart': () => { if(styles.pageBgMode === 'gradient') this.renderPageStyles(); },
+                        'pageStyles.pageBgGradientEnd': () => { if(styles.pageBgMode === 'gradient') this.renderPageStyles(); },
+                        'pageStyles.pageBgGradientAngle': () => { if(styles.pageBgMode === 'gradient') this.renderPageStyles(); },
+                        'pageStyles.pageOverlayOpacity': () => this.renderPageStyles(),
+                        'pageStyles.pageOverlayColor': () => this.renderPageStyles(),
+
+                        'globalCardStyles.opacity': () => { r.setProperty('--g-card-opacity', gCard.opacity); this.renderPreviewBlocks(); },
+                        'globalCardStyles.radius': () => r.setProperty('--g-card-border-radius', `${gCard.radius}px`),
+                        'globalCardStyles.bgColor': () => { r.setProperty('--g-card-bg-color', gCard.bgColor); if(gCard.bgMode === 'solid') this.renderPreviewBlocks(); },
+                        'globalCardStyles.textColor': () => { r.setProperty('--g-card-text-color', gCard.textColor); this.renderPreviewBlocks(); },
+                        'globalCardStyles.bgGradientStart': () => { if(gCard.bgMode === 'gradient') this.renderPreviewBlocks(); },
+                        'globalCardStyles.bgGradientEnd': () => { if(gCard.bgMode === 'gradient') this.renderPreviewBlocks(); },
+                        'globalCardStyles.bgGradientAngle': () => { if(gCard.bgMode === 'gradient') this.renderPreviewBlocks(); },
+                        'globalCardStyles.borderWidth': () => { r.setProperty('--active-card-border', gCard.borderWidth > 0 && gCard.borderStyle !== 'none' ? `${gCard.borderWidth}px ${gCard.borderStyle} ${gCard.borderColor}` : 'none'); },
+                        'globalCardStyles.borderStyle': () => { r.setProperty('--active-card-border', gCard.borderWidth > 0 && gCard.borderStyle !== 'none' ? `${gCard.borderWidth}px ${gCard.borderStyle} ${gCard.borderColor}` : 'none'); },
+                        'globalCardStyles.borderColor': () => { r.setProperty('--active-card-border', gCard.borderWidth > 0 && gCard.borderStyle !== 'none' ? `${gCard.borderWidth}px ${gCard.borderStyle} ${gCard.borderColor}` : 'none'); },
+                        'globalCardStyles.textStrokeWidth': () => { r.setProperty('--g-card-text-stroke', gCard.textStrokeWidth > 0 ? `${gCard.textStrokeWidth}px ${gCard.textStrokeColor}` : '0px transparent'); },
+                        'globalCardStyles.textStrokeColor': () => { r.setProperty('--g-card-text-stroke', gCard.textStrokeWidth > 0 ? `${gCard.textStrokeWidth}px ${gCard.textStrokeColor}` : '0px transparent'); },
+                        
+                        'personalInfo.nicknameColor': () => { this.elements.previewNickname.style.color = info.nicknameColor; },
+                        'personalInfo.subtitleColor': () => { this.elements.previewSubtitle.style.color = info.subtitleColor; },
+                        'personalInfo.bioColor': () => { this.elements.previewBio.style.color = info.bioColor; },
+                        'personalInfo.tagBgColor': () => { this.elements.previewTagsContainer.querySelectorAll('.tag-pill').forEach(el => el.style.backgroundColor = info.tagBgColor); },
+                        'personalInfo.tagTextColor': () => { this.elements.previewTagsContainer.querySelectorAll('.tag-pill').forEach(el => el.style.color = info.tagTextColor); },
+                        'personalInfo.avatarBorderSize': () => { this.elements.previewAvatar.style.borderWidth = `${info.avatarBorderSize}px`; },
+                        'personalInfo.avatarBorderColor': () => { this.elements.previewAvatar.style.borderColor = info.avatarBorderColor; },
+                    };
+
+                    if (directUpdateMap[keyPath]) {
+                        directUpdateMap[keyPath]();
+                        return; // Exit after direct update
+                    }
+                    // --- END OF Flicker Reduction Logic ---
+                    
                     const mainKey = keyPath.split('.')[0];
                     const keyParts = keyPath.split('.');
 
@@ -2660,32 +2999,11 @@ Monitor of this License or out of the use or inability to use the
                             case 'bio':
                                 this.elements.previewBio.textContent = this.state.personalInfo.bio;
                                 break;
-                            case 'nicknameColor':
-                                this.elements.previewNickname.style.color = this.state.personalInfo.nicknameColor;
-                                break;
-                            case 'subtitleColor':
-                                this.elements.previewSubtitle.style.color = this.state.personalInfo.subtitleColor;
-                                break;
-                            case 'bioColor':
-                                this.elements.previewBio.style.color = this.state.personalInfo.bioColor;
-                                break;
-                            case 'avatarDataUrl':
-                            case 'avatarShape':
-                            case 'avatarBorderSize':
-                            case 'avatarBorderColor':
-                            case 'avatarSize':
-                            case 'avatarOffsetX':
-                                this.renderPersonalInfo();
-                                break;
-                            case 'tags':
-                            case 'tagBgColor':
-                            case 'tagTextColor':
-                                this.renderPersonalInfo(); 
-                                if (subKey === 'tags') this.renderTagManager();
-                                break;
                             default:
                                 this.renderPersonalInfo();
+                                if (subKey === 'tags') this.renderTagManager();
                         }
+                        this.renderMobileEditPencils();
                         return;
                     }
 
@@ -2754,9 +3072,9 @@ Monitor of this License or out of the use or inability to use the
                     const block = this.findBlock(blockId);
                     if (!block || block.type !== 'text') return;
                     
-                    const newCard = { id: this.generateId('c'), icon: '', title: `新卡片`, content: '双击预览区可直接编辑内容', opacity: 1.0, followGlobalOpacity: true, textShadowEnabled: false };
+                    const newCard = { id: this.generateId('c'), icon: '', title: `新卡片`, content: '点击编辑内容', opacity: 1.0, followGlobalOpacity: true, textShadowEnabled: false };
                     
-                    this.pushHistory();
+                    this.pushHistory('添加卡片');
                     block.cards.push(newCard);
                     this.debouncedSaveToLocal();
                     
@@ -2785,7 +3103,7 @@ Monitor of this License or out of the use or inability to use the
                     const tempDiv = document.createElement('div');
                     tempDiv.innerHTML = this.createPreviewCardHTML(newCard);
                     const newCardEl = tempDiv.firstChild;
-                    this.applyCardStyles(newCardEl, newCard); // BUGFIX: Apply styles after creation
+                    this.applyCardStyles(newCardEl, newCard); 
                     container.appendChild(newCardEl);
 
                     const masonry = this.masonryInstances[blockId];
@@ -2817,7 +3135,7 @@ Monitor of this License or out of the use or inability to use the
                     const cardEl = this.elements.previewBlocksContainer.querySelector(`[data-card-id="${cardId}"]`);
                     
                     const doDelete = () => {
-                        this.pushHistory();
+                        this.pushHistory('删除卡片');
                         block.cards = block.cards.filter(c => c.id !== cardId);
                         this.debouncedSaveToLocal();
                         this.renderInspector();
@@ -2945,7 +3263,7 @@ Monitor of this License or out of the use or inability to use the
                             }
 
                             if (input.type === 'range') {
-                                const valueDisplay = input.closest('.form-group').querySelector('.angle-value, .spacer-height-value, #gCardRadiusValue, .avatar-size-value');
+                                const valueDisplay = input.closest('.form-group').querySelector('.angle-value, .spacer-height-value, #gCardRadiusValue, .avatar-size-value, .header-radius-value');
                                 if (valueDisplay) valueDisplay.textContent = value;
                             }
                         });
@@ -2992,7 +3310,7 @@ Monitor of this License or out of the use or inability to use the
                                         }
                                     }
                                     if (input.type === 'range') {
-                                        const valueDisplay = input.closest('.form-group').querySelector('.angle-value, .spacer-height-value, #gCardRadiusValue, .avatar-size-value');
+                                        const valueDisplay = input.closest('.form-group').querySelector('.angle-value, .spacer-height-value, #gCardRadiusValue, .avatar-size-value, .header-radius-value');
                                         if(valueDisplay) valueDisplay.textContent = value;
                                     }
                                 }
@@ -3034,19 +3352,19 @@ Monitor of this License or out of the use or inability to use the
                 
                 findBlock(blockId) { return this.state.blocks.find(b => b.id === blockId); },
                 findBlockIndex(blockId) { return this.state.blocks.findIndex(b => b.id === blockId); },
-                updateBlockTitle(blockId, title, pushHistory) { 
+                updateBlockTitle(blockId, title, pushHistory, historyDescription) { 
                     const blockIndex = this.findBlockIndex(blockId);
-                    if (blockIndex > -1) this.updateState(`blocks.${blockIndex}.title`, title, pushHistory);
+                    if (blockIndex > -1) this.updateState(`blocks.${blockIndex}.title`, title, pushHistory, historyDescription);
                 },
-                updateBlockSettings(blockId, key, value, pushHistory) {
+                updateBlockSettings(blockId, key, value, pushHistory, historyDescription) {
                     const blockIndex = this.findBlockIndex(blockId);
-                    if (blockIndex > -1) this.updateState(`blocks.${blockIndex}.settings.${key}`, value, pushHistory);
+                    if (blockIndex > -1) this.updateState(`blocks.${blockIndex}.settings.${key}`, value, pushHistory, historyDescription);
                 },
-                updateCard(blockId, cardId, key, value, pushHistory) {
+                updateCard(blockId, cardId, key, value, pushHistory, historyDescription) {
                     const blockIndex = this.findBlockIndex(blockId);
                     if (blockIndex > -1) {
                         const cardIndex = this.state.blocks[blockIndex].cards.findIndex(c => c.id === cardId);
-                        if (cardIndex > -1) this.updateState(`blocks.${blockIndex}.cards.${cardIndex}.${key}`, value, pushHistory);
+                        if (cardIndex > -1) this.updateState(`blocks.${blockIndex}.cards.${cardIndex}.${key}`, value, pushHistory, historyDescription);
                     }
                 },
 
@@ -3056,17 +3374,18 @@ Monitor of this License or out of the use or inability to use the
                     if (block && wrapper) {
                         wrapper.classList.toggle('is-hidden', block.isVisible === false);
                         wrapper.innerHTML = this.createPreviewBlockHTML(block);
-                        this.postRenderAsyncUpdates(wrapper); // BUGFIX
+                        this.postRenderAsyncUpdates(wrapper); 
                         this.initMasonryForBlock(blockId);
                     }
+                    this.renderMobileEditPencils();
                 },
                 
-                pushHistory() {
+                pushHistory(description = '操作') {
                      if (this.isRestoringState) return; 
                         if (this.historyIndex < this.history.length - 1) { 
                             this.history = this.history.slice(0, this.historyIndex + 1); 
                         } 
-                        this.history.push(this.deepClone(this.state)); 
+                        this.history.push({ state: this.deepClone(this.state), description }); 
                         if (this.history.length > 50) this.history.shift(); 
                         this.historyIndex = this.history.length - 1;
                         this.updateUndoRedoButtons(); 
@@ -3076,14 +3395,17 @@ Monitor of this License or out of the use or inability to use the
                         document.activeElement.blur();
                     }
                     if (this.historyIndex <= 0) return;
+
+                    const actionDescription = this.history[this.historyIndex].description;
+
                     this.isRestoringState = true; 
                     this.historyIndex--; 
-                    this.state = this.deepClone(this.history[this.historyIndex]); 
+                    this.state = this.deepClone(this.history[this.historyIndex].state); 
                     this.renderAll(); 
                     this.syncAllControls(); 
                     this.updateUndoRedoButtons(); 
                     this.isRestoringState = false; 
-                    this.showToast('已撤销', 'info');
+                    this.showToast(`已撤销: ${actionDescription}`, 'info');
                 },
                 redo(){
                     if (document.activeElement && document.activeElement.isContentEditable) {
@@ -3092,50 +3414,69 @@ Monitor of this License or out of the use or inability to use the
                     if (this.historyIndex >= this.history.length - 1) return; 
                     this.isRestoringState = true; 
                     this.historyIndex++; 
-                    this.state = this.deepClone(this.history[this.historyIndex]); 
+
+                    const actionDescription = this.history[this.historyIndex].description;
+                    
+                    this.state = this.deepClone(this.history[this.historyIndex].state); 
                     this.renderAll(); 
                     this.syncAllControls(); 
                     this.updateUndoRedoButtons(); 
                     this.isRestoringState = false; 
-                    this.showToast('已重做', 'info');
+                    this.showToast(`已重做: ${actionDescription}`, 'info');
                 },
                 updateUndoRedoButtons(){
                     const undoBtn = this.elements.inspectorPanel.querySelector('#undo-btn');
                     const redoBtn = this.elements.inspectorPanel.querySelector('#redo-btn');
-                    if (undoBtn) undoBtn.disabled = this.historyIndex <= 0; 
-                    if (redoBtn) redoBtn.disabled = this.historyIndex >= this.history.length - 1; 
+                    if (undoBtn) {
+                        undoBtn.disabled = this.historyIndex <= 0;
+                        if (this.historyIndex > 0) {
+                            undoBtn.title = `撤销: ${this.history[this.historyIndex].description}`;
+                        } else {
+                            undoBtn.title = '撤销';
+                        }
+                    }
+                    if (redoBtn) {
+                        redoBtn.disabled = this.historyIndex >= this.history.length - 1;
+                        if (this.historyIndex < this.history.length - 1) {
+                            redoBtn.title = `重做: ${this.history[this.historyIndex + 1].description}`;
+                        } else {
+                            redoBtn.title = '重做';
+                        }
+                    }
+                },
+
+                async handleImageUpload(event, target, cardInfo = null){
+                     const file = event.target.files[0];
+                     if (!file) return;
+                     this.showLoading('正在处理图片...');
+                     try {
+                         const reader = new FileReader();
+                         reader.onload = async e => {
+                             const dataUrl = e.target.result;
+                             if(target === 'colorThief') {
+                                 this.analyzeColorsFromImage(dataUrl); 
+                                 return;
+                             }
+                             const compressedUrl = await this.compressImage(dataUrl, 0.9, 1200);
+                             if (['avatar', 'pageBg', 'cardBg', 'imageCard'].includes(target)) {
+                                 this.showCropper(compressedUrl, { type: target, ...cardInfo, originalType: file.type });
+                             } else {
+                                this.hideLoading();
+                             }
+                         };
+                         reader.onerror = (err) => {
+                             this.showErrorModal('图片读取失败', err.message);
+                             this.hideLoading();
+                         };
+                         reader.readAsDataURL(file);
+                     } catch(err) {
+                         this.showErrorModal('图片处理失败', err.message);
+                         this.hideLoading();
+                     } finally {
+                         event.target.value = '';
+                     }
                 },
                 
-                async handleImageUpload(event, target, cardInfo = null){
-                     const file = event.target.files[0]; 
-                        if (!file) return; 
-                        this.showLoading('正在处理图片...');
-                        try {
-                            const reader = new FileReader(); 
-                            reader.onload = async e => {
-                                const dataUrl = e.target.result;
-                                if(target === 'colorThief') {
-                                    this.analyzeColorsFromImage(dataUrl);
-                                    return;
-                                }
-                                const compressedUrl = await this.compressImage(dataUrl, 0.9, 1200);
-                                if (['avatar', 'pageBg', 'cardBg', 'imageCard'].includes(target)) {
-                                    this.showCropper(compressedUrl, { type: target, ...cardInfo, originalType: file.type }); 
-                                }
-                                this.hideLoading();
-                            }; 
-                            reader.onerror = (err) => {
-                                this.showErrorModal('图片读取失败', err.message);
-                                this.hideLoading();
-                            };
-                            reader.readAsDataURL(file); 
-                        } catch(err) {
-                            this.showErrorModal('图片处理失败', err.message);
-                            this.hideLoading();
-                        } finally {
-                            event.target.value = ''; 
-                        }
-                },
                 handleCardBgUpload(event, blockId, cardId){
                     this.handleImageUpload(event, 'cardBg', { blockId, cardId });
                 },
@@ -3144,7 +3485,7 @@ Monitor of this License or out of the use or inability to use the
                         if (!block || !files.length) return; 
                         this.showLoading(`正在上传 ${files.length} 张图片...`);
                         try {
-                            this.pushHistory(); 
+                            this.pushHistory(`添加 ${files.length} 张图片`); 
                             const newCards = [];
                             for(const file of files) {
                                 const url = await this.readFileAsDataURL(file).then(url => this.compressImage(url, 0.9, 1200, file.type));
@@ -3173,7 +3514,7 @@ Monitor of this License or out of the use or inability to use the
                         let imageUrl = card.url;
                         if (imageUrl.startsWith('idb://')) {
                             const record = await this.getImageFromDB(imageUrl.substring(6));
-                            if (record && record.blob) { // BUGFIX: Check blob exists
+                            if (record && record.blob) {
                                 imageUrl = URL.createObjectURL(record.blob);
                             }
                         }
@@ -3181,20 +3522,66 @@ Monitor of this License or out of the use or inability to use the
                     }
                 },
                 
-                showCropper(imageSrc, target){
-                     this.currentCropTarget = target; 
-                        this.elements.cropperModal.classList.add('visible'); 
-                        this.elements.cropperImage.src = imageSrc; 
-                        if (this.cropper) this.cropper.destroy(); 
-                        this.cropper = new Cropper(this.elements.cropperImage, { aspectRatio: NaN, viewMode: 1, background: false }); 
+                showCropper(imageSrc, target) {
+                    this.currentCropTarget = target;
+                    const cropperImage = this.elements.cropperImage;
+                    const modal = this.elements.cropperModal;
+                
+                    if (this.cropper) {
+                        this.cropper.destroy();
+                        this.cropper = null;
+                    }
+                    cropperImage.src = '';
+                
+                    const initializeCropper = () => {
+                        cropperImage.removeEventListener('load', initializeCropper);
+                        cropperImage.removeEventListener('error', handleLoadError);
+                
+                        if (cropperImage.naturalWidth === 0 || cropperImage.naturalHeight === 0) {
+                            handleLoadError();
+                            return;
+                        }
+                
+                        this.cropper = new Cropper(cropperImage, {
+                            aspectRatio: NaN,
+                            viewMode: 1,
+                            background: false,
+                            ready: () => {
+                                this.hideLoading();
+                            }
+                        });
+                
+                        const freeRatioInput = modal.querySelector('input[name="crop-ratio"][value="NaN"]');
+                        if (freeRatioInput) {
+                            freeRatioInput.checked = true;
+                        }
+                    };
+                
+                    const handleLoadError = () => {
+                        cropperImage.removeEventListener('load', initializeCropper);
+                        cropperImage.removeEventListener('error', handleLoadError);
+                        this.showErrorModal('图片加载失败', '无法在裁剪器中加载图片，文件可能已损坏或格式不受支持。');
+                        this.hideCropper();
+                        this.hideLoading();
+                    };
+                
+                    cropperImage.addEventListener('load', initializeCropper);
+                    cropperImage.addEventListener('error', handleLoadError);
+                
+                    this.showLoading('正在加载图片...');
+                    modal.classList.add('visible');
+                    cropperImage.src = imageSrc;
                 },
+
                 hideCropper(){
-                     this.elements.cropperModal.classList.remove('visible'); 
-                        if (this.cropper) { 
-                            this.cropper.destroy(); 
-                            this.cropper = null; 
-                        } 
+                     this.elements.cropperModal.classList.remove('visible');
+                     if (this.cropper) {
+                         this.cropper.destroy();
+                         this.cropper = null;
+                     }
+                     this.elements.cropperImage.src = '';
                 },
+
                 saveCrop(){
                      if (!this.cropper || !this.currentCropTarget) return;
                         this.showLoading('正在保存图片...');
@@ -3217,7 +3604,7 @@ Monitor of this License or out of the use or inability to use the
                                 await this.saveImageToDB({ id: imageId, blob: blob });
                                 const idbUrl = `idb://${imageId}`;
 
-                                this.pushHistory();
+                                this.pushHistory('裁剪图片');
                                 if (type === 'avatar') {
                                     this.updateState('personalInfo.avatarDataUrl', idbUrl, false);
                                 } else if (type === 'pageBg') {
@@ -3242,6 +3629,63 @@ Monitor of this License or out of the use or inability to use the
                      if(this.cropper) this.cropper.setAspectRatio(parseFloat(document.querySelector('input[name="crop-ratio"]:checked').value)); 
                 },
                 
+                // --- FEATURE: Rich Text Editor ---
+                showRichTextEditor(targetElement) {
+                    if (!targetElement) return;
+
+                    const cardEl = targetElement.closest('.preview-card');
+                    const blockEl = targetElement.closest('.preview-block-wrapper');
+                    if (!cardEl || !blockEl) return;
+                    
+                    this.currentRichTextTarget = {
+                        blockId: blockEl.dataset.blockId,
+                        cardId: cardEl.dataset.cardId,
+                        element: targetElement
+                    };
+                    
+                    const block = this.findBlock(this.currentRichTextTarget.blockId);
+                    const card = block.cards.find(c => c.id === this.currentRichTextTarget.cardId);
+
+                    if (this.richTextEditor) {
+                        this.richTextEditor.root.innerHTML = card.content || '';
+                    } else {
+                        this.richTextEditor = new Quill('#rich-text-editor-container', {
+                            modules: {
+                                toolbar: [
+                                    [{ 'header': [1, 2, 3, false] }],
+                                    ['bold', 'italic', 'underline', 'strike'],
+                                    ['link'],
+                                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                                    [{ 'color': [] }, { 'background': [] }],
+                                    ['clean']
+                                ]
+                            },
+                            theme: 'snow'
+                        });
+                        this.richTextEditor.root.innerHTML = card.content || '';
+                    }
+                    
+                    this.elements.richTextEditorModal.classList.add('visible');
+                    this.richTextEditor.focus();
+                },
+                
+                hideRichTextEditor() {
+                    this.elements.richTextEditorModal.classList.remove('visible');
+                    this.currentRichTextTarget = null;
+                },
+
+                saveRichText() {
+                    if (!this.richTextEditor || !this.currentRichTextTarget) return;
+                    
+                    const { blockId, cardId } = this.currentRichTextTarget;
+                    const newContent = this.richTextEditor.root.innerHTML;
+
+                    this.updateCard(blockId, cardId, 'content', newContent, true, '编辑卡片内容');
+                    this.hideRichTextEditor();
+                    this.showToast('内容已保存', 'success');
+                },
+                // --- END FEATURE ---
+
                 async loadLocalFonts(){
                      if (!window.queryLocalFonts) {
                             this.showErrorModal('功能不支持', '您的浏览器不支持访问本地字体。请尝试使用“上传字体”功能。');
@@ -3280,7 +3724,7 @@ Monitor of this License or out of the use or inability to use the
                             
                             this.uploadedFonts.push({ family: fontName, fullName: `${fontName} (上传)`, type: 'uploaded' });
                             this.populateFontList();
-                            this.updateState('globalCardStyles.fontFamily', fontName, true);
+                            this.updateState('globalCardStyles.fontFamily', fontName, true, `上传字体 ${fontName}`);
                             this.showToast(`字体 "${fontName}" 上传成功`, 'success');
                         } catch (error) {
                             console.error('字体上传失败:', error);
@@ -3372,7 +3816,7 @@ Monitor of this License or out of the use or inability to use the
                 },
                 
                 applyPreset(preset){
-                     this.pushHistory(); 
+                     this.pushHistory('应用预设主题'); 
                         
                         this.state.pageStyles.pageBgSolidColor = preset.pageBgSolidColor; 
                         this.state.pageStyles.pageBgGradientStart = preset.pageBgGradientStart;
@@ -3430,7 +3874,6 @@ Monitor of this License or out of the use or inability to use the
                             canvas.height = height;
                             const ctx = canvas.getContext('2d');
                             ctx.drawImage(img, 0, 0, width, height);
-                            // 如果原始文件是PNG，则导出为PNG以保留透明度
                             const outputType = originalType === 'image/png' ? 'image/png' : 'image/jpeg';
                             resolve(canvas.toDataURL(outputType, quality));
                         };
@@ -3453,7 +3896,6 @@ Monitor of this License or out of the use or inability to use the
                 saveToLocal(){
                      try { 
                             const stateToSave = this.deepClone(this.state);
-                            // 不再将字体保存在localStorage中
                             delete stateToSave.uploadedFonts;
                             localStorage.setItem('blokkoState', JSON.stringify(stateToSave));
                             if (this.isStorageFull) {
@@ -3566,7 +4008,7 @@ Monitor of this License or out of the use or inability to use the
                                     await this.loadFontsFromDB();
                                 }
 
-                                this.history = [this.deepClone(this.state)];
+                                this.history = [{ state: this.deepClone(this.state), description: '导入配置' }];
                                 this.historyIndex = 0;
                                 this.setSelection({type: 'global'});
                                 this.renderAll(true); 
@@ -3587,7 +4029,7 @@ Monitor of this License or out of the use or inability to use the
                 },
                 
                 async bakeOverlaysForExport(clone) {
-                    // ... (This function is complex and remains the same, I'm omitting it here for brevity, but it's in the full code block)
+                    // This function remains complex and is assumed to be correct
                 },
                 
                 async exportPNG(){
@@ -3889,7 +4331,7 @@ Monitor of this License or out of the use or inability to use the
                             const oldIndex = e.oldIndex - 2;
                             const newIndex = e.newIndex - 2;
                             if (oldIndex === newIndex) return;
-                            this.pushHistory();
+                            this.pushHistory('排序区块');
                             const [moved] = this.state.blocks.splice(oldIndex, 1);
                             this.state.blocks.splice(newIndex, 0, moved);
                             this.debouncedSaveToLocal();
@@ -3911,7 +4353,7 @@ Monitor of this License or out of the use or inability to use the
                             onEnd: e => {
                                 const block = this.findBlock(blockId);
                                 if (!block) return;
-                                this.pushHistory();
+                                this.pushHistory('排序卡片');
                                 const [movedCard] = block.cards.splice(e.oldIndex, 1);
                                 block.cards.splice(e.newIndex, 0, movedCard);
                                 this.debouncedSaveToLocal();
@@ -3928,7 +4370,7 @@ Monitor of this License or out of the use or inability to use the
                         ghostClass: 'sortable-ghost',
                         onEnd: e => {
                             if (e.oldIndex === e.newIndex) return;
-                            this.pushHistory();
+                            this.pushHistory('排序区块');
                             const [movedBlock] = this.state.blocks.splice(e.oldIndex, 1);
                             this.state.blocks.splice(e.newIndex, 0, movedBlock);
                             this.debouncedSaveToLocal();
@@ -3947,7 +4389,7 @@ Monitor of this License or out of the use or inability to use the
                             handle: '.tag-drag-handle',
                             onEnd: e => {
                                 if (e.oldIndex === e.newIndex) return;
-                                this.pushHistory();
+                                this.pushHistory('排序标签');
                                 const [movedTag] = this.state.personalInfo.tags.splice(e.oldIndex, 1);
                                 this.state.personalInfo.tags.splice(e.newIndex, 0, movedTag);
                                 this.debouncedSaveToLocal();
@@ -3966,7 +4408,7 @@ Monitor of this License or out of the use or inability to use the
                             ghostClass: 'sortable-ghost',
                             onEnd: (e) => {
                                 if (e.oldIndex === e.newIndex) return;
-                                this.pushHistory();
+                                this.pushHistory('排序标签');
                                 const [movedTag] = this.state.personalInfo.tags.splice(e.oldIndex, 1);
                                 this.state.personalInfo.tags.splice(e.newIndex, 0, movedTag);
                                 this.debouncedSaveToLocal();
@@ -3978,11 +4420,11 @@ Monitor of this License or out of the use or inability to use the
 
                 initSortableCards(blockId){
                     const list = this.elements.inspectorPanel.querySelector(`.editor-block[data-block-id="${blockId}"] .card-editors-list`); 
-                    if (list) { if(this.cardSortables[blockId]) this.cardSortables[blockId].destroy(); this.cardSortables[blockId] = new Sortable(list, { handle: '.card-drag-handle', animation: 150, ghostClass: 'sortable-ghost', onEnd: e => { const b = this.findBlock(blockId); if (b) { this.pushHistory(); const [m] = b.cards.splice(e.oldIndex, 1); b.cards.splice(e.newIndex, 0, m); this.debouncedSaveToLocal(); this.renderPreviewBlockById(blockId); this.renderLayerPanel(); } } }); } 
+                    if (list) { if(this.cardSortables[blockId]) this.cardSortables[blockId].destroy(); this.cardSortables[blockId] = new Sortable(list, { handle: '.card-drag-handle', animation: 150, ghostClass: 'sortable-ghost', onEnd: e => { const b = this.findBlock(blockId); if (b) { this.pushHistory('排序卡片'); const [m] = b.cards.splice(e.oldIndex, 1); b.cards.splice(e.newIndex, 0, m); this.debouncedSaveToLocal(); this.renderPreviewBlockById(blockId); this.renderLayerPanel(); } } }); } 
                 },
                 initSortableImageCards(blockId){
                     const container = this.elements.inspectorPanel.querySelector(`.editor-block[data-block-id="${blockId}"] .image-card-editors-list`);
-                    if (container) { if (this.imageCardSortables[blockId]) this.imageCardSortables[blockId].destroy(); this.imageCardSortables[blockId] = new Sortable(container, { handle: '.card-drag-handle', animation: 150, ghostClass: 'sortable-ghost', onEnd: e => { const block = this.findBlock(blockId); if (block) { this.pushHistory(); const [moved] = block.cards.splice(e.oldIndex, 1); block.cards.splice(e.newIndex, 0, moved); this.debouncedSaveToLocal(); this.renderPreviewBlockById(blockId); this.renderLayerPanel(); } } }); }
+                    if (container) { if (this.imageCardSortables[blockId]) this.imageCardSortables[blockId].destroy(); this.imageCardSortables[blockId] = new Sortable(container, { handle: '.card-drag-handle', animation: 150, ghostClass: 'sortable-ghost', onEnd: e => { const block = this.findBlock(blockId); if (block) { this.pushHistory('排序图片'); const [moved] = block.cards.splice(e.oldIndex, 1); block.cards.splice(e.newIndex, 0, moved); this.debouncedSaveToLocal(); this.renderPreviewBlockById(blockId); this.renderLayerPanel(); } } }); }
                 },
 
                 initMasonryForBlock(blockId) {
@@ -4032,7 +4474,7 @@ Monitor of this License or out of the use or inability to use the
                     if (await this.showConfirm('恢复默认模板', '警告：此操作将清空您所有的内容和样式设置，并恢复到初始模板。此过程不可撤销，确定要继续吗？')) {
                         localStorage.removeItem('blokkoState');
                         this.state = this.getDefaultState();
-                        this.history = [this.deepClone(this.state)];
+                        this.history = [{ state: this.deepClone(this.state), description: '恢复默认' }];
                         this.historyIndex = 0;
                         this.updateUndoRedoButtons();
                         this.renderAll(true);
@@ -4048,6 +4490,7 @@ Monitor of this License or out of the use or inability to use the
                     
                     button.textContent = isLocked ? '预览中' : '编辑中';
                     button.title = isLocked ? '预览模式 (点击切换为编辑模式)' : '编辑模式 (点击切换为预览模式)';
+                    this.renderMobileEditPencils();
                     
                     const shouldDisable = isLocked;
                     
@@ -4083,7 +4526,7 @@ Monitor of this License or out of the use or inability to use the
                     if(!textInput) return;
                     const text = textInput.value.trim();
                     if (!text) return;
-                    this.pushHistory();
+                    this.pushHistory('添加标签');
                     if(!this.state.personalInfo.tags) this.state.personalInfo.tags = [];
                     this.state.personalInfo.tags.push({ id: this.generateId('t'), icon: null, text });
                     this.debouncedSaveToLocal();
@@ -4093,15 +4536,15 @@ Monitor of this License or out of the use or inability to use the
                     textInput.focus();
                 },
                 deleteTag(tagId) {
-                    this.pushHistory();
+                    this.pushHistory('删除标签');
                     this.state.personalInfo.tags = this.state.personalInfo.tags.filter(t => t.id !== tagId);
                     this.debouncedSaveToLocal();
                     this.renderPersonalInfo();
                     this.renderTagManager();
                 },
-                updateTag(tagId, key, value, pushHistory) {
+                updateTag(tagId, key, value, pushHistory, historyDescription) {
                     const tagIndex = this.state.personalInfo.tags.findIndex(t => t.id === tagId);
-                    if (tagIndex > -1) this.updateState(`personalInfo.tags.${tagIndex}.${key}`, value, pushHistory);
+                    if (tagIndex > -1) this.updateState(`personalInfo.tags.${tagIndex}.${key}`, value, pushHistory, historyDescription);
                 },
 
                 initIconPicker() {
@@ -4180,11 +4623,11 @@ Monitor of this License or out of the use or inability to use the
                     if (this.currentIconTarget) {
                         const { type, id, cardId } = this.currentIconTarget;
                         if (type === 'card') {
-                            this.updateCard(id, cardId, 'icon', iconClass, true);
+                            this.updateCard(id, cardId, 'icon', iconClass, true, '更改卡片图标');
                         } else if (type === 'tag') {
-                            this.updateTag(id, 'icon', iconClass, true);
+                            this.updateTag(id, 'icon', iconClass, true, '更改标签图标');
                         } else if (type === 'separator') {
-                            this.updateBlockSettings(id, 'icon', iconClass, true);
+                            this.updateBlockSettings(id, 'icon', iconClass, true, '更改分隔线图标');
                         }
                     }
                     this.hideIconPicker();
@@ -4201,7 +4644,7 @@ Monitor of this License or out of the use or inability to use the
                     }
                     try {
                         const dataUrl = await this.readFileAsDataURL(file);
-                        this.pushHistory();
+                        this.pushHistory(`上传图标 ${file.name}`);
                         if (!this.state.customIcons) this.state.customIcons = [];
                         this.state.customIcons.push({ name: file.name, dataUrl: dataUrl });
                         this.debouncedSaveToLocal();
@@ -4216,7 +4659,7 @@ Monitor of this License or out of the use or inability to use the
                 deleteCustomIcon(iconName) {
                     this.showConfirm('删除自定义图标', `确定要删除自定义图标 "${iconName}" 吗？`).then(confirmed => {
                         if (confirmed) {
-                            this.pushHistory();
+                            this.pushHistory(`删除图标 ${iconName}`);
                             this.state.customIcons = this.state.customIcons.filter(icon => icon.name !== iconName);
                             this.debouncedSaveToLocal();
                             this.renderIconGrid(this.elements.iconSearch.value);
@@ -4236,7 +4679,7 @@ Monitor of this License or out of the use or inability to use the
                     }).join('');
                 },
                 selectTexture(textureName) {
-                    this.updateState('pageStyles.pageBgPattern', textureName, true);
+                    this.updateState('pageStyles.pageBgPattern', textureName, true, '选择背景纹理');
                     const currentTextureName = this.elements.inspectorPanel.querySelector('#current-texture-name');
                     if (currentTextureName) currentTextureName.textContent = textureName || '无';
                     this.elements.texturePickerModal.classList.remove('visible');
@@ -4267,24 +4710,41 @@ Monitor of this License or out of the use or inability to use the
                 
                 analyzeColorsFromImage(dataUrl) {
                     const img = new Image();
+                    img.crossOrigin = "Anonymous";
+
                     img.onload = () => {
-                        try {
-                            const palette = this.colorThief.getPalette(img, 8);
-                            this.lastPalette = palette;
-                            this.renderPalette(palette);
-                            this.showToast('颜色提取成功！', 'success');
-                        } catch(e) {
-                            this.showErrorModal('颜色提取失败', e.message);
-                        } finally {
-                            this.hideLoading();
-                        }
+                        setTimeout(() => {
+                            try {
+                                if (img.naturalWidth === 0 || img.naturalHeight === 0) {
+                                    throw new Error("图片加载后尺寸为0，可能已损坏。");
+                                }
+                                const palette = this.colorThief.getPalette(img, 10);
+
+                                if (!palette || palette.length === 0) {
+                                    throw new Error("Color-Thief未能成功提取调色板。");
+                                }
+
+                                this.lastPalette = palette;
+                                this.renderPalette(palette);
+                                this.showToast('颜色提取成功！', 'success');
+
+                            } catch (e) {
+                                console.error("Color-Thief error:", e);
+                                this.showErrorModal('颜色提取失败', `无法从图片中提取有效颜色。请尝试另一张图片。(${e.message})`);
+                            } finally {
+                                this.hideLoading();
+                            }
+                        }, 100); 
                     };
+
                     img.onerror = () => {
-                        this.showErrorModal('图片加载失败', '无法从该图片提取颜色。');
+                        this.showErrorModal('图片加载失败', '无法从该图片提取颜色，请检查图片文件。');
                         this.hideLoading();
                     };
+
                     img.src = dataUrl;
                 },
+
                 renderPalette(palette) {
                     const container = document.getElementById('color-thief-palette');
                     if (!container) return;
@@ -4372,7 +4832,7 @@ Monitor of this License or out of the use or inability to use the
                     };
 
                     if (actionMap[action]) {
-                        this.updateState(actionMap[action], color, true);
+                        this.updateState(actionMap[action], color, true, '通过取色器应用颜色');
                         this.showToast('颜色已应用', 'info');
 
                         if (action.includes('gradient')) {
@@ -4417,9 +4877,7 @@ Monitor of this License or out of the use or inability to use the
                      return (...args) => { clearTimeout(timeout); timeout = setTimeout(() => func.apply(this, args), wait); }; 
                 },
                 generateId(p){ return `${p}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}` },
-                // BUGFIX: New function
                 postRenderAsyncUpdates(container) {
-                    // 1. Update image block images
                     container.querySelectorAll('figure[data-card-id]').forEach(figure => {
                         const img = figure.querySelector('img');
                         if (!img) return;
@@ -4450,7 +4908,6 @@ Monitor of this License or out of the use or inability to use the
                         }
                     });
 
-                    // 2. Update text card background images
                     container.querySelectorAll('.preview-card[data-card-id]').forEach(cardEl => {
                         const cardId = cardEl.dataset.cardId;
                         const blockWrapper = cardEl.closest('.preview-block-wrapper');
@@ -4469,7 +4926,7 @@ Monitor of this License or out of the use or inability to use the
                 sleep(ms){ return new Promise(resolve => setTimeout(resolve, ms)) },
 
                 async addBlock(type, sourceBlock = null) {
-                    this.pushHistory();
+                    this.pushHistory(sourceBlock ? '复制区块' : '添加新区块');
                     let newBlock;
                     
                     if (sourceBlock) {
@@ -4505,8 +4962,9 @@ Monitor of this License or out of the use or inability to use the
                     if (sourceBlock) this.showToast('样式已复制', 'success');
                 },
                 async deleteBlock(blockId) {
-                    if (await this.showConfirm('删除区块', '确定要删除这个区块吗？')) {
-                        this.pushHistory();
+                    const blockTitle = this.findBlock(blockId)?.title || '';
+                    if (await this.showConfirm('删除区块', `确定要删除区块 "${blockTitle}" 吗？`)) {
+                        this.pushHistory(`删除区块 "${blockTitle}"`);
                         this.destroyMasonryForBlock(blockId);
                         this.state.blocks = this.state.blocks.filter(b => b.id !== blockId);
                         this.debouncedSaveToLocal();
@@ -4525,7 +4983,7 @@ Monitor of this License or out of the use or inability to use the
                     const blockIndex = this.findBlockIndex(blockId);
                     if (blockIndex > -1) {
                         const currentVisibility = this.state.blocks[blockIndex].isVisible;
-                        this.updateState(`blocks.${blockIndex}.isVisible`, currentVisibility === false ? true : false, true);
+                        this.updateState(`blocks.${blockIndex}.isVisible`, currentVisibility === false ? true : false, true, '切换区块可见性');
                     }
                 },
 
@@ -4535,7 +4993,9 @@ Monitor of this License or out of the use or inability to use the
                         const currentExpansion = this.state.blocks[blockIndex].isExpanded;
                         const newExpansion = forceOpen === null ? !currentExpansion : forceOpen;
                         if (currentExpansion !== newExpansion) {
-                           this.updateState(`blocks.${blockIndex}.isExpanded`, newExpansion, false);
+                           // This is a UI-only state, no need to push history
+                           this.state.blocks[blockIndex].isExpanded = newExpansion;
+                           this.renderLayerPanel();
                         }
                     }
                 },
@@ -4551,7 +5011,7 @@ Monitor of this License or out of the use or inability to use the
                     if (await this.showConfirm('激活调试模式', '此操作将随机化当前所有设置并替换内容，此过程不可撤销。是否继续？')) {
                         this.showLoading('正在生成随机数据...');
                         this.state = this.generateRandomState();
-                        this.history = [this.deepClone(this.state)];
+                        this.history = [{ state: this.deepClone(this.state), description: '调试模式' }];
                         this.historyIndex = 0;
                         this.setSelection({type: 'global'});
                         this.renderAll(true);
@@ -4615,7 +5075,7 @@ Monitor of this License or out of the use or inability to use the
                 // --- IndexedDB & Migration ---
                 initDB() {
                     return new Promise((resolve, reject) => {
-                        const request = indexedDB.open('BlokkoDB', 2); // DB Version 2 for new stores
+                        const request = indexedDB.open('BlokkoDB', 2);
                         request.onupgradeneeded = event => {
                             const db = event.target.result;
                             if (!db.objectStoreNames.contains('fonts')) {
@@ -4773,10 +5233,11 @@ Monitor of this License or out of the use or inability to use the
                 async deleteFont(fontFamily) {
                     if (await this.showConfirm('删除字体', `确定要删除字体 "${fontFamily}" 吗？此操作不可撤销。`)) {
                         try {
+                            this.pushHistory(`删除字体 ${fontFamily}`);
                             await this.deleteFontFromDB(fontFamily);
                             this.uploadedFonts = this.uploadedFonts.filter(f => f.family !== fontFamily);
                             if (this.state.globalCardStyles.fontFamily === fontFamily) {
-                                this.updateState('globalCardStyles.fontFamily', '', true);
+                                this.updateState('globalCardStyles.fontFamily', '', false);
                             }
                             this.populateFontList();
                             this.showFontManager();
@@ -4808,6 +5269,22 @@ Monitor of this License or out of the use or inability to use the
                         }
                     });
                     return tempDiv.innerHTML;
+                },
+
+                renderMobileEditPencils() {
+                    // Remove existing pencils
+                    this.elements.previewWrapper.querySelectorAll('.mobile-edit-pencil').forEach(p => p.remove());
+
+                    const isLocked = this.elements.previewBlocksContainer.classList.contains('locked-mode');
+                    if (isLocked) return;
+
+                    // Add new pencils
+                    this.elements.previewWrapper.querySelectorAll('[data-state-key], [data-card-key], [data-separator-text-key], .tag-pill span[data-tag-id]').forEach(el => {
+                        const pencil = document.createElement('div');
+                        pencil.className = 'mobile-edit-pencil';
+                        pencil.innerHTML = '<span class="iconify" data-icon="mdi:pencil"></span>';
+                        el.appendChild(pencil);
+                    });
                 },
             };
             App.init();
