@@ -4,8 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Blokko v1.6.3 (Internal): -->
-    <title>Blokko-个人简介生成器！ (v1.6.3)-来玩《赛博朋克：2077》吧！</title>
+    <!-- Blokko v1.6.4 (Internal): -->
+    <title>Blokko-个人简介生成器！ (v1.6.4)-来玩《赛博朋克：2077》吧！</title>
 
     <!-- 性能优化: 预连接到关键域名，减少后续请求的连接建立时间 -->
     <link rel="preconnect" href="https://fontsapi.zeoseven.com" crossorigin>
@@ -51,7 +51,7 @@
         /* CSS 变量 */
         :root {
             --bg-editor: #ffffff;
-            --bg-preview-pane: #f0f2f5;
+            --bg-preview-pane: #d1d3d6;
             --bg-preview-page: #ffffff;
             --bg-card: #ffffff;
             --bg-input: #f9f9f9;
@@ -92,7 +92,8 @@
             --g-card-text-align: left;
             --g-card-line-height: 1.5;
             --g-card-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            --g-card-font-size: 1rem;
+            --g-card-title-font-size: 1.1em;
+            --g-card-content-font-size: 0.95em;
             --g-card-text-stroke: 0px transparent;
             --g-card-border: 1px solid transparent;
             /* 活动卡片样式变量 (用于预览) */
@@ -100,7 +101,6 @@
             --active-card-border: var(--g-card-border);
             --active-card-text-shadow: none;
             --active-card-font-family: var(--g-card-font-family);
-            --active-card-font-size: var(--g-card-font-size);
         }
 
         html.dark-mode {
@@ -321,12 +321,17 @@
             padding: 8px 10px;
             border-radius: 6px;
             cursor: pointer;
-            border: 1px solid transparent;
             transition: background-color var(--transition-short), border-color var(--transition-short);
+            /* --- UI IMPROVEMENT: Differentiate Layer Items --- */
+            background-color: var(--bg-section);
+            border: 1px solid var(--border-color);
+            margin-bottom: 4px;
         }
 
         .layer-list .layer-item:hover {
             background-color: var(--bg-input);
+            border-color: var(--text-secondary);
+            /* Add border highlight on hover */
         }
 
         .layer-list .layer-item.selected {
@@ -478,6 +483,7 @@
         }
 
         /* FIX: Hide pencil on export */
+
         .preview-wrapper {
             width: 100%;
             max-width: 600px;
@@ -490,7 +496,19 @@
             position: relative;
             overflow: hidden;
             font-family: var(--active-card-font-family);
-            font-size: var(--active-card-font-size);
+        }
+
+        /* NEW: Mobile Export Preview Mode */
+        body.mobile-export-preview-mode .preview-panel {
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        body.mobile-export-preview-mode .preview-wrapper {
+            width: 375px !important;
+            margin: 0 auto;
+            transform: scale(0.9);
+            transform-origin: top center;
         }
 
         .preview-wrapper::before {
@@ -672,7 +690,7 @@
             display: inline-flex;
         }
 
-        /* 关键修复：确保非激活的标签页内容即使是高级选项，也保持隐藏 */
+        /* 确保非激活的标签页内容即使是高级选项，也保持隐藏 */
         .tab-content.advanced-setting:not(.active) {
             display: none !important;
         }
@@ -1436,7 +1454,7 @@
         }
 
         .preview-card-title {
-            font-size: 1.1em;
+            font-size: var(--g-card-title-font-size);
             font-weight: inherit;
             margin-bottom: 8px;
             display: flex;
@@ -1452,7 +1470,7 @@
         }
 
         .preview-card-content {
-            font-size: 0.95em;
+            font-size: var(--g-card-content-font-size);
             line-height: inherit;
             white-space: pre-wrap;
         }
@@ -1473,6 +1491,9 @@
             display: flex;
             flex-direction: column;
             transition: transform 0.3s ease;
+            /* Ensure proper stacking context for masonry */
+            vertical-align: top;
+            display: inline-block;
         }
 
         .preview-cards-container figure img {
@@ -2463,11 +2484,10 @@
             }
         }
 
-        /* --- START: 移动端裁剪器布局响应式修复 --- */
         @media (max-width: 768px) {
             /* 当屏幕宽度小于等于 768px 时生效 (适用于平板和手机) */
 
-            /* 1. 减小主容器的左右内边距和元素间距，节省空间 */
+            /* 减小主容器的左右内边距和元素间距，节省空间 */
             #cropper-modal .modal-container {
                 padding: 15px;
             }
@@ -2477,27 +2497,25 @@
                 /* 从 20px 减小到 10px */
             }
 
-            /* 2. 让裁剪区占据更多比例空间 */
+            /* 让裁剪区占据更多比例空间 */
             .cropper-img-container {
                 flex: 4;
                 /* 从 3 增加到 4，使其更优先占据空间 */
             }
 
-            /* 3. 核心修复：大幅减小侧边栏预览区的最小宽度 */
+            /* 大幅减小侧边栏预览区的最小宽度 */
             .cropper-sidebar {
                 flex: 1;
                 min-width: 120px;
                 /* 从 180px 减小到 120px，这是最重要的改动 */
             }
 
-            /* 4. 优化滤镜控制区的布局，在更小的屏幕上自动换行 */
+            /* 优化滤镜控制区的布局，在更小的屏幕上自动换行 */
             #filter-sliders-grid {
                 /* 当空间不足时，自动从两列变为一列 */
                 grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
             }
         }
-
-        /* --- END: 移动端裁剪器布局响应式修复 --- */
     </style>
 </head>
 
@@ -2509,7 +2527,7 @@
     <header class="app-header">
         <button id="mobile-layer-toggle" class="btn btn-default btn-icon" style="width: auto; padding: 6px 12px;"><span
                 class="iconify" data-icon="mdi:layers-outline"></span> 内容</button>
-        <div class="app-header-title">Blokko (v1.6.3)</div>
+        <div class="app-header-title">Blokko (v1.6.4)</div>
         <div class="header-actions-wrapper">
             <button id="lock-mode-toggle" class="btn btn-default" style="width: auto; padding: 6px 12px;"
                 title="切换编辑/预览模式">编辑中</button>
@@ -3197,16 +3215,15 @@ Monitor of this License or out of the use or inability to use the
                 </div>
             </div>
             <div id="help-changelog" class="tab-content">
-                <h4>v1.6.3 更新日志</h4>
+                <h4>v1.6.4 更新日志</h4>
                 <ul>
-                    <li><strong>【新增】名片布局:</strong> 在“全局样式” ->
-                        “页面与头部样式”中，新增了“个人信息布局”切换选项。现在您可以在默认的居中布局和全新的“名片”式（左侧头像、右侧信息）布局之间自由选择，。</li>
-                    <li><strong>【新增】图片滤镜:</strong>
-                        在图片裁剪窗口中，集成了强大的图片调整功能！现在您可以在裁剪图片的同时，实时调节饱和度、对比度、亮度、灰度、复古和模糊效果（我终于修好啦哈哈哈哈哈哈），一步完成图片美化。</li>
-                    <li><strong>【新增】信息显隐:</strong>
-                        在“个人信息”设置面板中，增加了“显示个人信息区域”的开关。如果您想制作一张不包含个人信息的纯内容图，现在可以一键隐藏整个头部区域，同时也可以通过内容图层区域关闭。
+                    <li><strong>【新增】增强的文本样式：</strong>在全局和独立卡片中，新增了对“标题颜色”、“标题字号”和“正文字号”的精细控制。</li>
+                    <li><strong>【新增】手机端优化导出：</strong>在导出面板增加了“优化手机端导出”选项，勾选后在电脑端可预览并导出一张固定手机宽度的窄图；在手机端则以当前屏幕宽度进行导出，实现所见即所得。
                     </li>
-                    <li><strong>【修复】</strong>修正了设置了独立背景图的卡片无法正确响应“全局卡片样式”中透明度调节的问题。</li>
+                    <li><strong>【修复】</strong>修复了当卡片透明度为0时，正文的对齐方式（居中/居右）会失效并强制回到居左的布局BUG。</li>
+                    <li><strong>【修复】</strong>修复了图片区块启用“瀑布流”布局时，由于图片未加载完成就进行计算导致的元素重叠BUG。</li>
+                    <li><strong>【优化】</strong>左侧“内容图层”面板的图层项增加了独立的背景色和边框，视觉上与面板背景区分开，体验更佳。</li>
+                    <li><strong>【优化】</strong>实现了部分外部JS库（如图片裁剪、导出、瀑布流等）的按需加载，大幅提升了页面的首次打开速度。</li>
                 </ul>
             </div>
             <div id="help-about" class="tab-content">
@@ -3234,8 +3251,8 @@ Monitor of this License or out of the use or inability to use the
         <div class="modal-container">
             <h3>选择图标</h3>
             <div class="form-group">
-                <input type="text" id="icon-search" placeholder="搜索图标 (例如: bilibili, music, home, user)..."
-                    class="form-control">
+                <input type="text" id="icon-search"
+                    placeholder="搜索图标 (请输入英文/拼音，例如: bilibili, xiaohongshu, home, user)..." class="form-control">
             </div>
             <div id="icon-grid"></div>
             <div class="modal-actions">
@@ -3288,18 +3305,15 @@ Monitor of this License or out of the use or inability to use the
             <li data-action="apply-gcard-bg-gradient-start">&rarr; 全局卡片渐变 (起始色)</li>
             <li data-action="apply-gcard-bg-gradient-end">&rarr; 全局卡片渐变 (结束色)</li>
             <li data-action="apply-gcard-text">应用到全局卡片文字色</li>
+            <li data-action="apply-gcard-title-text">应用到全局卡片标题色</li>
         </ul>
     </div>
 
-    <!-- CDN 优化: 更换为对中国大陆友好的 BootCDN -->
-    <script src="https://cdn.bootcdn.net/ajax/libs/color-thief/2.3.2/color-thief.umd.min.js" defer></script>
-    <script src="https://cdn.bootcdn.net/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
-    <script src="https://cdn.bootcdn.net/ajax/libs/cropperjs/1.6.1/cropper.min.js" defer></script>
-    <script src="https://cdn.bootcdn.net/ajax/libs/Sortable/1.15.2/Sortable.min.js" defer></script>
-    <script src="https://cdn.bootcdn.net/ajax/libs/masonry/4.2.2/masonry.pkgd.min.js" defer></script>
-    <script src="https://code.iconify.design/3/3.1.1/iconify.min.js" defer></script>
-    <script src="https://cdn.bootcdn.net/ajax/libs/jszip/3.10.1/jszip.min.js" defer></script>
+    <!-- 核心库: 建议保留初始加载 -->
+    <script src="https://cdn.bootcdn.net/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
+    <script src="https://code.iconify.design/3/3.1.1/iconify.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/quill/2.0.2/quill.min.js"></script>
+    <!-- 其他库将按需加载 -->
 
 
     <script>
@@ -3529,8 +3543,7 @@ Monitor of this License or out of the use or inability to use the
                  * @description 应用初始化入口函数。
                  */
                 init() {
-                    console.log("Blokko 初始化 v1.6.3 ...");
-                    // 注意：根据用户要求，此处不添加 showLoading/hideLoading 和延迟初始化逻辑。
+                    console.log("Blokko 初始化 v1.6.4 ...");
 
                     this.elements = this.queryElements();
                     this.presets = this.getPresets();
@@ -3558,7 +3571,7 @@ Monitor of this License or out of the use or inability to use the
                         this.setSelection({ type: 'global' });
                         this.updateUndoRedoButtons();
 
-                        const currentVersion = '1.6.3';
+                        const currentVersion = '1.6.4';
                         const lastVisitedVersion = localStorage.getItem('blokkoLastVersion');
                         const hasSeenTutorial = localStorage.getItem('blokkoHasSeenTutorial');
 
@@ -3579,9 +3592,6 @@ Monitor of this License or out of the use or inability to use the
                             localStorage.setItem('blokkoLastVersion', currentVersion);
                         }
 
-                        if (window.ColorThief) {
-                            this.colorThief = new ColorThief();
-                        }
                     }).catch(err => {
                         console.error("数据库初始化失败:", err);
                         this.showFatalErrorModal('初始化失败', '无法初始化本地数据库，这可能是由于浏览器缓存损坏。您可以尝试重置应用来解决此问题。', err);
@@ -3590,7 +3600,6 @@ Monitor of this License or out of the use or inability to use the
 
                 /**
                  * @description 获取应用的默认初始状态。
-                 * @returns {object} - 默认状态对象。
                  */
                 getDefaultState() {
                     const lightTheme = this.getPresets().light;
@@ -3608,7 +3617,7 @@ Monitor of this License or out of the use or inability to use the
                             avatarOffsetX: 0,
                             tags: [
                                 { id: this.generateId('t'), icon: 'mdi:palette', text: '设计师' },
-                                { id: this.generateId('t'), icon: 'mdi:github', text: '代码爱好者' }
+                                { id: this.generateId('t'), icon: 'mdi:github', text: '可以放社交账号' }
                             ],
                             tagBgColor: lightTheme.pTagBgColor, tagTextColor: lightTheme.pTagTextColor
                         },
@@ -3628,13 +3637,13 @@ Monitor of this License or out of the use or inability to use the
                         blocks: [
                             {
                                 id: this.generateId('b'), type: 'text', title: "单排卡片区块", isVisible: true, isExpanded: false, settings: { layout: 'single', masonryEnabled: false }, cards: [
-                                    { id: this.generateId('c'), icon: '', title: "这是单排卡片", content: "双击这里进行编辑，现在支持<b>富文本</b>了哦！", opacity: 1.0, followGlobalOpacity: true, textShadowEnabled: false }
+                                    { id: this.generateId('c'), icon: '', title: "这是单排卡片", content: "双击这里或手机端点击铅笔进行编辑，现在支持<b>富文本</b>了哦！", opacity: 1.0, followGlobalOpacity: true, textShadowEnabled: false, titleColor: null, titleFontSize: null, contentFontSize: null }
                                 ]
                             },
                             {
                                 id: this.generateId('b'), type: 'text', title: "双排卡片区块", isVisible: true, isExpanded: false, settings: { layout: 'dual', masonryEnabled: false }, cards: [
-                                    { id: this.generateId('c'), icon: '', title: "这是双排卡片 1", content: "双击这里进行编辑", opacity: 1.0, followGlobalOpacity: true, textShadowEnabled: false },
-                                    { id: this.generateId('c'), icon: '', title: "这是双排卡片 2", content: "双击这里进行编辑", opacity: 1.0, followGlobalOpacity: true, textShadowEnabled: false }
+                                    { id: this.generateId('c'), icon: '', title: "这是双排卡片 1", content: "C端可以用ctrl+Z/Y/B/I分别实现撤回/重做/字体粗体/斜体功能哦！", opacity: 1.0, followGlobalOpacity: true, textShadowEnabled: false, titleColor: null, titleFontSize: null, contentFontSize: null },
+                                    { id: this.generateId('c'), icon: '', title: "这是双排卡片 2", content: "双击这里进行编辑", opacity: 1.0, followGlobalOpacity: true, textShadowEnabled: false, titleColor: null, titleFontSize: null, contentFontSize: null }
                                 ]
                             },
                             { id: this.generateId('b'), type: 'separator', title: "分割线", isVisible: true, isExpanded: false, settings: { style: 'solid', color: '#dddddd', thickness: 1, margin: 20, text: '', icon: null, textColor: '#555555' } },
@@ -3647,7 +3656,10 @@ Monitor of this License or out of the use or inability to use the
                             bgGradientStart: lightTheme.gCardBgGradientStart, bgGradientEnd: lightTheme.gCardBgGradientEnd,
                             bgGradientAngle: 135,
                             radius: 12, textAlign: "left", lineHeight: "1.5",
-                            fontFamily: "", fontSize: "1rem",
+                            fontFamily: "",
+                            titleColor: null, // NEW
+                            titleFontSize: "1.1em", // NEW
+                            contentFontSize: "0.95em", // NEW
                             textStrokeWidth: 0, textStrokeColor: "#000000",
                             borderWidth: 0, borderStyle: 'none', borderColor: '#cccccc',
                         }
@@ -3989,7 +4001,7 @@ Monitor of this License or out of the use or inability to use the
                             return;
                         }
                         const activeEl = document.activeElement;
-                        if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA')) {
+                        if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.isContentEditable)) {
                             return;
                         }
                         const isModifierPressed = e.ctrlKey || e.metaKey;
@@ -4153,19 +4165,34 @@ Monitor of this License or out of the use or inability to use the
                         }
 
                         // 处理导出选项的联动
-                        if (target.matches('#hd-export-toggle, #custom-width-toggle, #custom-width-input, #export-rounded-corners-toggle, #export-corner-radius-input')) {
+                        if (target.matches('#hd-export-toggle, #custom-width-toggle, #custom-width-input, #export-rounded-corners-toggle, #export-corner-radius-input, #mobile-export-toggle')) {
+                            // NEW: Mobile Export Logic
+                            const mobileExportToggle = panel.querySelector('#mobile-export-toggle');
                             const customWidthToggle = panel.querySelector('#custom-width-toggle');
                             const customWidthInput = panel.querySelector('#custom-width-input');
                             const hdExportToggle = panel.querySelector('#hd-export-toggle');
 
-                            if (target.id === 'custom-width-toggle') {
+                            if (target.id === 'mobile-export-toggle') {
+                                this.elements.body.classList.toggle('mobile-export-preview-mode', target.checked);
+                                if (target.checked) {
+                                    hdExportToggle.checked = false;
+                                    customWidthToggle.checked = false;
+                                    customWidthInput.disabled = true;
+                                }
+                            } else if (target.id === 'custom-width-toggle') {
                                 customWidthInput.disabled = !target.checked;
-                                if (target.checked) hdExportToggle.checked = false;
-                            }
-
-                            if (target.id === 'hd-export-toggle' && target.checked) {
-                                customWidthToggle.checked = false;
-                                customWidthInput.disabled = true;
+                                if (target.checked) {
+                                    hdExportToggle.checked = false;
+                                    mobileExportToggle.checked = false;
+                                    this.elements.body.classList.remove('mobile-export-preview-mode');
+                                }
+                            } else if (target.id === 'hd-export-toggle') {
+                                if (target.checked) {
+                                    customWidthToggle.checked = false;
+                                    customWidthInput.disabled = true;
+                                    mobileExportToggle.checked = false;
+                                    this.elements.body.classList.remove('mobile-export-preview-mode');
+                                }
                             }
 
                             if (target.id === 'export-rounded-corners-toggle') {
@@ -4409,7 +4436,7 @@ Monitor of this License or out of the use or inability to use the
                             if (tooltip) {
                                 tooltip.style.opacity = '0';
                                 setTimeout(() => {
-                                    if (tooltip) tooltip.remove();
+                                    if (tooltip && tooltip.style.opacity === '0') tooltip.remove();
                                 }, 200);
                             }
                         }
@@ -4960,7 +4987,6 @@ Monitor of this License or out of the use or inability to use the
                     }
                 },
 
-                // 以下 `create...HTML` 系列函数负责生成不同部分的检查器HTML字符串，代码较长，此处省略注释。
                 createGlobalInspectorHTML() {
                     const backBtn = this.selection.type !== 'global' ? `<button class="back-to-global-btn">← 返回全局</button>` : '';
                     const headerBorderRadiusHTML = `
@@ -5036,15 +5062,22 @@ Monitor of this License or out of the use or inability to use the
                                         <label class="checkbox-group advanced-toggle-label"><input type="checkbox" class="advanced-toggle"> 高级</label>
                                     </div>
                                     <div class="tabs"><button class="tab-btn" data-tab="card-bg-solid">纯色</button><button class="tab-btn advanced-setting" data-tab="card-bg-gradient">渐变</button></div>
-                                    <div id="card-bg-solid" class="tab-content"><div class="color-control-row"><div class="color-control-group"><label>背景色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.bgColor"><input type="text" class="color-hex-input" data-state-key="globalCardStyles.bgColor"></div></div><div class="color-control-group"><label>文字颜色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.textColor"><input type="text" class="color-hex-input" data-state-key="globalCardStyles.textColor"></div></div></div></div>
+                                    <div id="card-bg-solid" class="tab-content"><div class="color-control-row"><div class="color-control-group"><label>背景色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.bgColor"><input type="text" class="color-hex-input" data-state-key="globalCardStyles.bgColor"></div></div><div class="color-control-group"><label>不透明度:</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-state-key="globalCardStyles.opacity" min="0" max="1" step="0.05"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div></div></div>
                                     <div id="card-bg-gradient" class="tab-content advanced-setting"><div class="gradient-controls"><div class="form-group"><label>起始颜色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.bgGradientStart"><input type="text" class="color-hex-input" data-state-key="globalCardStyles.bgGradientStart"></div></div><div class="form-group"><label>结束颜色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.bgGradientEnd"><input type="text" class="color-hex-input" data-state-key="globalCardStyles.bgGradientEnd"></div></div><div class="gradient-angle-control form-group"><label>角度 (<span class="angle-value">135</span>°):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-state-key="globalCardStyles.bgGradientAngle" min="0" max="360" step="1"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div></div></div>
-                                    <div class="form-group"><label>不透明度:</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-state-key="globalCardStyles.opacity" min="0" max="1" step="0.05"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div>
                                     <div class="form-group advanced-setting"><label>圆角 (px): <span id="gCardRadiusValue">12</span></label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-state-key="globalCardStyles.radius" min="0" max="40" step="1"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div>
                                     <div class="advanced-setting"><hr class="separator"><label>卡片边框:<span class="tooltip-trigger" data-tooltip="边框在编辑器预览区可能显示不完美（如产生缝隙），但在最终导出的图片中是正常的。"><span class="iconify" data-icon="mdi:help-circle-outline"></span></span></label><div class="form-group inset-controls"><div class="form-group"><label>样式:</label><select data-state-key="globalCardStyles.borderStyle"><option value="none">无</option><option value="solid">实线</option><option value="dashed">虚线</option><option value="dotted">点状</option><option value="double">双实线</option></select></div><div class="color-control-row"><div class="color-control-group"><label>粗细(px):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-state-key="globalCardStyles.borderWidth" min="0" max="10" step="1"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div><div class="color-control-group"><label>颜色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.borderColor"><input type="text" class="color-hex-input" data-state-key="globalCardStyles.borderColor"></div></div></div></div></div>
-                                    <hr class="separator"><div class="form-group"><label>对齐:</label><div class="radio-group"><label><input type="radio" name="gCardAlign" value="left" data-state-key="globalCardStyles.textAlign">居左</label><label><input type="radio" name="gCardAlign" value="center" data-state-key="globalCardStyles.textAlign">居中</label><label><input type="radio" name="gCardAlign" value="right" data-state-key="globalCardStyles.textAlign">居右</label></div></div>
+                                    <hr class="separator">
+                                    <div class="color-control-row">
+                                      <div class="color-control-group"><label>标题颜色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.titleColor"><input type="text" class="color-hex-input" data-state-key="globalCardStyles.titleColor" placeholder="同正文色"></div></div>
+                                      <div class="color-control-group"><label>正文颜色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.textColor"><input type="text" class="color-hex-input" data-state-key="globalCardStyles.textColor"></div></div>
+                                    </div>
+                                    <div class="form-group"><label>对齐:</label><div class="radio-group"><label><input type="radio" name="gCardAlign" value="left" data-state-key="globalCardStyles.textAlign">居左</label><label><input type="radio" name="gCardAlign" value="center" data-state-key="globalCardStyles.textAlign">居中</label><label><input type="radio" name="gCardAlign" value="right" data-state-key="globalCardStyles.textAlign">居右</label></div></div>
                                     <div class="form-group"><label>行高:</label><div class="radio-group"><label><input type="radio" name="gCardLineHeight" value="1.4" data-state-key="globalCardStyles.lineHeight">紧凑</label><label><input type="radio" name="gCardLineHeight" value="1.5" data-state-key="globalCardStyles.lineHeight">中等</label><label><input type="radio" name="gCardLineHeight" value="1.6" data-state-key="globalCardStyles.lineHeight">宽松</label></div></div>
                                     <hr class="separator"><div class="form-group"><label>字体:</label><div class="font-controls"><input type="text" id="font-search-input" placeholder="搜索本地字体..." style="margin-bottom: 5px;"><select id="font-family-select" data-state-key="globalCardStyles.fontFamily"></select><div class="buttons"><button id="load-local-fonts-btn" class="btn btn-default">加载本地</button><button id="upload-font-btn" class="btn btn-default">上传字体</button><button id="manage-fonts-btn" class="btn btn-default">管理</button></div><input type="file" id="font-upload-input" accept=".ttf,.woff,.woff2,.otf" multiple style="display: none;"></div></div>
-                                    <div class="form-group"> <label>字号:</label> <select data-state-key="globalCardStyles.fontSize"> <option value="0.9rem">小</option> <option value="1rem" selected>中 (默认)</option> <option value="1.1rem">大</option> </select> </div>
+                                    <div class="color-control-row">
+                                        <div class="color-control-group"><label>标题字号:</label><select data-state-key="globalCardStyles.titleFontSize"><option value="1em">小</option><option value="1.1em">中</option><option value="1.2em">大</option><option value="1.4em">特大</option></select></div>
+                                        <div class="color-control-group"><label>正文字号:</label><select data-state-key="globalCardStyles.contentFontSize"><option value="0.8em">特小</option><option value="0.95em">小</option><option value="1em">中</option><option value="1.1em">大</option></select></div>
+                                    </div>
                                     <div class="advanced-setting"><label>文字描边:<span class="tooltip-trigger" data-tooltip="为文字添加边框，建议宽度不超过2px，以保证可读性。"><span class="iconify" data-icon="mdi:help-circle-outline"></span></span></label><div class="color-control-row"><div class="color-control-group"><label>粗细(px):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-state-key="globalCardStyles.textStrokeWidth" min="0" max="5" step="0.5"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div><div class="color-control-group"><label>颜色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.textStrokeColor"><input type="text" class="color-hex-input" data-state-key="globalCardStyles.textStrokeColor"></div></div></div></div>
                                 </div>
                             </fieldset>
@@ -5054,6 +5087,7 @@ Monitor of this License or out of the use or inability to use the
                                     <div class="form-group" style="display: flex; gap: 10px;"> <button id="undo-btn" class="btn btn-default" disabled>撤回</button> <button id="redo-btn" class="btn btn-default" disabled>重做</button> </div>
                                     <div class="form-group" style="display: flex; gap: 10px;"> <button id="import-btn" class="btn btn-secondary">导入配置</button> <button id="show-export-modal-btn" class="btn btn-secondary">导出数据...</button> </div>
                                     <div class="form-group">
+                                        <div class="checkbox-group" style="margin-bottom: 10px;"><label><input type="checkbox" id="mobile-export-toggle"> 优化手机端导出</label></div>
                                         <div class="checkbox-group" style="margin-bottom: 10px;"><label><input type="checkbox" id="hd-export-toggle"> 超清导出 (1800px)</label></div>
                                         <div class="checkbox-group" style="margin-bottom: 10px;"><label><input type="checkbox" id="custom-width-toggle"> 自定义宽度</label><input type="number" id="custom-width-input" value="1200" style="width: 80px; padding: 4px 8px;" disabled></div>
                                         <div class="checkbox-group" style="margin-bottom: 10px;"><label><input type="checkbox" id="export-rounded-corners-toggle"> 导出为圆角图片</label><input type="number" id="export-corner-radius-input" value="20" style="width: 60px; padding: 4px 8px;" disabled></div>
@@ -5113,17 +5147,11 @@ Monitor of this License or out of the use or inability to use the
                  */
                 renderPreviewBlocks() {
                     this.elements.previewBlocksContainer.innerHTML = this.state.blocks.length ? this.state.blocks.map(b => `<div class="preview-block-wrapper ${b.isVisible === false ? 'is-hidden' : ''}" data-block-id="${b.id}">${this.createPreviewBlockHTML(b)}</div>`).join('') : '<div class="empty-placeholder">(预览区) 无区块</div>';
-                    // 异步更新图片和卡片样式
                     this.postRenderAsyncUpdates(this.elements.previewBlocksContainer);
-                    // 初始化瀑布流
-                    this.state.blocks.forEach(b => this.initMasonryForBlock(b.id));
-                    // 更新选中高亮
                     this.updateHighlights();
-                    // 渲染移动端编辑铅笔
                     this.renderMobileEditPencils();
                 },
 
-                // ... 省略 createEditorBlockHTML, createPreviewBlockHTML 等HTML生成函数，因为它们的内部逻辑没有变化 ...
                 createEditorBlockHTML(block) {
                     let content = '';
                     const backBtn = this.selection.type !== 'global' ? `<button class="back-to-global-btn">← 返回全局</button>` : '';
@@ -5198,11 +5226,13 @@ Monitor of this License or out of the use or inability to use the
                     cardEl.style.setProperty('--card-transition-name', `card-${card.id}`);
                     const iconHTML = card.icon ? `<span class="iconify" data-icon="${card.icon}"></span>` : '';
 
-                    const finalAlign = (card.textAlign === undefined || card.textAlign === null || card.textAlign === '') ? this.state.globalCardStyles.textAlign : card.textAlign;
+                    const g = this.state.globalCardStyles;
+                    const finalAlign = card.textAlign || g.textAlign;
                     const justifyContent = { left: 'flex-start', center: 'center', right: 'flex-end' }[finalAlign] || 'flex-start';
+                    const finalTitleColor = card.titleColor || g.titleColor || g.textColor;
 
                     cardEl.innerHTML = `<div class="preview-card-inner">
-                            <h3 class="preview-card-title" data-card-key="title" style="justify-content: ${justifyContent};">${iconHTML}${this.escapeHTML(card.title || '')}</h3>
+                            <h3 class="preview-card-title" data-card-key="title" style="justify-content: ${justifyContent}; color: ${finalTitleColor};">${iconHTML}${this.escapeHTML(card.title || '')}</h3>
                             <div class="preview-card-content" data-card-key="content">${this.sanitizeHTML(card.content || '')}</div>
                         </div>`;
                     return cardEl.outerHTML;
@@ -5249,14 +5279,27 @@ Monitor of this License or out of the use or inability to use the
                                 <label><input type="radio" name="card-${card.id}-align" value="center" data-card-key="textAlign" ${card.textAlign === 'center' ? 'checked' : ''}>中</label>
                                 <label><input type="radio" name="card-${card.id}-align" value="right" data-card-key="textAlign" ${card.textAlign === 'right' ? 'checked' : ''}>右</label>
                             </div></div>
-                            <hr class="separator">
-                            <div class="color-control-row">
-                                <div class="color-control-group"><label>背景色:</label><div class="input-group"><input type="color" data-card-key="bgColor" value="${card.bgColor || ''}"><input class="color-hex-input" type="text" data-card-key="bgColor" value="${card.bgColor || ''}" placeholder="${g.bgColor} (全局)"><button class="btn btn-default btn-small" data-reset-card-key="bgColor">重置</button></div></div>
-                                <div class="color-control-group"><label>文字颜色:</label><div class="input-group"><input type="color" data-card-key="textColor" value="${card.textColor || ''}"><input class="color-hex-input" type="text" data-card-key="textColor" value="${card.textColor || ''}" placeholder="${g.textColor} (全局)"><button class="btn btn-default btn-small" data-reset-card-key="textColor">重置</button></div></div>
+                             <div style="text-align: right; margin-bottom: 10px;">
+                                <label class="checkbox-group advanced-toggle-label"><input type="checkbox" class="advanced-toggle"> 高级独立样式</label>
                             </div>
-                            <hr class="separator">
-                            <div class="form-group"><label>背景图:</label><div class="input-group simple"><input type="file" class="card-bg-upload" accept="image/*"><button class="btn btn-default btn-small card-clear-bg-btn">清除</button></div></div>
-                            <div class="card-overlay-controls" style="${card.bgImageDataUrl ? '' : 'display:none;'}"><label>图片蒙版:</label><div class="color-control-row"><div class="color-control-group"><label>颜色:</label><div class="input-group"><input type="color" data-card-key="overlayColor" value="${card.overlayColor || '#ffffff'}"><input class="color-hex-input" type="text" data-card-key="overlayColor" value="${card.overlayColor || '#ffffff'}"></div></div><div class="color-control-group"><label>不透明度:</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-card-key="overlayOpacity" min="0" max="1" step="0.05" value="${card.overlayOpacity ?? 0.5}"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div></div></div>
+                            <div class="advanced-setting">
+                                <hr class="separator">
+                                <h4>独立样式</h4>
+                                <div class="color-control-row">
+                                    <div class="color-control-group"><label>背景色:</label><div class="input-group"><input type="color" data-card-key="bgColor" value="${card.bgColor || ''}"><input class="color-hex-input" type="text" data-card-key="bgColor" value="${card.bgColor || ''}" placeholder="${g.bgColor} (全局)"><button class="btn btn-default btn-small" data-reset-card-key="bgColor">重置</button></div></div>
+                                    <div class="color-control-group"><label>正文颜色:</label><div class="input-group"><input type="color" data-card-key="textColor" value="${card.textColor || ''}"><input class="color-hex-input" type="text" data-card-key="textColor" value="${card.textColor || ''}" placeholder="${g.textColor} (全局)"><button class="btn btn-default btn-small" data-reset-card-key="textColor">重置</button></div></div>
+                                </div>
+                                <div class="color-control-row" style="margin-top: 10px;">
+                                    <div class="color-control-group"><label>标题颜色:</label><div class="input-group"><input type="color" data-card-key="titleColor" value="${card.titleColor || ''}"><input class="color-hex-input" type="text" data-card-key="titleColor" value="${card.titleColor || ''}" placeholder="同正文色"><button class="btn btn-default btn-small" data-reset-card-key="titleColor">重置</button></div></div>
+                                </div>
+                                <div class="color-control-row" style="margin-top: 10px;">
+                                    <div class="color-control-group"><label>标题字号:</label><select data-card-key="titleFontSize"><option value="">默认</option><option value="1em">小</option><option value="1.1em">中</option><option value="1.2em">大</option><option value="1.4em">特大</option></select></div>
+                                    <div class="color-control-group"><label>正文字号:</label><select data-card-key="contentFontSize"><option value="">默认</option><option value="0.8em">特小</option><option value="0.95em">小</option><option value="1em">中</option><option value="1.1em">大</option></select></div>
+                                </div>
+                                <hr class="separator">
+                                <div class="form-group"><label>背景图:</label><div class="input-group simple"><input type="file" class="card-bg-upload" accept="image/*"><button class="btn btn-default btn-small card-clear-bg-btn">清除</button></div></div>
+                                <div class="card-overlay-controls" style="${card.bgImageDataUrl ? '' : 'display:none;'}"><label>图片蒙版:</label><div class="color-control-row"><div class="color-control-group"><label>颜色:</label><div class="input-group"><input type="color" data-card-key="overlayColor" value="${card.overlayColor || '#ffffff'}"><input class="color-hex-input" type="text" data-card-key="overlayColor" value="${card.overlayColor || '#ffffff'}"></div></div><div class="color-control-group"><label>不透明度:</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-card-key="overlayOpacity" min="0" max="1" step="0.05" value="${card.overlayOpacity ?? 0.5}"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div></div></div>
+                            </div>
                         </div>`;
                 },
 
@@ -5298,12 +5341,23 @@ Monitor of this License or out of the use or inability to use the
                     const innerEl = cardEl.querySelector('.preview-card-inner');
                     if (!innerEl) return;
 
-                    // --- START OF MODIFICATION ---
+                    const titleEl = cardEl.querySelector('.preview-card-title');
+                    const contentEl = cardEl.querySelector('.preview-card-content');
+                    innerEl.style.textAlign = use('textAlign', cardData.textAlign);
+                    if (titleEl) {
+                        titleEl.style.fontSize = cardData.titleFontSize ? cardData.titleFontSize : '';
+                    }
+                    if (contentEl) {
+                        contentEl.style.fontSize = cardData.contentFontSize ? cardData.contentFontSize : '';
+                    }
+
+
+                    const finalTextColor = use('textColor', cardData.textColor);
+                    const finalTitleColor = cardData.titleColor || g.titleColor || finalTextColor;
+                    if (titleEl) titleEl.style.color = finalTitleColor;
+
 
                     let finalBg;
-                    const finalTextColor = use('textColor', cardData.textColor);
-
-                    // 1. 优先使用卡片独立背景图
                     if (cardData.bgImageDataUrl) {
                         let imageUrl = cardData.bgImageDataUrl;
                         if (imageUrl.startsWith('idb://')) {
@@ -5314,45 +5368,27 @@ Monitor of this License or out of the use or inability to use the
                             } catch (e) { console.error('从数据库加载卡片背景失败:', e); }
                         }
                         finalBg = `url(${imageUrl})`;
-
-                        // 2. 其次使用卡片独立背景色
                     } else if (cardData.bgColor) {
                         finalBg = cardData.bgColor;
-
-                        // 3. 最后使用全局背景样式
                     } else {
-                        if (g.bgMode === 'gradient') {
-                            finalBg = `linear-gradient(${g.bgGradientAngle}deg, ${g.bgGradientStart}, ${g.bgGradientEnd})`;
-                        } else {
-                            finalBg = g.bgColor;
-                        }
+                        finalBg = g.bgMode === 'gradient' ? `linear-gradient(${g.bgGradientAngle}deg, ${g.bgGradientStart}, ${g.bgGradientEnd})` : g.bgColor;
                     }
 
-                    // 统一设置背景内容和透明度
                     innerEl.style.setProperty('--card-bg-final', finalBg);
                     innerEl.style.setProperty('--card-bg-opacity', finalOpacity);
 
-                    // 如果卡片完全透明，则隐藏边框和阴影
                     if (parseFloat(finalOpacity) < 0.01) {
                         innerEl.style.boxShadow = 'none';
                         innerEl.style.border = 'var(--active-card-border)';
                     } else {
                         innerEl.style.setProperty('--card-text-color', finalTextColor);
-                        innerEl.style.textAlign = use('textAlign', cardData.textAlign);
-                        innerEl.style.fontSize = cardData.fontSize || 'inherit';
-                        innerEl.style.setProperty('--card-font-weight', cardData.fontWeight || 'normal');
                         innerEl.style.setProperty('--active-card-text-shadow', 'none');
-
-                        // 应用图片遮罩层样式
-                        innerEl.style.setProperty('--card-overlay-color', cardData.overlayColor || '#FFF');
                         const overlayOpacity = cardData.bgImageDataUrl ? (cardData.overlayOpacity ?? 0.5) : 0;
+                        innerEl.style.setProperty('--card-overlay-color', cardData.overlayColor || '#FFF');
                         innerEl.style.setProperty('--card-overlay-opacity', parseFloat(overlayOpacity) > 0 ? overlayOpacity : 0);
-
                         innerEl.style.boxShadow = 'var(--active-card-shadow)';
                         innerEl.style.border = 'var(--active-card-border)';
                     }
-
-                    // --- END OF MODIFICATION ---
                 },
 
                 /**
@@ -5414,6 +5450,9 @@ Monitor of this License or out of the use or inability to use the
                         'globalCardStyles.borderColor': () => { r.setProperty('--active-card-border', gCard.borderWidth > 0 && gCard.borderStyle !== 'none' ? `${gCard.borderWidth}px ${gCard.borderStyle} ${gCard.borderColor}` : 'none'); },
                         'globalCardStyles.textStrokeWidth': () => { r.setProperty('--g-card-text-stroke', gCard.textStrokeWidth > 0 ? `${gCard.textStrokeWidth}px ${gCard.textStrokeColor}` : '0px transparent'); },
                         'globalCardStyles.textStrokeColor': () => { r.setProperty('--g-card-text-stroke', gCard.textStrokeWidth > 0 ? `${gCard.textStrokeWidth}px ${gCard.textStrokeColor}` : '0px transparent'); },
+                        'globalCardStyles.titleColor': () => { this.renderPreviewBlocks(); },
+                        'globalCardStyles.titleFontSize': () => { r.setProperty('--g-card-title-font-size', gCard.titleFontSize); },
+                        'globalCardStyles.contentFontSize': () => { r.setProperty('--g-card-content-font-size', gCard.contentFontSize); },
 
                         'personalInfo.nicknameColor': () => { this.elements.previewHeader.querySelector('#preview-nickname').style.color = info.nicknameColor; },
                         'personalInfo.subtitleColor': () => { this.elements.previewHeader.querySelector('#preview-subtitle').style.color = info.subtitleColor; },
@@ -5538,7 +5577,7 @@ Monitor of this License or out of the use or inability to use the
                     const block = this.findBlock(blockId);
                     if (!block || block.type !== 'text') return;
 
-                    const newCard = { id: this.generateId('c'), icon: '', title: `新卡片`, content: '点击编辑内容', opacity: 1.0, followGlobalOpacity: true, textShadowEnabled: false };
+                    const newCard = { id: this.generateId('c'), icon: '', title: `新卡片`, content: '点击编辑内容', opacity: 1.0, followGlobalOpacity: true, textShadowEnabled: false, titleColor: null, titleFontSize: null, contentFontSize: null };
 
                     this.pushHistory('添加卡片');
                     block.cards.push(newCard);
@@ -5608,7 +5647,7 @@ Monitor of this License or out of the use or inability to use the
                     const block = this.findBlock(blockId);
                     if (!block) return;
 
-                    // BUGFIX: 删除卡片前，先清理其可能引用的图片
+                    //  删除卡片前，先清理其可能引用的图片
                     const cardToDelete = block.cards.find(c => c.id === cardId);
                     if (cardToDelete) {
                         await this.deleteImageByUrl(cardToDelete.url);
@@ -5707,7 +5746,7 @@ Monitor of this License or out of the use or inability to use the
                         }
                     } catch (e) {
                         localStorage.removeItem('blokkoState');
-                        this.showErrorModal('加载存档失败', '您的本地存档可能已损坏，已为您加载默认模板。错误信息: ' + e.message);
+                        this.showFatalErrorModal('加载存档失败', '您的本地存档可能已损坏，已为您加载默认模板。错误信息: ' + e.message);
                         console.error("从 localStorage 加载状态失败:", e);
                     } finally {
                         await this.loadFontsFromDB();
@@ -5889,7 +5928,7 @@ Monitor of this License or out of the use or inability to use the
                     this.updateUndoRedoButtons();
                 },
                 undo() {
-                    if (document.activeElement && document.activeElement.isContentEditable) {
+                    if (document.activeElement && (document.activeElement.isContentEditable || /INPUT|TEXTAREA/.test(document.activeElement.tagName))) {
                         document.activeElement.blur();
                     }
                     if (this.historyIndex <= 0) return;
@@ -5906,7 +5945,7 @@ Monitor of this License or out of the use or inability to use the
                     this.showToast(`已撤销: ${actionDescription}`, 'info');
                 },
                 redo() {
-                    if (document.activeElement && document.activeElement.isContentEditable) {
+                    if (document.activeElement && (document.activeElement.isContentEditable || /INPUT|TEXTAREA/.test(document.activeElement.tagName))) {
                         document.activeElement.blur();
                     }
                     if (this.historyIndex >= this.history.length - 1) return;
@@ -5953,6 +5992,8 @@ Monitor of this License or out of the use or inability to use the
 
                     try {
                         if (target === 'colorThief') {
+                            await this.loadScript('https://cdn.bootcdn.net/ajax/libs/color-thief/2.3.2/color-thief.umd.min.js');
+                            this.colorThief = new ColorThief();
                             const dataUrl = await this.readFileAsDataURL(file);
                             this.analyzeColorsFromImage(dataUrl);
                             URL.revokeObjectURL(objectUrl);
@@ -6047,7 +6088,14 @@ Monitor of this License or out of the use or inability to use the
                     }
                 },
 
-                showCropper(imageSrc, target) {
+                async showCropper(imageSrc, target) {
+                    try {
+                        await this.loadScript('https://cdn.bootcdn.net/ajax/libs/cropperjs/1.6.1/cropper.min.js');
+                    } catch (error) {
+                        this.showErrorModal('加载失败', '图片裁剪功能所需组件加载失败，请检查你的网络连接。');
+                        return;
+                    }
+
                     this.currentCropTarget = target;
                     const cropperImage = this.elements.cropperImage;
                     const modal = this.elements.cropperModal;
@@ -6255,20 +6303,18 @@ Monitor of this License or out of the use or inability to use the
                     const block = this.findBlock(this.currentRichTextTarget.blockId);
                     const card = block.cards.find(c => c.id === this.currentRichTextTarget.cardId);
 
-                    // BUGFIX: 修复PC端工具栏重复出现的BUG
                     const container = this.elements.richTextEditorContainer;
                     const parent = container.parentElement; // 获取父容器 (modal-container)
 
-                    // 1. 寻找并移除旧的工具栏
+                    // 1寻找并移除旧的工具栏
                     const oldToolbar = parent.querySelector('.ql-toolbar');
                     if (oldToolbar) {
                         oldToolbar.remove();
                     }
 
-                    // 2. 清空编辑器容器并重置实例
+                    // 清空编辑器容器并重置实例
                     container.innerHTML = ''; // 使用 innerHTML = '' 更简洁
                     this.richTextEditor = null;
-                    // --- END OF FIX ---
 
                     const isMobile = window.innerWidth <= 768;
                     let quillOptions;
@@ -6630,7 +6676,9 @@ Monitor of this License or out of the use or inability to use the
                 },
 
                 async exportEnhancedPackage() {
-                    if (typeof JSZip === 'undefined') {
+                    try {
+                        await this.loadScript('https://cdn.bootcdn.net/ajax/libs/jszip/3.10.1/jszip.min.js');
+                    } catch (e) {
                         this.showErrorModal('导出失败', 'JSZip 库未能加载，请检查网络连接或刷新页面后重试。');
                         return;
                     }
@@ -6667,7 +6715,7 @@ Monitor of this License or out of the use or inability to use the
                         await processObject(stateClone);
 
                         zip.file("config.json", JSON.stringify(stateClone, null, 2));
-                        zip.file("readme.txt", `Blokko 强化导出备份\n版本: 1.6.3\n导出时间: ${new Date().toLocaleString()}\n\n此 .zip 文件包含了您的配置文件 (config.json) 和所有图片资源 (images/ 文件夹)。`);
+                        zip.file("readme.txt", `Blokko 强化导出备份\n版本: 1.6.4\n导出时间: ${new Date().toLocaleString()}\n\n此 .zip 文件包含了您的配置文件 (config.json) 和所有图片资源 (images/ 文件夹)。`);
 
                         const blob = await zip.generateAsync({ type: "blob" });
                         const filename = this.generateFilename('Enhanced-Backup') + '.zip';
@@ -6722,10 +6770,13 @@ Monitor of this License or out of the use or inability to use the
                 },
 
                 async handleZipImport(file) {
-                    if (typeof JSZip === 'undefined') {
+                    try {
+                        await this.loadScript('https://cdn.bootcdn.net/ajax/libs/jszip/3.10.1/jszip.min.js');
+                    } catch (e) {
                         this.showErrorModal('导入失败', '必需的 JSZip 库未能加载，请检查网络或刷新页面后重试。');
                         return;
                     }
+
                     this.showLoading('正在解压并导入 .zip...');
                     try {
                         const zip = await JSZip.loadAsync(file);
@@ -6760,7 +6811,7 @@ Monitor of this License or out of the use or inability to use the
                         await processObject(importedState);
 
                         this.state = this.mergeDeep(this.getDefaultState(), importedState);
-                        // BUGFIX: 导入成功后立即保存
+                        // 导入成功后立即保存
                         localStorage.setItem('blokkoState', JSON.stringify(this.state));
 
                         this.history = [{ state: this.deepClone(this.state), description: '导入ZIP配置' }];
@@ -6825,7 +6876,7 @@ Monitor of this License or out of the use or inability to use the
                             if (migrated) this.showToast('旧版图片区块已自动升级', 'info');
 
                             this.state = this.mergeDeep(this.getDefaultState(), importedState);
-                            // BUGFIX: 导入成功后立即保存
+                            //导入成功后立即保存
                             localStorage.setItem('blokkoState', JSON.stringify(this.state));
 
                             if (importedState.uploadedFonts) {
@@ -6868,28 +6919,49 @@ Monitor of this License or out of the use or inability to use the
                 },
 
                 async exportPNG() {
+                    try {
+                        this.showLoading('加载导出组件...');
+                        await this.loadScript('https://cdn.bootcdn.net/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+                    } catch (error) {
+                        this.hideLoading();
+                        this.showErrorModal('加载失败', '导出功能所需组件加载失败，请检查你的网络连接。');
+                        return;
+                    }
                     this.showLoading('正在准备导出...');
 
+                    const mobileExportToggle = this.elements.inspectorPanel.querySelector('#mobile-export-toggle');
                     const customWidthToggle = this.elements.inspectorPanel.querySelector('#custom-width-toggle');
                     const hdExportToggle = this.elements.inspectorPanel.querySelector('#hd-export-toggle');
 
+                    // 防止手机端导出模糊的核心逻辑
+
+                    const isMobileExport = mobileExportToggle.checked;
                     const isCustomWidth = customWidthToggle.checked;
                     const isHD = hdExportToggle.checked;
 
-                    let targetWidth = 1200;
-                    if (isCustomWidth) {
+                    const sourceElement = this.elements.previewWrapper;
+                    const sourceWidth = sourceElement.clientWidth; // 这是元素在屏幕上的实际宽度
+
+                    let targetWidth;
+
+                    if (isMobileExport) {
+                        // 手机模式导出：固定目标宽度为 1200px 以保证高清
+                        targetWidth = 1200;
+                    } else if (isCustomWidth) {
                         targetWidth = parseInt(this.elements.inspectorPanel.querySelector('#custom-width-input').value, 10) || 1200;
                     } else if (isHD) {
                         targetWidth = 1800;
+                    } else {
+                        // 默认导出宽度
+                        targetWidth = 1200;
                     }
 
-                    const sourceWidth = 600;
+                    // 根据目标宽度和源宽度计算精确的缩放比例
                     const scale = targetWidth / sourceWidth;
 
                     const exportRounded = this.elements.inspectorPanel.querySelector('#export-rounded-corners-toggle').checked;
                     const cornerRadius = parseInt(this.elements.inspectorPanel.querySelector('#export-corner-radius-input').value, 10) || 20;
 
-                    const originalElement = this.elements.previewWrapper;
                     let clone = null;
 
                     const wasLayerOpen = this.elements.layerPanel.classList.contains('is-open');
@@ -6902,7 +6974,7 @@ Monitor of this License or out of the use or inability to use the
                     document.body.classList.add('export-mode');
 
                     try {
-                        clone = originalElement.cloneNode(true);
+                        clone = sourceElement.cloneNode(true);
                         clone.id = `export-clone-${Date.now()}`;
 
                         const style = document.createElement('style');
@@ -6914,6 +6986,7 @@ Monitor of this License or out of the use or inability to use the
                         clone.style.top = '0px';
                         clone.style.borderRadius = '0';
                         clone.style.width = `${sourceWidth}px`;
+                        clone.style.maxWidth = 'none';
 
                         document.body.appendChild(clone);
                         await this.sleep(100);
@@ -6921,6 +6994,7 @@ Monitor of this License or out of the use or inability to use the
                         this.showLoading('正在计算瀑布流布局...');
                         const masonryBlocks = this.state.blocks.filter(b => b.settings.masonryEnabled);
                         if (masonryBlocks.length > 0) {
+                            await this.loadScript('https://cdn.bootcdn.net/ajax/libs/masonry/4.2.2/masonry.pkgd.min.js');
                             for (const block of masonryBlocks) {
                                 const containerInClone = clone.querySelector(`.preview-block-wrapper[data-block-id="${block.id}"] .preview-cards-container`);
                                 if (containerInClone) {
@@ -6940,7 +7014,7 @@ Monitor of this License or out of the use or inability to use the
                         this.showLoading('正在渲染图片...');
 
                         const canvas = await html2canvas(clone, {
-                            scale: scale,
+                            scale: scale, // 使用计算好的高清缩放比例
                             useCORS: true,
                             backgroundColor: null,
                             logging: false
@@ -6993,18 +7067,24 @@ Monitor of this License or out of the use or inability to use the
                     const el = this.elements.previewWrapper;
                     if (!el || el.clientWidth === 0) return;
 
+                    const mobileExportToggle = document.getElementById('mobile-export-toggle');
                     const customWidthToggle = document.getElementById('custom-width-toggle');
                     const hdExportToggle = document.getElementById('hd-export-toggle');
-                    if (!customWidthToggle || !hdExportToggle) return;
+                    if (!customWidthToggle || !hdExportToggle || !mobileExportToggle) return;
 
+                    const isMobileExport = mobileExportToggle.checked;
                     const isCustomWidth = customWidthToggle.checked;
                     const isHD = hdExportToggle.checked;
 
-                    let targetWidth = 1200;
-                    if (isCustomWidth) {
+                    let targetWidth;
+                    if (isMobileExport) {
+                        targetWidth = 1200;
+                    } else if (isCustomWidth) {
                         targetWidth = parseInt(document.getElementById('custom-width-input').value, 10) || 1200;
                     } else if (isHD) {
                         targetWidth = 1800;
+                    } else {
+                        targetWidth = 1200;
                     }
 
                     const originalAspectRatio = el.clientHeight / el.clientWidth;
@@ -7157,9 +7237,9 @@ Monitor of this License or out of the use or inability to use the
                     r.setProperty('--g-card-text-align', g.textAlign);
                     r.setProperty('--g-card-line-height', g.lineHeight);
                     r.setProperty('--active-card-font-family', g.fontFamily ? `'${g.fontFamily}', sans-serif` : '');
-                    r.setProperty('--active-card-font-size', g.fontSize);
+                    r.setProperty('--g-card-title-font-size', g.titleFontSize);
+                    r.setProperty('--g-card-content-font-size', g.contentFontSize);
                     r.setProperty('--g-card-text-stroke', g.textStrokeWidth > 0 ? `${g.textStrokeWidth}px ${g.textStrokeColor}` : '0px transparent');
-
                     r.setProperty('--active-card-border', g.borderWidth > 0 && g.borderStyle !== 'none' ? `${g.borderWidth}px ${g.borderStyle} ${g.borderColor}` : 'none');
                     r.setProperty('--active-card-shadow', 'none');
                 },
@@ -7280,17 +7360,43 @@ Monitor of this License or out of the use or inability to use the
                 },
 
                 // ... Masonry 瀑布流布局相关函数 ...
-                initMasonryForBlock(blockId) {
+                async initMasonryForBlock(blockId) {
                     this.destroyMasonryForBlock(blockId);
                     const block = this.findBlock(blockId);
                     if (block && (block.type === 'text' || block.type === 'image') && ['dual', 'triple'].includes(block.settings.layout) && block.settings.masonryEnabled) {
                         const previewEl = this.elements.previewBlocksContainer.querySelector(`[data-block-id="${blockId}"] .preview-cards-container`);
                         if (previewEl) {
+                            try {
+                                await this.loadScript('https://cdn.bootcdn.net/ajax/libs/masonry/4.2.2/masonry.pkgd.min.js');
+                            } catch (e) {
+                                console.error("Masonry.js load failed.", e);
+                                this.showToast("瀑布流组件加载失败，请检查网络。", "error");
+                                return;
+                            }
+                            // 修复瀑布流重叠的核心逻辑
+                            const images = Array.from(previewEl.querySelectorAll('img'));
+                            // 创建一个 Promise 数组，每个 Promise 对应一张图片的加载
+                            const imageLoadPromises = images.map(img => {
+                                // 如果图片已经加载完成（例如从缓存加载），并且有有效尺寸，则立即 resolve
+                                if (img.complete && img.naturalHeight !== 0) {
+                                    return Promise.resolve();
+                                }
+                                // 否则，返回一个新的 Promise，它会在图片加载成功或失败时 resolve
+                                return new Promise(resolve => {
+                                    img.addEventListener('load', resolve, { once: true });
+                                    img.addEventListener('error', resolve, { once: true }); // 加载失败也 resolve，避免阻塞整个布局
+                                });
+                            });
+
+                            // 等待所有图片的 Promise 都完成后，再执行瀑布流初始化
+                            await Promise.all(imageLoadPromises);
+
                             previewEl.classList.add('masonry-active');
-                            const itemSelector = block.type === 'text' ? '.preview-card' : 'figure';
+                            const itemSelector = block.type === 'image' ? 'figure' : '.preview-card';
                             this.masonryInstances[blockId] = new Masonry(previewEl, {
                                 itemSelector: itemSelector,
-                                gutter: 15
+                                gutter: 15,
+                                fitWidth: true
                             });
                         }
                     }
@@ -7302,6 +7408,13 @@ Monitor of this License or out of the use or inability to use the
                         const previewEl = this.elements.previewBlocksContainer.querySelector(`[data-block-id="${blockId}"] .preview-cards-container`);
                         if (previewEl) {
                             previewEl.classList.remove('masonry-active');
+                            // Clean up masonry styles
+                            Array.from(previewEl.children).forEach(child => {
+                                child.style.position = '';
+                                child.style.left = '';
+                                child.style.top = '';
+                                child.style.width = '';
+                            });
                         }
                     }
                 },
@@ -7416,15 +7529,8 @@ Monitor of this License or out of the use or inability to use the
                     this.elements.texturePickerModal.classList.add('visible');
                 },
                 async loadIcons() {
-                    this.showLoading('正在加载图标库...');
-                    try {
-                        await this.sleep(100);
-                        this.showToast('图标库加载完成', 'info');
-                    } catch (e) {
-                        this.showErrorModal('图标库加载失败', '无法连接到 Iconify API，请检查网络连接。');
-                    } finally {
-                        this.hideLoading();
-                    }
+                    // No need to actually load anything with Iconify's on-demand nature
+                    this.showToast('图标库已准备就绪', 'info');
                 },
                 async renderIconGrid(searchTerm = '') {
                     this.elements.iconGrid.innerHTML = `<div class="spinner" style="margin: 40px auto;"></div>`;
@@ -7688,6 +7794,7 @@ Monitor of this License or out of the use or inability to use the
                         'apply-gcard-bg-gradient-start': 'globalCardStyles.bgGradientStart',
                         'apply-gcard-bg-gradient-end': 'globalCardStyles.bgGradientEnd',
                         'apply-gcard-text': 'globalCardStyles.textColor',
+                        'apply-gcard-title-text': 'globalCardStyles.titleColor',
                     };
 
                     if (actionMap[action]) {
@@ -7738,52 +7845,74 @@ Monitor of this License or out of the use or inability to use the
                 },
                 generateId(p) { return `${p}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}` },
                 postRenderAsyncUpdates(container) {
-                    container.querySelectorAll('figure[data-card-id]').forEach(figure => {
-                        const img = figure.querySelector('img');
-                        if (!img) return;
-
-                        const cardId = figure.dataset.cardId;
-                        const blockWrapper = figure.closest('.preview-block-wrapper');
-                        if (!blockWrapper) return;
-
-                        const blockId = blockWrapper.dataset.blockId;
-                        const block = this.findBlock(blockId);
-                        const card = block?.cards.find(c => c.id === cardId);
+                    const imageLoadPromises = [];
+                    container.querySelectorAll('figure[data-card-id] img').forEach(img => {
+                        const cardId = img.closest('figure').dataset.cardId;
+                        const blockId = img.closest('.preview-block-wrapper').dataset.blockId;
+                        const card = this.findBlock(blockId)?.cards.find(c => c.id === cardId);
 
                         if (card && card.url) {
-                            const setImageSrc = async (url) => {
-                                if (url && url.startsWith('idb://')) {
+                            const promise = new Promise(async (resolve) => {
+                                img.addEventListener('load', resolve, { once: true });
+                                img.addEventListener('error', resolve, { once: true }); // 失败也 resolve
+
+                                let srcToSet = card.url;
+                                if (card.url.startsWith('idb://')) {
                                     try {
-                                        const imageId = url.substring(6);
-                                        const imageRecord = await this.getImageFromDB(imageId);
-                                        if (imageRecord && imageRecord.blob) {
-                                            img.src = URL.createObjectURL(imageRecord.blob);
-                                        }
-                                    } catch (e) { console.error('从数据库加载图片卡片失败:', e); }
-                                } else {
-                                    img.src = url;
+                                        const record = await this.getImageFromDB(card.url.substring(6));
+                                        srcToSet = (record && record.blob) ? URL.createObjectURL(record.blob) : '';
+                                    } catch {
+                                        srcToSet = '';
+                                    }
                                 }
-                            };
-                            setImageSrc(card.url);
+
+                                if (img.src === srcToSet && img.complete) {
+                                    return resolve(); // 如果图片已加载，立即完成
+                                }
+                                if (!srcToSet) {
+                                    return resolve(); // 如果没有有效的 src，也立即完成
+                                }
+                                img.src = srcToSet;
+                            });
+                            imageLoadPromises.push(promise);
                         }
                     });
 
                     container.querySelectorAll('.preview-card[data-card-id]').forEach(cardEl => {
                         const cardId = cardEl.dataset.cardId;
-                        const blockWrapper = cardEl.closest('.preview-block-wrapper');
-                        if (!blockWrapper) return;
-
-                        const blockId = blockWrapper.dataset.blockId;
-                        const block = this.findBlock(blockId);
-                        const cardData = block?.cards.find(c => c.id === cardId);
+                        const blockId = cardEl.closest('.preview-block-wrapper').dataset.blockId;
+                        const cardData = this.findBlock(blockId)?.cards.find(c => c.id === cardId);
                         if (cardData) {
                             this.applyCardStyles(cardEl, cardData);
                         }
+                    });
+
+                    Promise.all(imageLoadPromises).then(() => {
+                        this.state.blocks.forEach(block => {
+                            if (block.settings.masonryEnabled) {
+                                this.initMasonryForBlock(block.id);
+                            }
+                        });
                     });
                 },
                 deepClone(obj) { return JSON.parse(JSON.stringify(obj)) },
                 escapeHTML(str) { return (str || '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[m]) },
                 sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)) },
+
+                // NEW: Script Loader for Performance
+                loadScript(url) {
+                    return new Promise((resolve, reject) => {
+                        if (document.querySelector(`script[src="${url}"]`)) {
+                            return resolve();
+                        }
+                        const script = document.createElement('script');
+                        script.src = url;
+                        script.onload = resolve;
+                        script.onerror = () => reject(new Error(`Failed to load script: ${url}`));
+                        document.body.appendChild(script);
+                    });
+                },
+
 
                 // ... 区块操作函数 ...
                 async addBlock(type, sourceBlock = null) {
@@ -7829,7 +7958,7 @@ Monitor of this License or out of the use or inability to use the
                     if (await this.showConfirm('删除区块', `确定要删除区块 "${block.title}" 吗？`)) {
                         this.pushHistory(`删除区块 "${block.title}"`);
 
-                        // BUGFIX: 删除区块前，清理其包含的所有图片
+                        // 删除区块前，清理其包含的所有图片
                         if (block.cards) {
                             for (const card of block.cards) {
                                 await this.deleteImageByUrl(card.url);
