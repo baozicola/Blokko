@@ -5,7 +5,7 @@
   <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
   <!-- MODIFIED: Version Bump -->
   <title>
-   Blokko-个人简介生成器！ (v1.6.5)-时之歌十周年快乐！！
+   Blokko-个人简介生成器！ (v1.7.0)-时之歌十周年快乐！！
   </title>
   <!-- 性能优化: 预连接到关键域名，减少后续请求的连接建立时间 -->
   <link crossorigin="" href="https://fontsapi.zeoseven.com" rel="preconnect"/>
@@ -47,7 +47,7 @@
    </button>
    <!-- MODIFIED: Version Bump -->
    <div class="app-header-title">
-    Blokko (v1.6.5)
+    Blokko (v1.7.0)
    </div>
    <div class="header-actions-wrapper">
     <button class="btn btn-default" id="lock-mode-toggle" style="width: auto; padding: 6px 12px;" title="切换编辑/预览模式">
@@ -890,7 +890,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
            MIT / ISC 协议:
           </strong>
           Lucide, Tabler, Phosphor (ph), Heroicons, Boxicons
-                                    (bx), Pixelarticons
+                                    (bx), Pixelarticons,Feather Icons,Fluent UI System Icons,Eva Icons
          </li>
          <li>
           <strong>
@@ -1144,105 +1144,61 @@ Monitor of this License or out of the use or inability to use the
     <!-- MODIFIED: Changelog Update -->
     <div class="tab-content" id="help-changelog">
      <h4>
-      v1.6.5 更新日志
+      v1.7.0 更新日志 (2025-11-17)
      </h4>
      <ul>
       <li>
        <strong>
-        【新增】在线图库功能：
+        【新增】悬浮头像效果：
        </strong>
-       在页面背景设置中，新增“在线搜索”选项，由
-       <strong>
-        Pixabay
-       </strong>
-       提供高质量、免费可商用的图片库支持。现在你可以直接搜索并使用海量美图作为背景！
+       在个人信息设置中，新增“头像垂直偏移”滑块，现在你可以让头像向上溢出，创造出悬浮效果！
       </li>
       <li>
        <strong>
-        【新增】按钮区块：
+        【新增】强化导出功能 - 解锁比例：
        </strong>
-       新增“➕ 按钮”区块类型，可以创建类似 Linktree
-                        的装饰性按钮。支持自定义图标、文字、颜色、对齐方式和宽度，并可在全局样式中统一设置。
+       在导出面板的“自定义宽度”旁增加了“锁定比例”选项。取消勾选后，可以自由设定导出图片的高度（时隔不知道多少个版本我终于修好了）
       </li>
       <li>
        <strong>
-        【新增】智能水印系统：
+        【新增】长按呼出：
        </strong>
-       在导出面板增加“显示作品信息”选项。
+       为了解决手机端点一下图层再点一下样式的繁琐操作，现在只需要长按不拖动，就会自动呼出对应的样式面板，手机端制作更方便。
+      </li>
+      <li>
+       <strong>
+        【优化】设置面板布局调整：
+       </strong>
        <ul>
         <li>
-         若使用了 Pixabay 的图片作为背景，此选项将默认勾选，并在导出的图片右下角署名摄影师与 Blokko。
+         “个人信息布局”（默认/名片）选项已从“页面样式”移至更直观的“个人信息”面板中。
         </li>
         <li>
-         若未使用在线图片，此选项默认关闭，勾选后仅署名 Blokko。
+         “显示个人信息区域”的开关已从“个人信息”面板移至“页面样式”面板。
         </li>
        </ul>
       </li>
       <li>
        <strong>
-        【优化】：
+        【优化】性能提升与体验改善：
        </strong>
-       优化了“关于”页面的文本表述和其他地方的描述文本。
-      </li>
-      <li>
-       <strong>
-        【修复】：
-       </strong>
-       修复了一个控制台的不会影响使用的报错。
-      </li>
-      <li>
-       <strong>
-        【修复】：
-       </strong>
-       修复了手机端点击“？”一类帮助提示会被异常挤出屏幕的BUG。
-      </li>
-      <li>
-       <strong>
-        【彩蛋】：
-       </strong>
-       更新了彩蛋内容。
-      </li>
-     </ul>
-     <hr/>
-     <h4>
-      v1.6.4 更新日志
-     </h4>
-     <ul>
-      <li>
-       <strong>
-        【新增】增强的文本样式：
-       </strong>
-       在全局和独立卡片中，新增了对“标题颜色”、“标题字号”和“正文字号”的精细控制。
-      </li>
-      <li>
-       <strong>
-        【新增】手机端优化导出：
-       </strong>
-       在导出面板增加了“优化手机端导出”选项，勾选后在电脑端可预览并导出一张固定手机宽度的窄图；在手机端则以当前屏幕宽度进行导出，实现所见即所得。
+       <ul>
+        <li>
+         优化了应用启动流程，现在页面的可交互速度更快。
+        </li>
+        <li>
+         改善了图片加载机制，减少了页面初次渲染时的布局“跳动”问题。
+        </li>
+        <li>
+         优化了内部渲染逻辑，修改卡片标题、颜色等操作的界面响应更丝滑。
+        </li>
+       </ul>
       </li>
       <li>
        <strong>
         【修复】
        </strong>
-       修复了当卡片透明度为0时，正文的对齐方式（居中/居右）会失效并强制回到居左的布局BUG。
-      </li>
-      <li>
-       <strong>
-        【修复】
-       </strong>
-       修复了图片区块启用“瀑布流”布局时，由于图片未加载完成就进行计算导致的元素重叠BUG。
-      </li>
-      <li>
-       <strong>
-        【优化】
-       </strong>
-       左侧“内容图层”面板的图层项增加了独立的背景色和边框，视觉上与面板背景区分开，体验更佳。
-      </li>
-      <li>
-       <strong>
-        【优化】
-       </strong>
-       实现了部分外部JS库（如图片裁剪、导出、瀑布流等）的按需加载，大幅提升了页面的首次打开速度。
+       修复了在颜色输入框中输入无效的十六进制值后，该无效值会残留在输入框中的问题。
       </li>
      </ul>
     </div>
@@ -1251,10 +1207,10 @@ Monitor of this License or out of the use or inability to use the
       关于 Blokko
      </h4>
      <p>
-      Blokko是一个方便大家快速制作扩列/自荐/置顶图的小工具！因为本质上是自用小工具，很多地方都没有细细打磨略显简陋，也缺少完善的新手教程_(:з」∠)_，未来或许会补充一个在线文档，制作的初衷是发现lit.link网站对简体中文支持不完善，很多字体都会缺字导致效果不好看，于是制作了Blokko来替代。
+      Blokko是一个方便大家快速制作扩列/自荐/置顶图的小工具！（关掉个人信息区域还能做点别的）因为本质上是自用小工具，很多地方都没有细细打磨略显简陋，也缺少完善的新手教程_(:з」∠)_，未来或许会补充一个在线文档（在写了在写了），制作的初衷是发现lit.link网站对简体中文支持不完善，很多字体都会缺字导致效果不好看，于是制作了Blokko来替代。
      </p>
      <p>
-      如果你在使用中遇到BUG，可以通过链接私信我！如果觉得好用，也希望能点击链接去置顶评论区留下评论或转发，或者是在自己的制作的图评论区或正文里贴上原博链接（就是置顶那一条，当然这些都不是强制要求的，但是如果可以的话会让我很开心！），最后感谢您使用Blokko,希望你可以做出你满意的效果ദ്ദി˶•̀֊•́)✧
+      如果你在使用中遇到BUG，可以通过链接私信我！如果觉得好用，也希望能点击链接去置顶评论区留下评论或转发，或者是在自己的制作的图评论区或正文里贴上原博链接，（就是置顶那一条，当然这些都不是强制要求的，就像水印在不用pixabay图片的情况下不会被勾选一样，但是如果可以的话会让我很开心！），最后感谢您使用Blokko,希望可以实现你满意的效果ദ്ദി˶•̀֊•́)✧
      </p>
      <p>
       <strong>

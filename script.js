@@ -170,7 +170,7 @@
              */
             const App = {
                 // NEW: Pixabay API Key
-                pixabayApiKey: '53274475-6295c67fa26c85aa8b2331ee7',
+                pixabayApiKey: '23863777-a87f73315a013444469228d4e',
                 // 数据库实例
                 db: null,
                 // 标记浏览器存储空间是否已满
@@ -242,7 +242,7 @@
                  */
                 init() {
                     // MODIFIED: Version Log
-                    console.log("Blokko 初始化 v1.6.5 ...");
+                    console.log("Blokko 初始化 v1.7.0 ...");
 
                     this.elements = this.queryElements();
                     this.presets = this.getPresets();
@@ -251,9 +251,10 @@
 
                     this.initDB().then(async () => {
                         this.bindCoreEvents();
-                        this.bindEditorEvents();
+                        // OPTIMIZATION: Defer non-critical initializations
+                        // this.bindEditorEvents(); // deferred
                         this.bindPreviewEvents();
-                        this.initResizer();
+                        // this.initResizer(); // deferred
 
                         this.loadPreferences();
                         await this.loadFromLocal();
@@ -264,14 +265,22 @@
                         this.renderAll(true);
                         this.syncAllControls();
                         this.populateFontList();
-                        this.initAllSortables();
-                        this.updateExportSizePreview();
+                        // this.initAllSortables(); // deferred
 
                         this.setSelection({ type: 'global' });
                         this.updateUndoRedoButtons();
+                        this.updatePreviewAspectRatio(); // NEW: Initial aspect ratio update
+
+                        // OPTIMIZATION: Defer non-critical initializations to improve TTI
+                        setTimeout(() => {
+                            this.bindEditorEvents();
+                            this.initResizer();
+                            this.initAllSortables();
+                        }, 0);
+
 
                         // MODIFIED: Version Bump
-                        const currentVersion = '1.6.5';
+                        const currentVersion = '1.7.0';
                         const lastVisitedVersion = localStorage.getItem('blokkoLastVersion');
                         const hasSeenTutorial = localStorage.getItem('blokkoHasSeenTutorial');
 
@@ -315,6 +324,8 @@
                             avatarShape: '50%', avatarBorderSize: 4, avatarBorderColor: '#ffffff',
                             avatarSize: 100,
                             avatarOffsetX: 0,
+                            // NEW: Floating Avatar Offset
+                            avatarOffsetY: 0,
                             tags: [
                                 { id: this.generateId('t'), icon: 'mdi:palette', text: '设计师' },
                                 { id: this.generateId('t'), icon: 'mdi:github', text: '可以放社交账号' }
@@ -371,6 +382,12 @@
                             textColor: '#FFFFFF',
                             radius: 8,
                             textAlign: 'center'
+                        },
+                        // NEW: Export Settings State
+                        exportSettings: {
+                            lockAspectRatio: true,
+                            customWidth: 1200,
+                            customHeight: 750
                         }
                     };
                 },
@@ -644,7 +661,7 @@
                             const type = layerItem.dataset.type;
 
                             if (type === 'personalInfo') {
-                                if (actionBtn.matches('.toggle-visibility-btn')) this.togglePersonalInfoVisibility();
+                                // This action is now handled in the inspector, layer panel only has selection
                                 return;
                             }
 
@@ -852,12 +869,12 @@
 
                         // 更新 range 输入条旁边的数值显示
                         if (target.type === 'range') {
-                            const valueDisplay = target.closest('.form-group').querySelector('.angle-value, .spacer-height-value, #gCardRadiusValue, .avatar-size-value, .header-radius-value');
+                            const valueDisplay = target.closest('.form-group').querySelector('.angle-value, .spacer-height-value, #gCardRadiusValue, .avatar-size-value, .avatar-offsetY-value, .header-radius-value, .shadow-blur-value, .shadow-offset-value');
                             if (valueDisplay) valueDisplay.textContent = value;
                         }
                     });
 
-                    // 校验并格式化十六进制颜色输入框
+                    // BUG FIX: 校验并格式化十六进制颜色输入框
                     panel.addEventListener('blur', e => {
                         const target = e.target;
                         if (target.matches('.color-hex-input')) {
@@ -867,9 +884,17 @@
                             }
                             if (/^[0-9a-fA-F]{6}$/.test(value)) {
                                 target.value = '#' + value;
-                                target.dispatchEvent(new Event('input', { bubbles: true }));
-                                target.dispatchEvent(new Event('change', { bubbles: true }));
+                            } else {
+                                // If invalid, reset to the current state value
+                                const stateKey = target.dataset.stateKey;
+                                if (stateKey) {
+                                    const currentStateValue = stateKey.split('.').reduce((o, k) => o && o[k], this.state);
+                                    target.value = currentStateValue || '#000000';
+                                }
                             }
+                            // Trigger input and change to ensure state is updated if corrected
+                            target.dispatchEvent(new Event('input', { bubbles: true }));
+                            target.dispatchEvent(new Event('change', { bubbles: true }));
                         }
                     }, true);
 
@@ -924,12 +949,19 @@
                             }
                         }
 
+                        // NEW: Handle aspect ratio lock and custom dimensions
+                        if (target.matches('#lock-aspect-ratio-toggle, #custom-width-input, #custom-height-input')) {
+                            this.updatePreviewAspectRatio();
+                        }
+
                         // 处理导出选项的联动
-                        if (target.matches('#hd-export-toggle, #custom-width-toggle, #custom-width-input, #export-rounded-corners-toggle, #export-corner-radius-input, #mobile-export-toggle')) {
+                        if (target.matches('#hd-export-toggle, #custom-width-toggle, #export-rounded-corners-toggle, #export-corner-radius-input, #mobile-export-toggle, #lock-aspect-ratio-toggle')) { // FIX: Add lock toggle to the match list
                             // Mobile Export Logic
                             const mobileExportToggle = panel.querySelector('#mobile-export-toggle');
                             const customWidthToggle = panel.querySelector('#custom-width-toggle');
                             const customWidthInput = panel.querySelector('#custom-width-input');
+                            const customHeightInput = panel.querySelector('#custom-height-input');
+                            const lockRatioToggle = panel.querySelector('#lock-aspect-ratio-toggle');
                             const hdExportToggle = panel.querySelector('#hd-export-toggle');
 
                             if (target.id === 'mobile-export-toggle') {
@@ -938,21 +970,43 @@
                                     hdExportToggle.checked = false;
                                     customWidthToggle.checked = false;
                                     customWidthInput.disabled = true;
+                                    customHeightInput.disabled = true;
+                                    lockRatioToggle.disabled = true;
+                                } else if (!customWidthToggle.checked) {
+                                    lockRatioToggle.disabled = false;
                                 }
+                                this.updatePreviewAspectRatio();
                             } else if (target.id === 'custom-width-toggle') {
+                                const customDimControls = panel.querySelector('#custom-dimensions-controls');
+                                if (customDimControls) customDimControls.style.display = target.checked ? 'block' : 'none';
+                                
+                                // FIX: More robust logic for enabling/disabling inputs
                                 customWidthInput.disabled = !target.checked;
+                                lockRatioToggle.disabled = !target.checked;
+                                customHeightInput.disabled = !target.checked || lockRatioToggle.checked; // Height is disabled if custom is off OR lock is on
+
                                 if (target.checked) {
                                     hdExportToggle.checked = false;
                                     mobileExportToggle.checked = false;
                                     this.elements.body.classList.remove('mobile-export-preview-mode');
                                 }
+                                this.updatePreviewAspectRatio();
+                            } else if (target.id === 'lock-aspect-ratio-toggle') { // NEW: Added logic for the lock toggle itself
+                                // Height input is only enabled when custom dimensions is on AND lock is off
+                                customHeightInput.disabled = target.checked || !customWidthToggle.checked;
+                                this.updatePreviewAspectRatio();
                             } else if (target.id === 'hd-export-toggle') {
                                 if (target.checked) {
                                     customWidthToggle.checked = false;
                                     customWidthInput.disabled = true;
+                                    customHeightInput.disabled = true;
+                                    lockRatioToggle.disabled = true;
                                     mobileExportToggle.checked = false;
                                     this.elements.body.classList.remove('mobile-export-preview-mode');
+                                } else {
+                                    lockRatioToggle.disabled = !customWidthToggle.checked;
                                 }
+                                this.updatePreviewAspectRatio();
                             }
 
                             if (target.id === 'export-rounded-corners-toggle') {
@@ -1057,6 +1111,7 @@
                                 this.pushHistory('重置头像位置与大小');
                                 this.updateState('personalInfo.avatarSize', 100, false);
                                 this.updateState('personalInfo.avatarOffsetX', 0, false);
+                                this.updateState('personalInfo.avatarOffsetY', 0, false);
                                 this.showToast('头像位置与大小已重置', 'info');
                             },
                         };
@@ -1137,7 +1192,7 @@
                         // Tab 切换
                         const tabBtn = target.closest('.tabs .tab-btn');
                         if (tabBtn) {
-                            const parent = tabBtn.closest('.tab-group-wrapper, .editor-section > .section-content');
+                            const parent = tabBtn.closest('.tab-group-wrapper, .editor-section > .section-content, .editor-section > .inset-controls');
                             if (!parent) return;
                             parent.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
                             tabBtn.classList.add('active');
@@ -1304,7 +1359,6 @@
                             const tagId = target.dataset.tagTextId;
                             const value = target.innerText;
 
-                            // 辅助函数，用于通过路径字符串更新 state 对象
                             const updateStateObject = (path, val) => {
                                 let obj = this.state;
                                 const keys = path.split('.');
@@ -1316,7 +1370,6 @@
                                 updateStateObject(stateKey, value);
                                 this.syncControl(stateKey);
                             } else if (cardKey) {
-                                // MODIFIED: Handle button card editing
                                 const cardEl = target.closest('.preview-card, figure, .preview-button');
                                 const blockEl = target.closest('.preview-block-wrapper');
                                 if (cardEl && blockEl) {
@@ -1343,6 +1396,68 @@
                             }
                         }
                     });
+
+                    // 移动端长按打开样式面板并定位 (修正版)
+                    this.elements.previewWrapper.addEventListener('touchstart', e => {
+                        if (this.elements.previewBlocksContainer.classList.contains('locked-mode')) return;
+
+                        clearTimeout(this.longPressTimer);
+
+                        this.longPressTimer = setTimeout(() => {
+                            e.preventDefault();
+
+                            let selection = null;
+                            let controlToHighlight = null;
+                            
+                            const cardTarget = e.target.closest('.preview-card, figure, .preview-button');
+                            const blockWrapperTarget = e.target.closest('.preview-block-wrapper');
+                            const headerTarget = e.target.closest('.preview-header');
+                            const separatorTarget = e.target.closest('.separator-preview');
+                            const spacerTarget = e.target.closest('.spacer-preview');
+
+                            if (cardTarget && blockWrapperTarget) {
+                                const blockId = blockWrapperTarget.dataset.blockId;
+                                const cardId = cardTarget.dataset.cardId;
+                                selection = { type: 'block', id: blockId, cardId: cardId };
+                                controlToHighlight = `.editor-card[data-card-id="${cardId}"]`;
+                            } else if ((separatorTarget || spacerTarget) && blockWrapperTarget) {
+                                const blockId = blockWrapperTarget.dataset.blockId;
+                                selection = { type: 'block', id: blockId };
+                                controlToHighlight = `.editor-block[data-block-id="${blockId}"]`;
+                            } else if (headerTarget) {
+                                selection = { type: 'personalInfo' };
+                                controlToHighlight = '#personal-info-section';
+                            } else if (blockWrapperTarget) {
+                                const blockId = blockWrapperTarget.dataset.blockId;
+                                selection = { type: 'block', id: blockId };
+                                controlToHighlight = `.editor-block[data-block-id="${blockId}"]`;
+                            }
+
+                            if (selection) {
+                                this.setSelection(selection);
+                                this.togglePanelDrawer('inspector-panel');
+
+                                setTimeout(() => {
+                                    if (controlToHighlight) {
+                                        const control = this.elements.inspectorPanel.querySelector(controlToHighlight);
+                                        if (control) {
+                                            control.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                            const highlightTarget = control.closest('.editor-section, .editor-card');
+                                            if (highlightTarget) {
+                                                highlightTarget.classList.remove('highlight-animation');
+                                                void highlightTarget.offsetWidth;
+                                                highlightTarget.classList.add('highlight-animation');
+                                            }
+                                        }
+                                    }
+                                }, 350);
+                            }
+                        }, 600);
+                    }, { passive: false });
+
+                    const cancelLongPress = () => clearTimeout(this.longPressTimer);
+                    this.elements.previewWrapper.addEventListener('touchend', cancelLongPress);
+                    this.elements.previewWrapper.addEventListener('touchmove', cancelLongPress);
                 },
 
                 /**
@@ -1447,8 +1562,6 @@
                 async renderPersonalInfo() {
                     const info = this.state.personalInfo;
                     const header = this.elements.previewHeader;
-
-                    // 根据布局状态动态生成HTML结构
                     let innerHTML;
                     if (info.layout === 'card') {
                         innerHTML = `
@@ -1462,7 +1575,7 @@
                                 <div class="tags-container" id="preview-tags-container"></div>
                             </div>
                         `;
-                    } else { // 默认布局
+                    } else {
                         innerHTML = `
                             <img id="preview-avatar" src="" alt="Avatar" title="点击更换头像">
                             <h1 id="preview-nickname" data-state-key="personalInfo.nickname"></h1>
@@ -1472,15 +1585,11 @@
                         `;
                     }
                     header.innerHTML = innerHTML;
-
-                    // 缓存新生成的元素
                     const previewAvatar = header.querySelector('#preview-avatar');
                     const previewNickname = header.querySelector('#preview-nickname');
                     const previewSubtitle = header.querySelector('#preview-subtitle');
                     const previewBio = header.querySelector('#preview-bio');
                     const previewTagsContainer = header.querySelector('#preview-tags-container');
-
-                    // 异步从 IndexedDB 加载并设置头像
                     const setAvatarSrc = async (url) => {
                         if (url && url.startsWith('idb://')) {
                             try {
@@ -1500,38 +1609,33 @@
                         }
                     };
                     await setAvatarSrc(info.avatarDataUrl);
-
                     previewNickname.textContent = info.nickname;
                     previewSubtitle.textContent = info.subtitle;
                     previewBio.textContent = info.bio;
-
                     previewNickname.style.color = info.nicknameColor;
                     previewSubtitle.style.color = info.subtitleColor;
                     previewBio.style.color = info.bioColor;
-
-                    // 设置头像大小、位置、形状和边框
                     const baseSize = 90;
                     const newSize = baseSize * ((info.avatarSize || 100) / 100);
                     const offsetX = info.avatarOffsetX || 0;
+                    const offsetY = info.avatarOffsetY || 0;
                     previewAvatar.style.width = `${newSize}px`;
                     previewAvatar.style.height = `${newSize}px`;
                     previewAvatar.style.transform = `translateX(${offsetX}%)`;
+                    const overflowAmount = (newSize * (offsetY / 100));
+                    previewAvatar.style.marginTop = `-${overflowAmount}px`;
+                    this.elements.previewWrapper.style.paddingTop = `${20 + overflowAmount / 2}px`;
                     previewAvatar.style.borderRadius = info.avatarShape;
                     previewAvatar.style.borderWidth = `${info.avatarBorderSize}px`;
                     previewAvatar.style.borderColor = info.avatarBorderColor;
-
-                    // 渲染标签
                     previewTagsContainer.innerHTML = (info.tags || [])
                         .map(tag => {
                             const iconHTML = tag.icon ? `<span class="iconify" data-icon="${tag.icon}"></span>` : '';
                             return `<span class="tag-pill" style="background-color:${info.tagBgColor}; color:${info.tagTextColor};">${iconHTML}<span data-tag-text-id="${tag.id}">${this.escapeHTML(tag.text)}</span></span>`;
                         }).join('');
-
-                    // 应用布局和可见性
                     header.classList.toggle('layout-card', info.layout === 'card');
                     header.style.display = info.isVisible ? '' : 'none';
-                    header.style.boxShadow = 'none';
-                    this.initSortablePreviewTags(); // 重新初始化拖拽
+                    this.initSortablePreviewTags();
                 },
 
                 /**
@@ -1631,12 +1735,11 @@
 
                     // 个人信息图层
                     let html = `<div class="layer-item-container">
-                                    <div class="layer-item ${type === 'personalInfo' ? 'selected' : ''} ${isInfoHidden ? 'is-hidden' : ''}" data-type="personalInfo">
+                                    <div class="layer-item ${type === 'personalInfo' ? 'selected' : ''}" data-type="personalInfo">
                                         <button class="layer-toggle"></button>
                                         <span class="layer-icon iconify" data-icon="mdi:account-circle-outline"></span>
                                         <span class="layer-name">个人信息</span>
                                         <div class="layer-actions">
-                                            <button class="btn-icon toggle-visibility-btn" title="切换显示/隐藏"><span class="iconify" data-icon="${isInfoHidden ? 'mdi:eye-off' : 'mdi:eye'}"></span></button>
                                         </div>
                                     </div>
                                </div><hr>`;
@@ -1781,6 +1884,9 @@
                         </div>`;
                     // NEW: Watermark/Attribution Checkbox HTML
                     const attributionLink = this.state.pageStyles.pageBgImageAttribution ? `<a href="${this.state.pageStyles.pageBgImageAttribution.pageURL}" target="_blank" style="margin-left: 5px; font-weight: normal;">(查看作者)</a>` : `<a href="https://weibo.com/u/5095783616" target="_blank" style="margin-left: 5px; font-weight: normal;">(开发者主页)</a>`;
+                    
+                    
+
 
                     return `
                         <h3 class="panel-header">全局样式与导出 ${backBtn}</h3>
@@ -1788,12 +1894,9 @@
                              <fieldset class="editor-section" id="page-styles-section">
                                 <legend>页面与头部样式</legend>
                                 <div class="section-content">
+                                 <!-- MOVED: personalInfo.isVisible checkbox -->
                                  <div class="form-group">
-                                    <label>个人信息布局:</label>
-                                    <div class="radio-group">
-                                        <label><input type="radio" name="personal-info-layout" value="default" data-state-key="personalInfo.layout"> 默认布局</label>
-                                        <label><input type="radio" name="personal-info-layout" value="card" data-state-key="personalInfo.layout"> 名片布局</label>
-                                    </div>
+                                     <label class="checkbox-group" style="font-weight: bold;"><input type="checkbox" data-state-key="personalInfo.isVisible"> 显示个人信息区域</label>
                                  </div>
                                  <hr class="separator">
 								 <div class="tab-group-wrapper">
@@ -1831,7 +1934,38 @@
                                         <div id="page-bg-gradient" class="tab-content advanced-setting"><div class="gradient-controls"><div class="form-group"><label>起始颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.pageBgGradientStart"><input type="text" class="color-hex-input" data-state-key="pageStyles.pageBgGradientStart"></div></div><div class="form-group"><label>结束颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.pageBgGradientEnd"><input type="text" class="color-hex-input" data-state-key="pageStyles.pageBgGradientEnd"></div></div><div class="gradient-angle-control form-group"><label>角度 (<span class="angle-value">135</span>°):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-state-key="pageStyles.pageBgGradientAngle" min="0" max="360" step="1"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div></div></div>
                                         <div class="advanced-setting" style="margin-top: 10px;">
                                             <div class="form-group"><button id="show-texture-picker-btn" class="btn btn-default">🎨 添加纹理</button></div>
-                                            <div id="page-texture-controls" class="inset-controls"><div class="form-group"><label>当前纹理: <span id="current-texture-name">无</span></label><button id="clear-texture-btn" class="btn btn-default btn-small">清除纹理</button></div><div class="color-control-row"><div class="color-control-group"><label>纹理颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.pageBgPatternColor"><input type="text" class="color-hex-input" data-state-key="pageStyles.pageBgPatternColor"></div></div><div class="color-control-group"><label>纹理不透明度:</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-state-key="pageStyles.pageBgPatternOpacity" min="0" max="1" step="0.05"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div></div><div class="form-group"><label>纹理密度:</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-state-key="pageStyles.pageBgPatternDensity" min="10" max="100" step="2"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div></div>
+                                            <div id="page-texture-controls" class="inset-controls">
+                                                <div class="form-group"><label>当前纹理: <span
+                                                            id="current-texture-name">无</span></label><button
+                                                        id="clear-texture-btn"
+                                                        class="btn btn-default btn-small">清除纹理</button></div>
+                                                <div class="color-control-row">
+                                                    <div class="color-control-group"><label>纹理颜色:</label>
+                                                        <div class="input-group"><input type="color"
+                                                                data-state-key="pageStyles.pageBgPatternColor"><input
+                                                                type="text" class="color-hex-input"
+                                                                data-state-key="pageStyles.pageBgPatternColor"></div>
+                                                    </div>
+                                                    <div class="color-control-group"><label>纹理不透明度:</label>
+                                                        <div class="input-group simple stepper-group"><button
+                                                                class="btn btn-default btn-stepper minus"
+                                                                aria-label="减少">-</button><input type="range"
+                                                                data-state-key="pageStyles.pageBgPatternOpacity" min="0"
+                                                                max="1" step="0.05"><button
+                                                                class="btn btn-default btn-stepper plus"
+                                                                aria-label="增加">+</button></div>
+                                                    </div>
+                                                </div>
+                                                <div class="form-group"><label>纹理密度:</label>
+                                                    <div class="input-group simple stepper-group"><button
+                                                            class="btn btn-default btn-stepper minus"
+                                                            aria-label="减少">-</button><input type="range"
+                                                            data-state-key="pageStyles.pageBgPatternDensity" min="10"
+                                                            max="100" step="2"><button
+                                                            class="btn btn-default btn-stepper plus"
+                                                            aria-label="增加">+</button></div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -1839,36 +1973,190 @@
                             <fieldset class="editor-section" id="color-thief-section">
                                 <legend>🎨 智能取色</legend>
                                 <div class="section-content">
-                                    <p style="font-size: 0.9rem; color: var(--text-secondary); margin-top: -10px; margin-bottom: 15px;">上传图片，自动提取调色板。右键 (PC) 或长按 (手机) 色块可快捷应用。</p>
+                                    <p style="font-size: 0.9rem; color: var(--text-secondary); margin-top: -10px; margin-bottom: 15px;">
+                                        上传图片，自动提取调色板。右键 (PC) 或长按 (手机) 色块可快捷应用。</p>
                                     <button id="pick-color-btn" class="btn btn-default">上传图片分析颜色</button>
                                     <input type="file" id="color-thief-upload" accept="image/*" style="display: none;">
                                     <div class="palette-container" id="color-thief-palette"></div>
                                 </div>
                             </fieldset>
-                            <fieldset class="editor-section" id="global-card-styles-section"> 
+                            <fieldset class="editor-section" id="global-card-styles-section">
                                 <legend>全局卡片样式</legend>
                                 <div class="section-content">
                                     <div style="text-align: right; margin-bottom: 10px;">
-                                        <label class="checkbox-group advanced-toggle-label"><input type="checkbox" class="advanced-toggle"> 高级</label>
+                                        <label class="checkbox-group advanced-toggle-label"><input type="checkbox"
+                                                class="advanced-toggle"> 高级</label>
                                     </div>
-                                    <div class="tabs"><button class="tab-btn" data-tab="card-bg-solid">纯色</button><button class="tab-btn advanced-setting" data-tab="card-bg-gradient">渐变</button></div>
-                                    <div id="card-bg-solid" class="tab-content"><div class="color-control-row"><div class="color-control-group"><label>背景色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.bgColor"><input type="text" class="color-hex-input" data-state-key="globalCardStyles.bgColor"></div></div><div class="color-control-group"><label>不透明度:</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-state-key="globalCardStyles.opacity" min="0" max="1" step="0.05"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div></div></div>
-                                    <div id="card-bg-gradient" class="tab-content advanced-setting"><div class="gradient-controls"><div class="form-group"><label>起始颜色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.bgGradientStart"><input type="text" class="color-hex-input" data-state-key="globalCardStyles.bgGradientStart"></div></div><div class="form-group"><label>结束颜色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.bgGradientEnd"><input type="text" class="color-hex-input" data-state-key="globalCardStyles.bgGradientEnd"></div></div><div class="gradient-angle-control form-group"><label>角度 (<span class="angle-value">135</span>°):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-state-key="globalCardStyles.bgGradientAngle" min="0" max="360" step="1"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div></div></div>
-                                    <div class="form-group advanced-setting"><label>圆角 (px): <span id="gCardRadiusValue">12</span></label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-state-key="globalCardStyles.radius" min="0" max="40" step="1"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div>
-                                   <div class="advanced-setting"><hr class="separator"><label>卡片边框:<span class="tooltip-trigger" data-tooltip="边框在编辑器预览区可能显示不完美（如产生缝隙），但在最终导出的图片中是正常的。"><span class="iconify" data-icon="mdi:help-circle-outline"></span></span></label><div class="form-group inset-controls"><div class="form-group"><label>样式:</label><select data-state-key="globalCardStyles.borderStyle"><option value="none">无</option><option value="solid">实线</option><option value="dashed">虚线</option><option value="dotted">点状</option><option value="double">双实线</option></select></div><div class="color-control-row"><div class="color-control-group"><label>粗细(px):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-state-key="globalCardStyles.borderWidth" min="0" max="10" step="1"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div><div class="color-control-group"><label>颜色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.borderColor"><input type="text" class="color-hex-input" data-state-key="globalCardStyles.borderColor"></div></div></div></div></div>
+                                    <div class="tabs"><button class="tab-btn" data-tab="card-bg-solid">纯色</button><button
+                                            class="tab-btn advanced-setting" data-tab="card-bg-gradient">渐变</button>
+                                    </div>
+                                    <div id="card-bg-solid" class="tab-content">
+                                        <div class="color-control-row">
+                                            <div class="color-control-group"><label>背景色:</label>
+                                                <div class="input-group"><input type="color"
+                                                        data-state-key="globalCardStyles.bgColor"><input type="text"
+                                                        class="color-hex-input"
+                                                        data-state-key="globalCardStyles.bgColor"></div>
+                                            </div>
+                                            <div class="color-control-group"><label>不透明度:</label>
+                                                <div class="input-group simple stepper-group"><button
+                                                        class="btn btn-default btn-stepper minus"
+                                                        aria-label="减少">-</button><input type="range"
+                                                        data-state-key="globalCardStyles.opacity" min="0" max="1"
+                                                        step="0.05"><button class="btn btn-default btn-stepper plus"
+                                                        aria-label="增加">+</button></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div id="card-bg-gradient" class="tab-content advanced-setting">
+                                        <div class="gradient-controls">
+                                            <div class="form-group"><label>起始颜色:</label>
+                                                <div class="input-group"><input type="color"
+                                                        data-state-key="globalCardStyles.bgGradientStart"><input
+                                                        type="text" class="color-hex-input"
+                                                        data-state-key="globalCardStyles.bgGradientStart"></div>
+                                            </div>
+                                            <div class="form-group"><label>结束颜色:</label>
+                                                <div class="input-group"><input type="color"
+                                                        data-state-key="globalCardStyles.bgGradientEnd"><input
+                                                        type="text" class="color-hex-input"
+                                                        data-state-key="globalCardStyles.bgGradientEnd"></div>
+                                            </div>
+                                            <div class="gradient-angle-control form-group"><label>角度 (<span
+                                                        class="angle-value">135</span>°):</label>
+                                                <div class="input-group simple stepper-group"><button
+                                                        class="btn btn-default btn-stepper minus"
+                                                        aria-label="减少">-</button><input type="range"
+                                                        data-state-key="globalCardStyles.bgGradientAngle" min="0"
+                                                        max="360" step="1"><button
+                                                        class="btn btn-default btn-stepper plus"
+                                                        aria-label="增加">+</button></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group advanced-setting"><label>圆角 (px): <span
+                                                id="gCardRadiusValue">12</span></label>
+                                        <div class="input-group simple stepper-group"><button
+                                                class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input
+                                                type="range" data-state-key="globalCardStyles.radius" min="0" max="40"
+                                                step="1"><button class="btn btn-default btn-stepper plus"
+                                                aria-label="增加">+</button></div>
+                                    </div>
+                                    <div class="advanced-setting">
+                                        <hr class="separator"><label>卡片边框:<span class="tooltip-trigger"
+                                                data-tooltip="边框在编辑器预览区可能显示不完美（如产生缝隙），但在最终导出的图片中是正常的。"><span class="iconify"
+                                                    data-icon="mdi:help-circle-outline"></span></span></label>
+                                        <div class="form-group inset-controls">
+                                            <div class="form-group"><label>样式:</label><select
+                                                    data-state-key="globalCardStyles.borderStyle">
+                                                    <option value="none">无</option>
+                                                    <option value="solid">实线</option>
+                                                    <option value="dashed">虚线</option>
+                                                    <option value="dotted">点状</option>
+                                                    <option value="double">双实线</option>
+                                                </select></div>
+                                            <div class="color-control-row">
+                                                <div class="color-control-group"><label>粗细(px):</label>
+                                                    <div class="input-group simple stepper-group"><button
+                                                            class="btn btn-default btn-stepper minus"
+                                                            aria-label="减少">-</button><input type="range"
+                                                            data-state-key="globalCardStyles.borderWidth" min="0"
+                                                            max="10" step="1"><button
+                                                            class="btn btn-default btn-stepper plus"
+                                                            aria-label="增加">+</button></div>
+                                                </div>
+                                                <div class="color-control-group"><label>颜色:</label>
+                                                    <div class="input-group"><input type="color"
+                                                            data-state-key="globalCardStyles.borderColor"><input
+                                                            type="text" class="color-hex-input"
+                                                            data-state-key="globalCardStyles.borderColor"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                     <hr class="separator">
                                     <div class="color-control-row">
-                                      <div class="color-control-group"><label>标题颜色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.titleColor"><input type="text" class="color-hex-input" data-state-key="globalCardStyles.titleColor" placeholder="同正文色"></div></div>
-                                      <div class="color-control-group"><label>正文颜色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.textColor"><input type="text" class="color-hex-input" data-state-key="globalCardStyles.textColor"></div></div>
+                                        <div class="color-control-group"><label>标题颜色:</label>
+                                            <div class="input-group"><input type="color"
+                                                    data-state-key="globalCardStyles.titleColor"><input type="text"
+                                                    class="color-hex-input" data-state-key="globalCardStyles.titleColor"
+                                                    placeholder="同正文色"></div>
+                                        </div>
+                                        <div class="color-control-group"><label>正文颜色:</label>
+                                            <div class="input-group"><input type="color"
+                                                    data-state-key="globalCardStyles.textColor"><input type="text"
+                                                    class="color-hex-input"
+                                                    data-state-key="globalCardStyles.textColor"></div>
+                                        </div>
                                     </div>
-                                    <div class="form-group"><label>对齐:</label><div class="radio-group"><label><input type="radio" name="gCardAlign" value="left" data-state-key="globalCardStyles.textAlign">居左</label><label><input type="radio" name="gCardAlign" value="center" data-state-key="globalCardStyles.textAlign">居中</label><label><input type="radio" name="gCardAlign" value="right" data-state-key="globalCardStyles.textAlign">居右</label></div></div>
-                                    <div class="form-group"><label>行高:</label><div class="radio-group"><label><input type="radio" name="gCardLineHeight" value="1.4" data-state-key="globalCardStyles.lineHeight">紧凑</label><label><input type="radio" name="gCardLineHeight" value="1.5" data-state-key="globalCardStyles.lineHeight">中等</label><label><input type="radio" name="gCardLineHeight" value="1.6" data-state-key="globalCardStyles.lineHeight">宽松</label></div></div>
-                                    <hr class="separator"><div class="form-group"><label>字体:</label><div class="font-controls"><input type="text" id="font-search-input" placeholder="搜索本地字体..." style="margin-bottom: 5px;"><select id="font-family-select" data-state-key="globalCardStyles.fontFamily"></select><div class="buttons"><button id="load-local-fonts-btn" class="btn btn-default">加载本地</button><button id="upload-font-btn" class="btn btn-default">上传字体</button><button id="manage-fonts-btn" class="btn btn-default">管理</button></div><input type="file" id="font-upload-input" accept=".ttf,.woff,.woff2,.otf" multiple style="display: none;"></div></div>
+                                    <div class="form-group"><label>对齐:</label>
+                                        <div class="radio-group"><label><input type="radio" name="gCardAlign"
+                                                    value="left" data-state-key="globalCardStyles.textAlign">居左</label><label><input
+                                                    type="radio" name="gCardAlign" value="center"
+                                                    data-state-key="globalCardStyles.textAlign">居中</label><label><input
+                                                    type="radio" name="gCardAlign" value="right"
+                                                    data-state-key="globalCardStyles.textAlign">居右</label></div>
+                                    </div>
+                                    <div class="form-group"><label>行高:</label>
+                                        <div class="radio-group"><label><input type="radio" name="gCardLineHeight"
+                                                    value="1.4"
+                                                    data-state-key="globalCardStyles.lineHeight">紧凑</label><label><input
+                                                    type="radio" name="gCardLineHeight" value="1.5"
+                                                    data-state-key="globalCardStyles.lineHeight">中等</label><label><input
+                                                    type="radio" name="gCardLineHeight" value="1.6"
+                                                    data-state-key="globalCardStyles.lineHeight">宽松</label></div>
+                                    </div>
+                                    <hr class="separator">
+                                    <div class="form-group"><label>字体:</label>
+                                        <div class="font-controls"><input type="text" id="font-search-input"
+                                                placeholder="搜索本地字体..." style="margin-bottom: 5px;"><select
+                                                id="font-family-select"
+                                                data-state-key="globalCardStyles.fontFamily"></select>
+                                            <div class="buttons"><button id="load-local-fonts-btn"
+                                                    class="btn btn-default">加载本地</button><button id="upload-font-btn"
+                                                    class="btn btn-default">上传字体</button><button id="manage-fonts-btn"
+                                                    class="btn btn-default">管理</button></div><input type="file"
+                                                id="font-upload-input" accept=".ttf,.woff,.woff2,.otf" multiple
+                                                style="display: none;">
+                                        </div>
+                                    </div>
                                     <div class="color-control-row">
-                                        <div class="color-control-group"><label>标题字号:</label><select data-state-key="globalCardStyles.titleFontSize"><option value="1em">小</option><option value="1.1em">中</option><option value="1.2em">大</option><option value="1.4em">特大</option></select></div>
-                                        <div class="color-control-group"><label>正文字号:</label><select data-state-key="globalCardStyles.contentFontSize"><option value="0.8em">特小</option><option value="0.95em">小</option><option value="1em">中</option><option value="1.1em">大</option></select></div>
+                                        <div class="color-control-group"><label>标题字号:</label><select
+                                                data-state-key="globalCardStyles.titleFontSize">
+                                                <option value="1em">小</option>
+                                                <option value="1.1em">中</option>
+                                                <option value="1.2em">大</option>
+                                                <option value="1.4em">特大</option>
+                                            </select></div>
+                                        <div class="color-control-group"><label>正文字号:</label><select
+                                                data-state-key="globalCardStyles.contentFontSize">
+                                                <option value="0.8em">特小</option>
+                                                <option value="0.95em">小</option>
+                                                <option value="1em">中</option>
+                                                <option value="1.1em">大</option>
+                                            </select></div>
                                     </div>
-                                    <div class="advanced-setting"><label>文字描边:<span class="tooltip-trigger" data-tooltip="为文字添加边框，建议宽度不超过2px，以保证可读性。"><span class="iconify" data-icon="mdi:help-circle-outline"></span></span></label><div class="color-control-row"><div class="color-control-group"><label>粗细(px):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-state-key="globalCardStyles.textStrokeWidth" min="0" max="5" step="0.5"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div><div class="color-control-group"><label>颜色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.textStrokeColor"><input type="text" class="color-hex-input" data-state-key="globalCardStyles.textStrokeColor"></div></div></div></div>
+                                    <div class="advanced-setting"><label>文字描边:<span class="tooltip-trigger"
+                                                data-tooltip="为文字添加边框，建议宽度不超过2px，以保证可读性。"><span class="iconify"
+                                                    data-icon="mdi:help-circle-outline"></span></span></label>
+                                        <div class="color-control-row">
+                                            <div class="color-control-group"><label>粗细(px):</label>
+                                                <div class="input-group simple stepper-group"><button
+                                                        class="btn btn-default btn-stepper minus"
+                                                        aria-label="减少">-</button><input type="range"
+                                                        data-state-key="globalCardStyles.textStrokeWidth" min="0"
+                                                        max="5" step="0.5"><button
+                                                        class="btn btn-default btn-stepper plus"
+                                                        aria-label="增加">+</button></div>
+                                            </div>
+                                            <div class="color-control-group"><label>颜色:</label>
+                                                <div class="input-group"><input type="color"
+                                                        data-state-key="globalCardStyles.textStrokeColor"><input
+                                                        type="text" class="color-hex-input"
+                                                        data-state-key="globalCardStyles.textStrokeColor"></div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </fieldset>
                             <!-- NEW: Global Button Styles Section -->
@@ -1876,38 +2164,92 @@
                                 <legend>全局按钮样式</legend>
                                 <div class="section-content">
                                     <div class="color-control-row">
-                                        <div class="color-control-group"><label>背景色:</label><div class="input-group"><input type="color" data-state-key="globalButtonStyles.bgColor"><input type="text" class="color-hex-input" data-state-key="globalButtonStyles.bgColor"></div></div>
-                                        <div class="color-control-group"><label>文字颜色:</label><div class="input-group"><input type="color" data-state-key="globalButtonStyles.textColor"><input type="text" class="color-hex-input" data-state-key="globalButtonStyles.textColor"></div></div>
+                                        <div class="color-control-group"><label>背景色:</label>
+                                            <div class="input-group"><input type="color"
+                                                    data-state-key="globalButtonStyles.bgColor"><input type="text"
+                                                    class="color-hex-input" data-state-key="globalButtonStyles.bgColor">
+                                            </div>
+                                        </div>
+                                        <div class="color-control-group"><label>文字颜色:</label>
+                                            <div class="input-group"><input type="color"
+                                                    data-state-key="globalButtonStyles.textColor"><input type="text"
+                                                    class="color-hex-input"
+                                                    data-state-key="globalButtonStyles.textColor"></div>
+                                        </div>
                                     </div>
-                                    <div class="form-group" style="margin-top: 15px;"><label>圆角 (px):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-state-key="globalButtonStyles.radius" min="0" max="40" step="1"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div>
-                                    <div class="form-group"><label>内容对齐:</label><div class="radio-group">
-                                        <label><input type="radio" name="gButtonAlign" value="flex-start" data-state-key="globalButtonStyles.textAlign">居左</label>
-                                        <label><input type="radio" name="gButtonAlign" value="center" data-state-key="globalButtonStyles.textAlign">居中</label>
-                                        <label><input type="radio" name="gButtonAlign" value="flex-end" data-state-key="globalButtonStyles.textAlign">居右</label>
-                                    </div></div>
+                                    <div class="form-group" style="margin-top: 15px;"><label>圆角 (px):</label>
+                                        <div class="input-group simple stepper-group"><button
+                                                class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input
+                                                type="range" data-state-key="globalButtonStyles.radius" min="0" max="40"
+                                                step="1"><button class="btn btn-default btn-stepper plus"
+                                                aria-label="增加">+</button></div>
+                                    </div>
+                                    <div class="form-group"><label>内容对齐:</label>
+                                        <div class="radio-group">
+                                            <label><input type="radio" name="gButtonAlign" value="flex-start"
+                                                    data-state-key="globalButtonStyles.textAlign">居左</label>
+                                            <label><input type="radio" name="gButtonAlign" value="center"
+                                                    data-state-key="globalButtonStyles.textAlign">居中</label>
+                                            <label><input type="radio" name="gButtonAlign" value="flex-end"
+                                                    data-state-key="globalButtonStyles.textAlign">居右</label>
+                                        </div>
+                                    </div>
                                 </div>
                             </fieldset>
                             <fieldset class="editor-section" id="export-section">
                                 <legend>操作</legend>
                                 <div class="section-content">
-                                    <div class="form-group" style="display: flex; gap: 10px;"> <button id="undo-btn" class="btn btn-default" disabled>撤回</button> <button id="redo-btn" class="btn btn-default" disabled>重做</button> </div>
-                                    <div class="form-group" style="display: flex; gap: 10px;"> <button id="import-btn" class="btn btn-secondary">导入配置</button> <button id="show-export-modal-btn" class="btn btn-secondary">导出数据...</button> </div>
+                                    <div class="form-group" style="display: flex; gap: 10px;"> <button id="undo-btn"
+                                            class="btn btn-default" disabled>撤回</button> <button id="redo-btn"
+                                            class="btn btn-default" disabled>重做</button> </div>
+                                    <div class="form-group" style="display: flex; gap: 10px;"> <button id="import-btn"
+                                            class="btn btn-secondary">导入配置</button> <button
+                                            id="show-export-modal-btn" class="btn btn-secondary">导出数据...</button>
+                                    </div>
                                     <div class="form-group">
-                                        <div class="checkbox-group" style="margin-bottom: 10px;"><label><input type="checkbox" id="mobile-export-toggle"> 优化手机端导出</label></div>
-                                        <div class="checkbox-group" style="margin-bottom: 10px;"><label><input type="checkbox" id="hd-export-toggle"> 超清导出 (1800px)</label></div>
-                                        <div class="checkbox-group" style="margin-bottom: 10px;"><label><input type="checkbox" id="custom-width-toggle"> 自定义宽度</label><input type="number" id="custom-width-input" value="1200" style="width: 80px; padding: 4px 8px;" disabled></div>
-                                        <div class="checkbox-group" style="margin-bottom: 10px;"><label><input type="checkbox" id="export-rounded-corners-toggle"> 导出为圆角图片</label><input type="number" id="export-corner-radius-input" value="20" style="width: 60px; padding: 4px 8px;" disabled></div>
+                                        <div class="checkbox-group" style="margin-bottom: 10px;"><label><input
+                                                    type="checkbox" id="mobile-export-toggle"> 优化手机端导出</label></div>
+                                        <div class="checkbox-group" style="margin-bottom: 10px;"><label><input
+                                                    type="checkbox" id="hd-export-toggle"> 超清导出 (1800px)</label></div>
+                                        <div class="checkbox-group" style="margin-bottom: 10px;"><label><input
+                                                    type="checkbox" id="custom-width-toggle"> 自定义尺寸</label></div>
+                                        <div id="custom-dimensions-controls" style="display: none; padding-left: 20px;">
+                                            <div class="checkbox-group" style="margin-bottom: 10px;"><label><input type="checkbox" id="lock-aspect-ratio-toggle" data-state-key="exportSettings.lockAspectRatio" checked> 锁定比例</label></div>
+                                            <div style="display: flex; gap: 10px; align-items: center;">
+                                                <input type="number" id="custom-width-input" data-state-key="exportSettings.customWidth" value="1200" style="width: 80px; padding: 4px 8px;">
+                                                <span>x</span>
+                                                <input type="number" id="custom-height-input" data-state-key="exportSettings.customHeight" value="750" style="width: 80px; padding: 4px 8px;" disabled>
+                                            </div>
+                                        </div>
+                                        <div class="checkbox-group" style="margin-bottom: 10px;"><label><input
+                                                    type="checkbox" id="export-rounded-corners-toggle"> 导出为圆角图片</label><input
+                                                type="number" id="export-corner-radius-input" value="20"
+                                                style="width: 60px; padding: 4px 8px;" disabled></div>
                                         <!-- NEW: Watermark/Attribution Checkbox -->
                                         <div class="checkbox-group" style="margin-bottom: 10px;">
-                                            <label><input type="checkbox" id="export-attribution-toggle"> 显示blokko水印/背景作者</label>
+                                            <label><input type="checkbox" id="export-attribution-toggle">
+                                                显示blokko水印/背景作者</label>
                                             <span id="attribution-link-wrapper"></span>
                                         </div>
-                                        <div id="export-size-preview" style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 5px;"></div>
-                                        <button id="export-png-btn" class="btn btn-primary" style="margin-top:10px;">导出为图片 (1200px)</button>
+                                        <div id="export-size-preview"
+                                            style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 5px;">
+                                        </div>
+                                        <button id="export-png-btn" class="btn btn-primary"
+                                            style="margin-top:10px;">导出为图片 (1200px)</button>
                                     </div>
-                                    <hr class="separator"><div class="form-group"><label>预设主题:</label><div class="input-group simple"> <button data-preset="light" class="btn btn-default btn-small">明亮</button> <button data-preset="dark" class="btn btn-default btn-small">暗黑</button> <button data-preset="mint" class="btn btn-default btn-small">薄荷</button> <button data-preset="coffee" class="btn btn-default btn-small">咖啡</button> </div></div>
-                                    <div class="form-group"><button id="reset-btn" class="btn btn-danger">恢复默认模板</button></div>
-                                    <input type="file" id="config-file-input" accept=".json,.zip" style="display: none;">
+                                    <hr class="separator">
+                                    <div class="form-group"><label>预设主题:</label>
+                                        <div class="input-group simple"> <button data-preset="light"
+                                                class="btn btn-default btn-small">明亮</button> <button
+                                                data-preset="dark" class="btn btn-default btn-small">暗黑</button> <button
+                                                data-preset="mint" class="btn btn-default btn-small">薄荷</button> <button
+                                                data-preset="coffee" class="btn btn-default btn-small">咖啡</button>
+                                        </div>
+                                    </div>
+                                    <div class="form-group"><button id="reset-btn"
+                                            class="btn btn-danger">恢复默认模板</button></div>
+                                    <input type="file" id="config-file-input" accept=".json,.zip"
+                                        style="display: none;">
                                 </div>
                             </fieldset>
                         </div>
@@ -1923,19 +2265,33 @@
                                 <legend>个人信息</legend>
                                 <div class="section-content">
                                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                        <label class="checkbox-group" style="font-weight: bold;"><input type="checkbox" data-state-key="personalInfo.isVisible"> 显示个人信息区域</label>
+                                        <!-- MOVED: Layout controls -->
+                                        <div class="form-group" style="margin: 0;">
+                                            <label>布局:</label>
+                                            <div class="radio-group" style="padding: 5px;">
+                                                <label><input type="radio" name="personal-info-layout" value="default" data-state-key="personalInfo.layout"> 默认</label>
+                                                <label><input type="radio" name="personal-info-layout" value="card" data-state-key="personalInfo.layout"> 名片</label>
+                                            </div>
+                                        </div>
                                         <label class="checkbox-group advanced-toggle-label"><input type="checkbox" class="advanced-toggle"> 高级</label>
                                     </div>
                                     <div class="form-group"><label>头像上传 (点击左侧预览区的头像也可上传):</label><input type="file" id="avatar-upload" accept="image/*"></div>
                                     <div class="form-group advanced-setting"><label>头像形状:</label><div class="radio-group"><label><input type="radio" name="avatarShape" value="50%" data-state-key="personalInfo.avatarShape">圆形</label><label><input type="radio" name="avatarShape" value="16px" data-state-key="personalInfo.avatarShape">圆角</label><label><input type="radio" name="avatarShape" value="0px" data-state-key="personalInfo.avatarShape">方形</label></div></div>
                                     <div class="form-group advanced-setting"><label>头像边框:</label><div class="color-control-row"><div class="color-control-group"><label>粗细(px):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-state-key="personalInfo.avatarBorderSize" min="0" max="10" step="1"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div><div class="color-control-group"><label>颜色:</label><div class="input-group"><input type="color" data-state-key="personalInfo.avatarBorderColor"><input type="text" class="color-hex-input" data-state-key="personalInfo.avatarBorderColor"><button class="btn btn-default btn-small" data-reset-key="personalInfo.avatarBorderColor">重置</button></div></div></div></div>
                                     
-                                    ${this.state.personalInfo.layout !== 'card' ? `
                                     <hr class="separator advanced-setting">
                                     <div class="form-group advanced-setting"><label>头像大小 (%): <span class="avatar-size-value">100</span></label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-state-key="personalInfo.avatarSize" min="50" max="200" step="1"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div>
                                     <div class="form-group advanced-setting"><label>头像水平位置:</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-state-key="personalInfo.avatarOffsetX" min="-100" max="100" step="1"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div>
+                                    <!-- NEW: Floating Avatar Control -->
+<div id="avatar-offsetY-control" class="form-group advanced-setting">
+                                        <label>头像垂直偏移 (悬浮): <span class="avatar-offsetY-value">0</span>%</label>
+                                        <div class="input-group simple stepper-group">
+                                            <button class="btn btn-default btn-stepper minus" aria-label="减少">-</button>
+                                            <input type="range" data-state-key="personalInfo.avatarOffsetY" min="0" max="100" step="1">
+                                            <button class="btn btn-default btn-stepper plus" aria-label="增加">+</button>
+                                        </div>
+                                    </div>
                                     <div class="form-group advanced-setting"><button id="reset-avatar-transform-btn" class="btn btn-default btn-small">恢复默认位置与大小</button></div>
-                                    ` : ''}
 
                                     <hr class="separator">
                                     <div class="form-group"><label>昵称:</label><input type="text" data-state-key="personalInfo.nickname" data-preview-target="#preview-nickname"></div>
@@ -2370,16 +2726,21 @@
                             case 'subtitle': this.elements.previewHeader.querySelector('#preview-subtitle').textContent = this.state.personalInfo.subtitle; break;
                             case 'bio': this.elements.previewHeader.querySelector('#preview-bio').textContent = this.state.personalInfo.bio; break;
                             case 'avatarSize':
-                            case 'avatarOffsetX':
-                                if (previewAvatar) {
-                                    const baseSize = 90;
-                                    const newSize = baseSize * ((info.avatarSize || 100) / 100);
-                                    const offsetX = info.avatarOffsetX || 0;
-                                    previewAvatar.style.width = `${newSize}px`;
-                                    previewAvatar.style.height = `${newSize}px`;
-                                    previewAvatar.style.transform = `translateX(${offsetX}%)`;
-                                }
-                                break;
+                        case 'avatarOffsetX':
+                        case 'avatarOffsetY':
+                            if (previewAvatar) {
+                                const baseSize = 90;
+                                const newSize = baseSize * ((info.avatarSize || 100) / 100);
+                                const offsetX = info.avatarOffsetX || 0;
+                                const offsetY = info.avatarOffsetY || 0;
+                                previewAvatar.style.width = `${newSize}px`;
+                                previewAvatar.style.height = `${newSize}px`;
+                                previewAvatar.style.transform = `translateX(${offsetX}%)`;
+                                const overflowAmount = (newSize * (offsetY / 100));
+                                previewAvatar.style.marginTop = `-${overflowAmount}px`;
+                                this.elements.previewWrapper.style.paddingTop = `${20 + (overflowAmount / 2.5)}px`;
+                            }
+                            break;
                             case 'avatarShape':
                                 if (previewAvatar) previewAvatar.style.borderRadius = info.avatarShape;
                                 break;
@@ -2394,8 +2755,9 @@
                     }
 
                     // 如果更新的是页面或全局卡片样式
-                    if (mainKey === 'pageStyles' || mainKey === 'globalCardStyles' || mainKey === 'globalButtonStyles') {
+                    if (mainKey === 'pageStyles' || mainKey === 'globalCardStyles' || mainKey === 'globalButtonStyles' || mainKey === 'exportSettings') {
                         if (mainKey === 'globalCardStyles' || mainKey === 'globalButtonStyles') this.updateGlobalCardStyleVars();
+                        if (mainKey === 'exportSettings') this.updatePreviewAspectRatio();
                         this.renderPageStyles();
                         this.renderPreviewBlocks();
                         if (this.selection.type === 'global') this.syncAllControls();
@@ -2445,11 +2807,16 @@
                             const cardProp = keyParts[4];
                             const card = block.cards[cardIndex];
                             if (!card) return;
-
-                            if (cardProp === 'title' || cardProp === 'text') {
-                                this.renderLayerPanel();
+                            
+                            // OPTIMIZATION: More granular rendering
+                            if (['title', 'content', 'icon', 'text', 'bgColor', 'textColor'].includes(cardProp)) {
+                                this.renderPreviewCardById(block.id, card.id);
+                                if (cardProp === 'title' || cardProp === 'text') {
+                                    this.renderLayerPanel();
+                                }
+                            } else {
+                                this.renderPreviewBlockById(block.id);
                             }
-                            this.renderPreviewBlockById(block.id);
                             return;
                         }
                     }
@@ -2697,7 +3064,7 @@
                             }
 
                             if (input.type === 'range') {
-                                const valueDisplay = input.closest('.form-group').querySelector('.angle-value, .spacer-height-value, #gCardRadiusValue, .avatar-size-value, .header-radius-value');
+                                const valueDisplay = input.closest('.form-group').querySelector('.angle-value, .spacer-height-value, #gCardRadiusValue, .avatar-size-value, .avatar-offsetY-value, .header-radius-value, .shadow-blur-value, .shadow-offset-value');
                                 if (valueDisplay) valueDisplay.textContent = value;
                             }
                         });
@@ -2744,7 +3111,7 @@
                                         }
                                     }
                                     if (input.type === 'range') {
-                                        const valueDisplay = input.closest('.form-group').querySelector('.angle-value, .spacer-height-value, #gCardRadiusValue, .avatar-size-value, .header-radius-value');
+                                        const valueDisplay = input.closest('.form-group').querySelector('.angle-value, .spacer-height-value, #gCardRadiusValue, .avatar-size-value, .avatar-offsetY-value, .header-radius-value, .shadow-blur-value, .shadow-offset-value');
                                         if (valueDisplay) valueDisplay.textContent = value;
                                     }
                                 }
@@ -2768,6 +3135,14 @@
                             gCardSection.querySelectorAll('.tab-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === gCardActiveTab));
                             gCardSection.querySelectorAll(':scope > .section-content > .tab-content').forEach(c => c.classList.toggle('active', c.id === gCardActiveTab));
                         }
+                        
+                        // NEW: Sync export dimension controls visibility
+                        const customDimControls = this.elements.inspectorPanel.querySelector('#custom-dimensions-controls');
+                        if(customDimControls) {
+                            const customWidthToggle = this.elements.inspectorPanel.querySelector('#custom-width-toggle');
+                            customDimControls.style.display = customWidthToggle.checked ? 'block' : 'none';
+                        }
+
 
                         const pageSection = this.elements.inspectorPanel.querySelector('#page-styles-section');
                         if (pageSection) {
@@ -2823,6 +3198,61 @@
                         this.initMasonryForBlock(blockId);
                     }
                     this.renderMobileEditPencils();
+                },
+                
+                // OPTIMIZATION: More granular card rendering
+                renderPreviewCardById(blockId, cardId) {
+                    const block = this.findBlock(blockId);
+                    const cardData = block?.cards.find(c => c.id === cardId);
+                    if (!cardData) return;
+                    
+                    const cardEl = this.elements.previewBlocksContainer.querySelector(`[data-card-id="${cardId}"]`);
+                    if (!cardEl) {
+                        // Element not found, fall back to full block render
+                        this.renderPreviewBlockById(blockId);
+                        return;
+                    }
+
+                    if (cardEl.matches('.preview-card')) { // Handle text card
+                        const titleEl = cardEl.querySelector('.preview-card-title');
+                        const contentEl = cardEl.querySelector('.preview-card-content');
+                        
+                        if (titleEl) {
+                            const iconHTML = cardData.icon ? `<span class="iconify" data-icon="${cardData.icon}"></span>` : '';
+                            titleEl.innerHTML = iconHTML + this.escapeHTML(cardData.title || '');
+                        }
+                        if (contentEl) {
+                            contentEl.innerHTML = this.sanitizeHTML(cardData.content || '');
+                        }
+                        this.applyCardStyles(cardEl, cardData);
+                    } else if (cardEl.matches('.preview-button')) { // Handle button card
+                        const textSpan = cardEl.querySelector('span[data-card-key="text"]');
+                        const iconSpan = cardEl.querySelector('.iconify');
+                        if(textSpan) textSpan.textContent = cardData.text || '';
+                        
+                        if(cardData.icon) {
+                            if(iconSpan) {
+                                iconSpan.dataset.icon = cardData.icon;
+                            } else {
+                                const newIcon = document.createElement('span');
+                                newIcon.className = 'iconify';
+                                newIcon.dataset.icon = cardData.icon;
+                                cardEl.insertBefore(newIcon, textSpan);
+                            }
+                        } else if (iconSpan) {
+                            iconSpan.remove();
+                        }
+                        // Re-apply inline styles for buttons
+                        const g = this.state.globalButtonStyles;
+                        const alignSelf = { 'left': 'flex-start', 'center': 'center', 'right': 'flex-end' }[cardData.textAlign] || 'center';
+                        cardEl.style.setProperty('--button-bg-color', cardData.bgColor || g.bgColor);
+                        cardEl.style.setProperty('--button-text-color', cardData.textColor || g.textColor);
+                        cardEl.style.setProperty('--button-border-radius', (cardData.radius != null ? cardData.radius : g.radius) + 'px');
+                        cardEl.style.setProperty('--button-text-align', cardData.textAlign || g.textAlign);
+                        cardEl.style.setProperty('--button-width', cardData.width || '100%');
+                        cardEl.style.setProperty('--button-align-self', alignSelf);
+
+                    }
                 },
 
                 // ... 历史记录 (撤销/重做) 相关函数 ...
@@ -3677,7 +4107,7 @@
                         await processObject(stateClone);
 
                         zip.file("config.json", JSON.stringify(stateClone, null, 2));
-                        zip.file("readme.txt", `Blokko 强化导出备份\n版本: 1.6.5\n导出时间: ${new Date().toLocaleString()}\n\n此 .zip 文件包含了您的配置文件 (config.json) 和所有图片资源 (images/ 文件夹)。`);
+                        zip.file("readme.txt", `Blokko 强化导出备份\n版本: 1.7.0\n导出时间: ${new Date().toLocaleString()}\n\n此 .zip 文件包含了您的配置文件 (config.json) 和所有图片资源 (images/ 文件夹)。`);
 
                         const blob = await zip.generateAsync({ type: "blob" });
                         const filename = this.generateFilename('Enhanced-Backup') + '.zip';
@@ -3895,30 +4325,33 @@
                     const customWidthToggle = this.elements.inspectorPanel.querySelector('#custom-width-toggle');
                     const hdExportToggle = this.elements.inspectorPanel.querySelector('#hd-export-toggle');
 
-                    // 防止手机端导出模糊的核心逻辑
-
                     const isMobileExport = mobileExportToggle.checked;
                     const isCustomWidth = customWidthToggle.checked;
                     const isHD = hdExportToggle.checked;
-
+                    
                     const sourceElement = this.elements.previewWrapper;
-                    const sourceWidth = sourceElement.clientWidth; // 这是元素在屏幕上的实际宽度
+                    // NEW: Use the actual element's dimensions for scaling calculation
+                    const sourceWidth = sourceElement.offsetWidth;
+                    const sourceHeight = sourceElement.offsetHeight;
 
-                    let targetWidth;
+                    let targetWidth, targetHeight;
 
                     if (isMobileExport) {
-                        // 手机模式导出：固定目标宽度为 1200px 以保证高清
                         targetWidth = 1200;
+                        targetHeight = Math.round(targetWidth * (sourceHeight / sourceWidth));
                     } else if (isCustomWidth) {
-                        targetWidth = parseInt(this.elements.inspectorPanel.querySelector('#custom-width-input').value, 10) || 1200;
+                        targetWidth = this.state.exportSettings.customWidth;
+                        targetHeight = this.state.exportSettings.lockAspectRatio
+                            ? Math.round(targetWidth * (sourceHeight / sourceWidth))
+                            : this.state.exportSettings.customHeight;
                     } else if (isHD) {
                         targetWidth = 1800;
+                        targetHeight = Math.round(targetWidth * (sourceHeight / sourceWidth));
                     } else {
-                        // 默认导出宽度
                         targetWidth = 1200;
+                        targetHeight = Math.round(targetWidth * (sourceHeight / sourceWidth));
                     }
 
-                    // 根据目标宽度和源宽度计算精确的缩放比例
                     const scale = targetWidth / sourceWidth;
 
                     const exportRounded = this.elements.inspectorPanel.querySelector('#export-rounded-corners-toggle').checked;
@@ -3976,6 +4409,10 @@
                         clone.style.top = '0px';
                         clone.style.borderRadius = '0';
                         clone.style.width = `${sourceWidth}px`;
+                        // NEW: Set height for unlocked aspect ratio
+                        if (isCustomWidth && !this.state.exportSettings.lockAspectRatio) {
+                            clone.style.height = `${sourceHeight}px`; // Keep original height for rendering, but canvas will be different size
+                        }
                         clone.style.maxWidth = 'none';
 
                         document.body.appendChild(clone);
@@ -4004,34 +4441,43 @@
                         this.showLoading('正在渲染图片...');
 
                         const canvas = await html2canvas(clone, {
-                            scale: scale, // 使用计算好的高清缩放比例
+                            scale: scale, // Use calculated high-res scale
                             useCORS: true,
                             backgroundColor: null,
-                            logging: false
+                            logging: false,
+                            width: sourceWidth,
+                            // NEW: Use custom height for unlocked aspect ratio
+                            height: (isCustomWidth && !this.state.exportSettings.lockAspectRatio) ? targetHeight / scale : sourceHeight,
+                            windowWidth: sourceWidth,
+                            windowHeight: sourceHeight,
                         });
-
+                        
+                        const g = this.state.globalCardStyles;
                         let finalCanvas = canvas;
+
+
                         if (exportRounded && cornerRadius > 0) {
                             this.showLoading('正在应用圆角...');
-                            finalCanvas = document.createElement('canvas');
-                            finalCanvas.width = canvas.width;
-                            finalCanvas.height = canvas.height;
-                            const ctx = finalCanvas.getContext('2d');
+                            const roundedCanvas = document.createElement('canvas');
+                            roundedCanvas.width = finalCanvas.width;
+                            roundedCanvas.height = finalCanvas.height;
+                            const ctx = roundedCanvas.getContext('2d');
                             const scaledRadius = cornerRadius * scale;
 
                             ctx.beginPath();
                             ctx.moveTo(scaledRadius, 0);
-                            ctx.lineTo(finalCanvas.width - scaledRadius, 0);
-                            ctx.arcTo(finalCanvas.width, 0, finalCanvas.width, scaledRadius, scaledRadius);
-                            ctx.lineTo(finalCanvas.width, finalCanvas.height - scaledRadius);
-                            ctx.arcTo(finalCanvas.width, finalCanvas.height, finalCanvas.width - scaledRadius, finalCanvas.height, scaledRadius);
-                            ctx.lineTo(scaledRadius, finalCanvas.height);
-                            ctx.arcTo(0, finalCanvas.height, 0, finalCanvas.height - scaledRadius, scaledRadius);
+                            ctx.lineTo(roundedCanvas.width - scaledRadius, 0);
+                            ctx.arcTo(roundedCanvas.width, 0, roundedCanvas.width, scaledRadius, scaledRadius);
+                            ctx.lineTo(roundedCanvas.width, roundedCanvas.height - scaledRadius);
+                            ctx.arcTo(roundedCanvas.width, roundedCanvas.height, roundedCanvas.width - scaledRadius, roundedCanvas.height, scaledRadius);
+                            ctx.lineTo(scaledRadius, roundedCanvas.height);
+                            ctx.arcTo(0, roundedCanvas.height, 0, roundedCanvas.height - scaledRadius, scaledRadius);
                             ctx.lineTo(0, scaledRadius);
                             ctx.arcTo(0, 0, scaledRadius, 0, scaledRadius);
                             ctx.closePath();
                             ctx.clip();
-                            ctx.drawImage(canvas, 0, 0);
+                            ctx.drawImage(finalCanvas, 0, 0);
+                            finalCanvas = roundedCanvas;
                         }
 
                         const dataUrl = finalCanvas.toDataURL('image/png');
@@ -4061,10 +4507,31 @@
                     if (attr && attr.user) {
                         wrapper.innerHTML = `<a href="${attr.pageURL}" target="_blank" style="margin-left: 5px; font-weight: normal;">(查看作者: ${this.escapeHTML(attr.user)})</a>`;
                     } else {
+                         wrapper.innerHTML = '';
                     }
                 },
 
                 // ... 辅助函数和工具函数 ...
+                // MODIFIED: Renamed from updateExportSizePreview to updatePreviewAspectRatio and added more logic
+                updatePreviewAspectRatio() {
+                    const s = this.state.exportSettings;
+                    const el = this.elements.previewWrapper;
+                    const panel = this.elements.inspectorPanel;
+                    if (!el || !panel) return;
+                    
+                    const customWidthToggle = panel.querySelector('#custom-width-toggle');
+                    
+                    if (customWidthToggle && customWidthToggle.checked && !s.lockAspectRatio) {
+                        const aspectRatio = s.customWidth / s.customHeight;
+                        el.style.aspectRatio = `${aspectRatio}`;
+                        el.style.height = 'auto';
+                    } else {
+                        el.style.aspectRatio = '';
+                        el.style.height = '';
+                    }
+                    this.updateExportSizePreview();
+                },
+
                 updateExportSizePreview() {
                     const el = this.elements.previewWrapper;
                     if (!el || el.clientWidth === 0) return;
@@ -4073,28 +4540,32 @@
                     const customWidthToggle = document.getElementById('custom-width-toggle');
                     const hdExportToggle = document.getElementById('hd-export-toggle');
                     if (!customWidthToggle || !hdExportToggle || !mobileExportToggle) return;
-
+                    
+                    const s = this.state.exportSettings;
                     const isMobileExport = mobileExportToggle.checked;
                     const isCustomWidth = customWidthToggle.checked;
                     const isHD = hdExportToggle.checked;
 
-                    let targetWidth;
+                    let targetWidth, targetHeight;
+                    const originalAspectRatio = el.offsetHeight / el.offsetWidth;
+
                     if (isMobileExport) {
                         targetWidth = 1200;
+                        targetHeight = Math.round(targetWidth * originalAspectRatio);
                     } else if (isCustomWidth) {
-                        targetWidth = parseInt(document.getElementById('custom-width-input').value, 10) || 1200;
+                        targetWidth = s.customWidth;
+                        targetHeight = s.lockAspectRatio ? Math.round(targetWidth * originalAspectRatio) : s.customHeight;
                     } else if (isHD) {
                         targetWidth = 1800;
+                        targetHeight = Math.round(targetWidth * originalAspectRatio);
                     } else {
                         targetWidth = 1200;
+                        targetHeight = Math.round(targetWidth * originalAspectRatio);
                     }
-
-                    const originalAspectRatio = el.clientHeight / el.clientWidth;
-                    const finalHeight = Math.round(targetWidth * originalAspectRatio);
 
                     const previewEl = document.getElementById('export-size-preview');
                     if (previewEl) {
-                        previewEl.textContent = `导出尺寸: ${targetWidth}x${finalHeight}px`;
+                        previewEl.textContent = `导出尺寸: ${targetWidth}x${targetHeight}px`;
                     }
 
                     const exportBtn = document.getElementById('export-png-btn');
@@ -4244,7 +4715,8 @@
                     r.setProperty('--g-card-content-font-size', g.contentFontSize);
                     r.setProperty('--g-card-text-stroke', g.textStrokeWidth > 0 ? `${g.textStrokeWidth}px ${g.textStrokeColor}` : '0px transparent');
                     r.setProperty('--active-card-border', g.borderWidth > 0 && g.borderStyle !== 'none' ? `${g.borderWidth}px ${g.borderStyle} ${g.borderColor}` : 'none');
-                    r.setProperty('--active-card-shadow', 'none');
+                    
+
 
                     // NEW: Set global button styles
                     r.setProperty('--g-button-bg-color', gBtn.bgColor);
@@ -4586,8 +5058,7 @@
                         return;
                     }
                     try {
-                        const prefixes = 'lucide,tabler,mdi,ph,heroicons,ri,icon-park-outline,icon-park-solid,icon-park-twotone,simple-icons,noto,bx,bxs,bxl,carbon,pixelarticons';
-                        const response = await fetch(`https://api.iconify.design/search?query=${encodeURIComponent(searchTerm)}&limit=99&prefixes=${prefixes}`);
+                        const prefixes = 'lucide,tabler,mdi,ph,heroicons,ri,icon-park-outline,icon-park-solid,icon-park-twotone,simple-icons,noto,bx,bxs,bxl,carbon,pixelarticons,feather,fluent,eva'; const response = await fetch(`https://api.iconify.design/search?query=${encodeURIComponent(searchTerm)}&limit=99&prefixes=${prefixes}`);
                         const data = await response.json();
 
                         let onlineIconsHTML;
@@ -5013,11 +5484,6 @@
                         this.renderPreviewBlocks();
                         this.showToast('区块已删除', 'info');
                     }
-                },
-
-                togglePersonalInfoVisibility() {
-                    const currentVisibility = this.state.personalInfo.isVisible;
-                    this.updateState('personalInfo.isVisible', !currentVisibility, true, '切换个人信息可见性');
                 },
 
                 toggleBlockVisibility(blockId) {

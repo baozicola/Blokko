@@ -38,7 +38,6 @@
             --g-card-bg-color: var(--bg-card);
             --g-card-text-color: var(--text-primary);
             --g-card-opacity: 1;
-            --g-card-shadow: none;
             --g-card-border-radius: 12px;
             --g-card-text-align: left;
             --g-card-line-height: 1.5;
@@ -53,7 +52,7 @@
             --g-button-border-radius: 8px;
             --g-button-text-align: center;
             /* 活动卡片样式变量 (用于预览) */
-            --active-card-shadow: var(--g-card-shadow);
+            --active-card-shadow: none;
             --active-card-border: var(--g-card-border);
             --active-card-text-shadow: none;
             --active-card-font-family: var(--g-card-font-family);
@@ -84,7 +83,6 @@
             --preset-text-shadow: none;
             --g-card-bg-color: var(--bg-card);
             --g-card-text-color: var(--text-primary);
-            --g-card-shadow: none;
             /* NEW: 全局按钮样式变量 (暗黑) */
             --g-button-bg-color: var(--text-action);
         }
@@ -452,7 +450,7 @@
             padding-bottom: 40px;
             transition: all var(--transition-speed) ease;
             position: relative;
-            overflow: hidden;
+            overflow: visible;
             font-family: var(--active-card-font-family);
         }
 
@@ -890,6 +888,8 @@
             border-radius: 16px;
             transition: all var(--transition-speed) ease;
             overflow-wrap: break-word;
+            /* NEW: Allow avatar to overflow for floating effect */
+            overflow: visible;
         }
 
         /* NEW: Styles for card layout */
@@ -935,6 +935,9 @@
             background-color: #fff;
             transition: all var(--transition-speed) ease;
             cursor: pointer;
+            /* NEW: Add z-index for floating effect */
+            position: relative;
+            z-index: 5;
         }
 
         #preview-nickname {
@@ -1212,6 +1215,8 @@
             border-radius: 6px;
             overflow: hidden;
             transition: all var(--transition-short) ease;
+            /* OPTIMIZATION: Add min-height for layout stability */
+            min-height: 80px;
         }
 
         .thumbnail-wrapper img {
@@ -1344,7 +1349,7 @@
             overflow: hidden;
             color: var(--card-text-color, var(--g-card-text-color));
             border-radius: var(--g-card-border-radius);
-            box-shadow: var(--active-card-shadow, none);
+            box-shadow: none;
             border: var(--active-card-border, none);
             font-weight: var(--card-font-weight, normal);
             text-shadow: var(--active-card-text-shadow, none);
@@ -1452,6 +1457,11 @@
             /* Ensure proper stacking context for masonry */
             vertical-align: top;
             display: inline-block;
+            /* OPTIMIZATION: Add min-height for layout stability */
+            background-color: var(--bg-image-thumb);
+            min-height: 150px;
+            border-radius: 8px;
+            overflow: hidden;
         }
 
         .preview-cards-container figure img {
@@ -2542,6 +2552,14 @@
             html.dark-mode .inspector-panel .editor-section>legend {
                 box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
             }
+        }
+
+        @keyframes highlight {
+            from { background-color: rgba(0, 122, 255, 0.2); }
+            to { background-color: transparent; }
+        }
+        .highlight-animation {
+            animation: highlight 1.5s ease-out;
         }
 
         @media (max-width: 768px) {
