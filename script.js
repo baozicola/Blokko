@@ -4408,14 +4408,16 @@
                         clone.style.left = '-9999px';
                         clone.style.top = '0px';
                         clone.style.borderRadius = '0';
-                        clone.style.width = `${sourceWidth}px`;
-                        // NEW: Set height for unlocked aspect ratio
-                        if (isCustomWidth && !this.state.exportSettings.lockAspectRatio) {
-                            clone.style.height = `${sourceHeight}px`; // Keep original height for rendering, but canvas will be different size
-                        }
-                        clone.style.maxWidth = 'none';
+                        // ...
+clone.style.width = `${sourceWidth}px`;
+clone.style.maxWidth = 'none';
+if (isCustomWidth && !this.state.exportSettings.lockAspectRatio) {
+    const cloneHeight = targetHeight / scale;
+    clone.style.height = `${cloneHeight}px`;
+    clone.style.overflow = 'hidden'; 
+}
 
-                        document.body.appendChild(clone);
+document.body.appendChild(clone);
                         await this.sleep(100);
 
                         this.showLoading('正在计算瀑布流布局...');
@@ -4441,16 +4443,11 @@
                         this.showLoading('正在渲染图片...');
 
                         const canvas = await html2canvas(clone, {
-                            scale: scale, // Use calculated high-res scale
-                            useCORS: true,
-                            backgroundColor: null,
-                            logging: false,
-                            width: sourceWidth,
-                            // NEW: Use custom height for unlocked aspect ratio
-                            height: (isCustomWidth && !this.state.exportSettings.lockAspectRatio) ? targetHeight / scale : sourceHeight,
-                            windowWidth: sourceWidth,
-                            windowHeight: sourceHeight,
-                        });
+    scale: scale,
+    useCORS: true,
+    backgroundColor: null,
+    logging: false
+});
                         
                         const g = this.state.globalCardStyles;
                         let finalCanvas = canvas;
