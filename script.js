@@ -874,7 +874,6 @@
                         }
                     });
 
-                    // BUG FIX: 校验并格式化十六进制颜色输入框
                     panel.addEventListener('blur', e => {
                         const target = e.target;
                         if (target.matches('.color-hex-input')) {
@@ -955,7 +954,7 @@
                         }
 
                         // 处理导出选项的联动
-                        if (target.matches('#hd-export-toggle, #custom-width-toggle, #export-rounded-corners-toggle, #export-corner-radius-input, #mobile-export-toggle, #lock-aspect-ratio-toggle')) { // FIX: Add lock toggle to the match list
+                        if (target.matches('#hd-export-toggle, #custom-width-toggle, #export-rounded-corners-toggle, #export-corner-radius-input, #mobile-export-toggle, #lock-aspect-ratio-toggle')) { 
                             // Mobile Export Logic
                             const mobileExportToggle = panel.querySelector('#mobile-export-toggle');
                             const customWidthToggle = panel.querySelector('#custom-width-toggle');
@@ -979,8 +978,7 @@
                             } else if (target.id === 'custom-width-toggle') {
                                 const customDimControls = panel.querySelector('#custom-dimensions-controls');
                                 if (customDimControls) customDimControls.style.display = target.checked ? 'block' : 'none';
-                                
-                                // FIX: More robust logic for enabling/disabling inputs
+
                                 customWidthInput.disabled = !target.checked;
                                 lockRatioToggle.disabled = !target.checked;
                                 customHeightInput.disabled = !target.checked || lockRatioToggle.checked; // Height is disabled if custom is off OR lock is on
@@ -2207,8 +2205,10 @@
                                             id="show-export-modal-btn" class="btn btn-secondary">导出数据...</button>
                                     </div>
                                     <div class="form-group">
-                                        <div class="checkbox-group" style="margin-bottom: 10px;"><label><input
-                                                    type="checkbox" id="mobile-export-toggle"> 优化手机端导出</label></div>
+                                        <div id="mobile-export-toggle-container">
+                                            <div class="checkbox-group" style="margin-bottom: 10px;"><label><input
+                                                        type="checkbox" id="mobile-export-toggle"> 手机端导出预览</label></div>
+                                        </div>
                                         <div class="checkbox-group" style="margin-bottom: 10px;"><label><input
                                                     type="checkbox" id="hd-export-toggle"> 超清导出 (1800px)</label></div>
                                         <div class="checkbox-group" style="margin-bottom: 10px;"><label><input
@@ -2719,7 +2719,6 @@
                     if (mainKey === 'personalInfo') {
                         const subKey = keyParts[1];
 
-                        // FIX: Add specific render paths to avoid full re-render
                         const previewAvatar = this.elements.previewHeader.querySelector('#preview-avatar');
                         switch (subKey) {
                             case 'nickname': this.elements.previewHeader.querySelector('#preview-nickname').textContent = this.state.personalInfo.nickname; break;
@@ -4307,7 +4306,6 @@
 
                 // ... 导出PNG相关函数 ...
                 async bakeOverlaysForExport(clone) {
-                    // This function is assumed to be correct
                 },
 
                 async exportPNG() {
@@ -4321,41 +4319,51 @@
                     }
                     this.showLoading('正在准备导出...');
 
-                    const mobileExportToggle = this.elements.inspectorPanel.querySelector('#mobile-export-toggle');
-                    const customWidthToggle = this.elements.inspectorPanel.querySelector('#custom-width-toggle');
-                    const hdExportToggle = this.elements.inspectorPanel.querySelector('#hd-export-toggle');
+                    const s = this.state.exportSettings;
+                    const panel = this.elements.inspectorPanel;
+
+                    const mobileExportToggle = panel.querySelector('#mobile-export-toggle');
+                    const customWidthToggle = panel.querySelector('#custom-width-toggle');
+                    const hdExportToggle = panel.querySelector('#hd-export-toggle');
 
                     const isMobileExport = mobileExportToggle.checked;
                     const isCustomWidth = customWidthToggle.checked;
                     const isHD = hdExportToggle.checked;
-                    
+
                     const sourceElement = this.elements.previewWrapper;
-                    // NEW: Use the actual element's dimensions for scaling calculation
+                    
+                    const DESKTOP_RENDER_WIDTH = 600; 
+                    
+                    let effectiveRenderWidth = sourceElement.offsetWidth;
                     const sourceWidth = sourceElement.offsetWidth;
                     const sourceHeight = sourceElement.offsetHeight;
+                    
+                    if (isCustomWidth && s.lockAspectRatio) {
+                        effectiveRenderWidth = DESKTOP_RENDER_WIDTH;
+                    }
 
                     let targetWidth, targetHeight;
+                    const originalAspectRatio = sourceHeight / sourceWidth; // 必须使用实际渲染的宽高比来保证内容不变形
 
                     if (isMobileExport) {
                         targetWidth = 1200;
-                        targetHeight = Math.round(targetWidth * (sourceHeight / sourceWidth));
+                        targetHeight = Math.round(targetWidth * originalAspectRatio);
                     } else if (isCustomWidth) {
-                        targetWidth = this.state.exportSettings.customWidth;
-                        targetHeight = this.state.exportSettings.lockAspectRatio
-                            ? Math.round(targetWidth * (sourceHeight / sourceWidth))
-                            : this.state.exportSettings.customHeight;
+                        targetWidth = s.customWidth;
+                        targetHeight = s.lockAspectRatio ? Math.round(targetWidth * originalAspectRatio) : s.customHeight;
                     } else if (isHD) {
                         targetWidth = 1800;
-                        targetHeight = Math.round(targetWidth * (sourceHeight / sourceWidth));
+                        targetHeight = Math.round(targetWidth * originalAspectRatio);
                     } else {
                         targetWidth = 1200;
-                        targetHeight = Math.round(targetWidth * (sourceHeight / sourceWidth));
+                        targetHeight = Math.round(targetWidth * originalAspectRatio);
                     }
 
-                    const scale = targetWidth / sourceWidth;
+                    // scale 是基于我们强制的渲染宽度来计算的
+                    const scale = targetWidth / effectiveRenderWidth;
 
-                    const exportRounded = this.elements.inspectorPanel.querySelector('#export-rounded-corners-toggle').checked;
-                    const cornerRadius = parseInt(this.elements.inspectorPanel.querySelector('#export-corner-radius-input').value, 10) || 20;
+                    const exportRounded = panel.querySelector('#export-rounded-corners-toggle').checked;
+                    const cornerRadius = parseInt(panel.querySelector('#export-corner-radius-input').value, 10) || 20;
 
                     let clone = null;
 
@@ -4372,28 +4380,18 @@
                         clone = sourceElement.cloneNode(true);
                         clone.id = `export-clone-${Date.now()}`;
 
-                        // NEW: Watermark/Attribution logic
-                        const showAttribution = this.elements.inspectorPanel.querySelector('#export-attribution-toggle').checked;
+                        const showAttribution = panel.querySelector('#export-attribution-toggle').checked;
                         if (showAttribution) {
                             const attr = this.state.pageStyles.pageBgImageAttribution;
-                            let attrHTML = '';
-                            if (attr && attr.user) {
-                                attrHTML = `Photo by ${this.escapeHTML(attr.user)} on Pixabay / `;
-                            }
+                            let attrHTML = attr && attr.user ? `Photo by ${this.escapeHTML(attr.user)} on Pixabay / ` : '';
                             attrHTML += `Made with Blokko`;
 
                             const attrDiv = document.createElement('div');
                             attrDiv.style.cssText = `
-                                position: absolute;
-                                bottom: 10px;
-                                right: 15px;
-                                font-size: 10px;
+                                position: absolute; bottom: 10px; right: 15px; font-size: 10px;
                                 font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-                                color: rgba(255, 255, 255, 0.7);
-                                background-color: rgba(0, 0, 0, 0.3);
-                                padding: 3px 6px;
-                                border-radius: 4px;
-                                z-index: 100;
+                                color: rgba(255, 255, 255, 0.7); background-color: rgba(0, 0, 0, 0.3);
+                                padding: 3px 6px; border-radius: 4px; z-index: 100;
                                 text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
                             `;
                             attrDiv.textContent = attrHTML;
@@ -4408,18 +4406,13 @@
                         clone.style.left = '-9999px';
                         clone.style.top = '0px';
                         clone.style.borderRadius = '0';
-                        clone.style.width = `${sourceWidth}px`;
-                        // NEW: Set height for unlocked aspect ratio
-                        if (isCustomWidth && !this.state.exportSettings.lockAspectRatio) {
-                            clone.style.height = `${sourceHeight}px`; // Keep original height for rendering, but canvas will be different size
-                        }
-                        if (isCustomWidth && !this.state.exportSettings.lockAspectRatio) {
-
-    const cloneHeight = targetHeight / scale;
-    clone.style.height = `${cloneHeight}px`;
-    clone.style.overflow = 'hidden'; 
-}
+                        clone.style.width = `${effectiveRenderWidth}px`;
                         clone.style.maxWidth = 'none';
+                        if (isCustomWidth && !s.lockAspectRatio) {
+                            const cloneHeight = targetHeight / scale;
+                            clone.style.height = `${cloneHeight}px`;
+                            clone.style.overflow = 'hidden'; 
+                        }
 
                         document.body.appendChild(clone);
                         await this.sleep(100);
@@ -4447,15 +4440,13 @@
                         this.showLoading('正在渲染图片...');
 
                         const canvas = await html2canvas(clone, {
-                            scale: scale, // Use calculated high-res scale
+                            scale: scale,
                             useCORS: true,
                             backgroundColor: null,
                             logging: false,
                         });
                         
-                        const g = this.state.globalCardStyles;
                         let finalCanvas = canvas;
-
 
                         if (exportRounded && cornerRadius > 0) {
                             this.showLoading('正在应用圆角...');
