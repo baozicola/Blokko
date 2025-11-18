@@ -5,7 +5,7 @@
   <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
   <!-- MODIFIED: Version Bump -->
   <title>
-   Blokko-个人简介生成器！ (v1.7.0)-时之歌十周年快乐！！
+   Blokko-个人简介生成器！ (v1.7.1)-时之歌十周年快乐！！
   </title>
   <!-- 性能优化: 预连接到关键域名，减少后续请求的连接建立时间 -->
   <link crossorigin="" href="https://fontsapi.zeoseven.com" rel="preconnect"/>
@@ -47,7 +47,7 @@
    </button>
    <!-- MODIFIED: Version Bump -->
    <div class="app-header-title">
-    Blokko (v1.7.0)
+    Blokko (v1.7.1)
    </div>
    <div class="header-actions-wrapper">
     <button class="btn btn-default" id="lock-mode-toggle" style="width: auto; padding: 6px 12px;" title="切换编辑/预览模式">
@@ -162,7 +162,7 @@
      <a href="https://pixabay.com/" target="_blank">
       Pixabay
      </a>
-     提供
+     提供,为了性能开销考虑，预览图分辨率为低清，原始图像是高清的。
     </p>
     <div class="modal-actions" style="justify-content: center; margin-top: 20px;">
      <button class="btn btn-primary" id="pixabay-search-close-btn">
@@ -360,7 +360,7 @@
        强化导出 (.zip)
       </h4>
       <p style="margin: 0; font-size: 0.9rem;">
-       将配置文件和所有图片打包成一个 .zip 文件。最建议的保存选项，可以方便的在多设备互通使用。
+       将配置文件和所有图片打包成一个 .zip 文件。最建议的保存选项，可以方便的在多设备互通使用，导入数据支持直接导入ZIP包。
       </p>
      </div>
      <div class="export-option" data-action="template">
@@ -1144,61 +1144,32 @@ Monitor of this License or out of the use or inability to use the
     <!-- MODIFIED: Changelog Update -->
     <div class="tab-content" id="help-changelog">
      <h4>
-      v1.7.0 更新日志 (2025-11-17)
+      v1.7.1 更新日志 (2025-11-18)
      </h4>
      <ul>
       <li>
        <strong>
-        【新增】悬浮头像效果：
+        【新增】
        </strong>
-       在个人信息设置中，新增“头像垂直偏移”滑块，现在你可以让头像向上溢出，创造出悬浮效果！
+       新增了Github的介绍页面。
       </li>
       <li>
        <strong>
-        【新增】强化导出功能 - 解锁比例：
+        【优化】
        </strong>
-       在导出面板的“自定义宽度”旁增加了“锁定比例”选项。取消勾选后，可以自由设定导出图片的高度（时隔不知道多少个版本我终于修好了）
-      </li>
-      <li>
-       <strong>
-        【新增】长按呼出：
-       </strong>
-       为了解决手机端点一下图层再点一下样式的繁琐操作，现在只需要长按不拖动，就会自动呼出对应的样式面板，手机端制作更方便。
-      </li>
-      <li>
-       <strong>
-        【优化】设置面板布局调整：
-       </strong>
-       <ul>
-        <li>
-         “个人信息布局”（默认/名片）选项已从“页面样式”移至更直观的“个人信息”面板中。
-        </li>
-        <li>
-         “显示个人信息区域”的开关已从“个人信息”面板移至“页面样式”面板。
-        </li>
-       </ul>
-      </li>
-      <li>
-       <strong>
-        【优化】性能提升与体验改善：
-       </strong>
-       <ul>
-        <li>
-         优化了应用启动流程，现在页面的可交互速度更快。
-        </li>
-        <li>
-         改善了图片加载机制，减少了页面初次渲染时的布局“跳动”问题。
-        </li>
-        <li>
-         优化了内部渲染逻辑，修改卡片标题、颜色等操作的界面响应更丝滑。
-        </li>
-       </ul>
+       优化了部分叙述性文本。
       </li>
       <li>
        <strong>
         【修复】
        </strong>
-       修复了在颜色输入框中输入无效的十六进制值后，该无效值会残留在输入框中的问题。
+       修复了勾选手机模式，瀑布流不会重排，以及图片异常显示遮罩的BUG。
+      </li>
+      <li>
+       <strong>
+        【修复】
+       </strong>
+       修复了在线图库无法使用的BUG。
       </li>
      </ul>
     </div>

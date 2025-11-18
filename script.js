@@ -170,7 +170,7 @@
              */
             const App = {
                 // NEW: Pixabay API Key
-                pixabayApiKey: '23863777-a87f73315a013444469228d4e',
+                pixabayApiKey: '53274475-6295c67fa26c85aa8b2331ee7',
                 // 数据库实例
                 db: null,
                 // 标记浏览器存储空间是否已满
@@ -242,7 +242,7 @@
                  */
                 init() {
                     // MODIFIED: Version Log
-                    console.log("Blokko 初始化 v1.7.0 ...");
+                    console.log("Blokko 初始化 v1.7.1 ...");
 
                     this.elements = this.queryElements();
                     this.presets = this.getPresets();
@@ -280,7 +280,7 @@
 
 
                         // MODIFIED: Version Bump
-                        const currentVersion = '1.7.0';
+                        const currentVersion = '1.7.1';
                         const lastVisitedVersion = localStorage.getItem('blokkoLastVersion');
                         const hasSeenTutorial = localStorage.getItem('blokkoHasSeenTutorial');
 
@@ -2228,7 +2228,7 @@
                                         <!-- NEW: Watermark/Attribution Checkbox -->
                                         <div class="checkbox-group" style="margin-bottom: 10px;">
                                             <label><input type="checkbox" id="export-attribution-toggle">
-                                                显示blokko水印/背景作者</label>
+                                                显示Blokko水印/背景作者</label>
                                             <span id="attribution-link-wrapper"></span>
                                         </div>
                                         <div id="export-size-preview"
@@ -4107,7 +4107,7 @@
                         await processObject(stateClone);
 
                         zip.file("config.json", JSON.stringify(stateClone, null, 2));
-                        zip.file("readme.txt", `Blokko 强化导出备份\n版本: 1.7.0\n导出时间: ${new Date().toLocaleString()}\n\n此 .zip 文件包含了您的配置文件 (config.json) 和所有图片资源 (images/ 文件夹)。`);
+                        zip.file("readme.txt", `Blokko 强化导出备份\n版本: 1.7.1\n导出时间: ${new Date().toLocaleString()}\n\n此 .zip 文件包含了您的配置文件 (config.json) 和所有图片资源 (images/ 文件夹)。`);
 
                         const blob = await zip.generateAsync({ type: "blob" });
                         const filename = this.generateFilename('Enhanced-Backup') + '.zip';
@@ -4408,16 +4408,20 @@
                         clone.style.left = '-9999px';
                         clone.style.top = '0px';
                         clone.style.borderRadius = '0';
-                        // ...
-clone.style.width = `${sourceWidth}px`;
-clone.style.maxWidth = 'none';
-if (isCustomWidth && !this.state.exportSettings.lockAspectRatio) {
+                        clone.style.width = `${sourceWidth}px`;
+                        // NEW: Set height for unlocked aspect ratio
+                        if (isCustomWidth && !this.state.exportSettings.lockAspectRatio) {
+                            clone.style.height = `${sourceHeight}px`; // Keep original height for rendering, but canvas will be different size
+                        }
+                        if (isCustomWidth && !this.state.exportSettings.lockAspectRatio) {
+
     const cloneHeight = targetHeight / scale;
     clone.style.height = `${cloneHeight}px`;
     clone.style.overflow = 'hidden'; 
 }
+                        clone.style.maxWidth = 'none';
 
-document.body.appendChild(clone);
+                        document.body.appendChild(clone);
                         await this.sleep(100);
 
                         this.showLoading('正在计算瀑布流布局...');
@@ -4443,11 +4447,11 @@ document.body.appendChild(clone);
                         this.showLoading('正在渲染图片...');
 
                         const canvas = await html2canvas(clone, {
-    scale: scale,
-    useCORS: true,
-    backgroundColor: null,
-    logging: false
-});
+                            scale: scale, // Use calculated high-res scale
+                            useCORS: true,
+                            backgroundColor: null,
+                            logging: false,
+                        });
                         
                         const g = this.state.globalCardStyles;
                         let finalCanvas = canvas;
@@ -4527,6 +4531,7 @@ document.body.appendChild(clone);
                         el.style.height = '';
                     }
                     this.updateExportSizePreview();
+                    setTimeout(() => this.relayoutAllMasonry(), 350);
                 },
 
                 updateExportSizePreview() {

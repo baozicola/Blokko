@@ -1451,15 +1451,10 @@
 
         .preview-cards-container figure {
             margin: 0;
-            display: flex;
-            flex-direction: column;
             transition: transform 0.3s ease;
             /* Ensure proper stacking context for masonry */
             vertical-align: top;
             display: inline-block;
-            /* OPTIMIZATION: Add min-height for layout stability */
-            background-color: var(--bg-image-thumb);
-            min-height: 150px;
             border-radius: 8px;
             overflow: hidden;
         }
