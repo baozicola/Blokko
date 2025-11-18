@@ -1,3 +1,0 @@
-# self-intro-generator
-
-teet
