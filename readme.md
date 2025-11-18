@@ -3,7 +3,9 @@ Blokko是一个简易的置顶图生成器，目的是解决简体中文社区�
 ---
 
 国内用户可以尝试使用第一个链接，但是如果你能看到这段文字，那第二个大概率也是通的，首次加载或版本更新后会需要加载一点点资源，已知火狐浏览器会出现预览问题，建议使用Chrome/Edge等Chromium内核的浏览器，手机端目前仅推荐在启用全屏模式下关闭夜间模式使用。
+
 https://baozicola.pages.dev/ （Cloudflare)
+
 https://baozicola.github.io/Blokko/  （GitHub page）
 
 ---
@@ -55,6 +57,7 @@ A：水印只会在使用了Pixabay图像的时候默认勾选并可以主动关
 Q：我编不出来了！
 
 A：以后再写！
+
 
 
 
