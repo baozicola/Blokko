@@ -1,4 +1,6 @@
-Blokko是一个简易的置顶图生成器，目的是解决简体中文社区微博置顶/扩列图/一类的需求，目前已经支持了富文本、药丸标签、纹理、背景图、渐变$、$瀑布流展示、响应式布局等多种功能，并对手机端完成了基础适配，部署在GitHub Page和Cloudflare Page上。<img title="" src="file:///C:/Users/sishiqi/AppData/Roaming/marktext/images/2025-11-18-14-31-02-image.png" alt="" data-align="inline">
+Blokko是一个简易的置顶图生成器，目的是解决简体中文社区微博置顶/扩列图/一类的需求，目前已经支持了富文本、药丸标签、纹理、背景图、渐变、瀑布流展示、响应式布局等多种功能，并对手机端完成了基础适配，部署在GitHub Page和Cloudflare Page上。
+
+![Uploading 屏幕截图 2025-11-18 143101.png…]()
 
 ---
 
@@ -57,6 +59,7 @@ A：水印只会在使用了Pixabay图像的时候默认勾选并可以主动关
 Q：我编不出来了！
 
 A：以后再写！
+
 
 
 
