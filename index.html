@@ -3,9 +3,8 @@
  <head>
   <meta charset="utf-8"/>
   <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-  <!-- MODIFIED: Version Bump -->
   <title>
-   Blokko-个人简介生成器！ (v1.7.1)-时之歌十周年快乐！！
+   Blokko-个人简介生成器！ (v1.8.0)-时之歌十周年快乐！！
   </title>
   <!-- 性能优化: 预连接到关键域名，减少后续请求的连接建立时间 -->
   <link crossorigin="" href="https://fontsapi.zeoseven.com" rel="preconnect"/>
@@ -45,9 +44,8 @@
     </span>
     内容
    </button>
-   <!-- MODIFIED: Version Bump -->
    <div class="app-header-title">
-    Blokko (v1.7.1)
+    Blokko (v1.8.0)
    </div>
    <div class="header-actions-wrapper">
     <button class="btn btn-default" id="lock-mode-toggle" style="width: auto; padding: 6px 12px;" title="切换编辑/预览模式">
@@ -79,8 +77,7 @@
      <!-- Layer items will be dynamically inserted here -->
     </div>
     <hr/>
-    <!-- MODIFIED: Add Button Block Button -->
-    <div class="form-group" style="display: flex; flex-wrap: wrap; gap: 10px;">
+    <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
      <button class="btn btn-default" id="add-text-block-btn">
       ➕ 文本
      </button>
@@ -89,6 +86,15 @@
      </button>
      <button class="btn btn-default" id="add-button-block-btn">
       🔘 按钮
+     </button>
+     <button class="btn btn-default" id="add-music-block-btn">
+      🎵 音乐
+     </button>
+     <button class="btn btn-default" id="add-progress-block-btn">
+      📊 进度条
+     </button>
+     <button class="btn btn-default" id="add-timeline-block-btn">
+      ⏳ 时间轴
      </button>
      <button class="btn btn-default" id="add-separator-block-btn">
       〰️ 分隔
@@ -112,10 +118,28 @@
    <div class="resizer" id="resizer">
    </div>
    <aside class="inspector-panel" id="inspector-panel">
-    <!-- Inspector content will be dynamically inserted here -->
+    <div class="inspector-tabs">
+     <button class="inspector-tab-btn active" data-tab="global">
+      🎨 全局
+     </button>
+     <button class="inspector-tab-btn" data-tab="selected">
+      📝 选中
+     </button>
+     <button class="inspector-tab-btn" data-tab="system">
+      ⚙️ 系统
+     </button>
+    </div>
+    <div class="inspector-tab-content active" id="inspector-tab-content-global">
+     <!-- 全局样式设置 -->
+    </div>
+    <div class="inspector-tab-content" id="inspector-tab-content-selected">
+     <!-- 选中项设置 -->
+    </div>
+    <div class="inspector-tab-content" id="inspector-tab-content-system">
+     <!-- 系统与导出设置 -->
+    </div>
    </aside>
   </div>
-  <!-- MODIFIED: Renamed from #page-bg-upload-modal to #image-source-modal -->
   <div class="modal-overlay" id="image-source-modal">
    <div class="modal-container">
     <h3>
@@ -138,14 +162,12 @@
     </div>
    </div>
   </div>
-  <!-- NEW: Pixabay Search Modal -->
   <div class="modal-overlay" id="pixabay-search-modal">
    <div class="modal-container">
     <h3>
      从 Pixabay 搜索图片
     </h3>
     <div class="form-group">
-     <!-- 使用 input-group 包裹输入框和按钮 -->
      <div class="input-group">
       <input class="form-control" id="pixabay-search-input" placeholder="搜索免费高质量图片 (英文关键词效果更佳)..." style="border-right: none;" type="text"/>
       <button class="btn btn-default" id="pixabay-search-btn" style="width: auto; flex-shrink: 0; border-radius: 0 6px 6px 0;">
@@ -194,7 +216,6 @@
       16:9
      </label>
     </div>
-    <!-- MODIFIED: Cropper Layout -->
     <div class="cropper-main-content">
      <div class="cropper-img-container">
       <img id="cropper-image" src=""/>
@@ -315,7 +336,6 @@
     </div>
    </div>
   </div>
-  <!-- FEATURE: Rich Text Editor Modal -->
   <div class="modal-overlay" id="rich-text-editor-modal">
    <div class="modal-container">
     <h3>
@@ -333,7 +353,6 @@
     </div>
    </div>
   </div>
-  <!-- NEW: Export Modal -->
   <div class="modal-overlay" id="export-modal">
    <div class="modal-container" style="max-width: 600px;">
     <h3>
@@ -1140,8 +1159,72 @@ Monitor of this License or out of the use or inability to use the
       </details>
      </div>
     </div>
-    <!-- MODIFIED: Changelog Update -->
     <div class="tab-content" id="help-changelog">
+     <h4>
+      v1.8.0 更新日志 (2025-11-19)
+     </h4>
+     <ul>
+      <li>
+       <strong>
+        【重构】
+       </strong>
+       右侧检查器面板重构为“全局”、“选中”、“系统”三大固定标签页，交互更清晰。并保留了原有交互逻辑，依旧可以上下文交互。
+      </li>
+      <li>
+       <strong>
+        【新增】
+       </strong>
+       **风格化边框系统**：新增像素风、新丑风、双层偏移三种边框，并可通过复选框精确应用到不同元素。
+      </li>
+      <li>
+       <strong>
+        【新增】
+       </strong>
+       **头像状态挂件**：可在头像右上角添加在线、勿扰、自定义Emoji等状态。
+      </li>
+      <li>
+       <strong>
+        【新增】
+       </strong>
+       **新区块：音乐**，可展示封面、歌名、歌手、歌词和自动计算的进度条。
+      </li>
+      <li>
+       <strong>
+        【新增】
+       </strong>
+       **新区块：进度条**，可展示带标签的百分比进度。
+      </li>
+      <li>
+       <strong>
+        【新增】
+       </strong>
+       **新区块：时间轴**，可创建垂直时间轴列表。
+      </li>
+      <li>
+       <strong>
+        【新增】
+       </strong>
+       **智能随机配色**：在系统面板中可一键生成和谐的配色方案。
+      </li>
+      <li>
+       <strong>
+        【新增】
+       </strong>
+       **历史记录可视化**：系统面板中增加操作历史列表，下个版本开始点击即可回滚操作（制作中）。
+      </li>
+      <li>
+       <strong>
+        【优化】
+       </strong>
+       随着功能增多左侧“添加区块”按钮改为更紧凑的网格布局。
+      </li>
+      <li>
+       <strong>
+        【优化】
+       </strong>
+       全局卡片样式新增“内边距”控制。
+      </li>
+     </ul>
      <h4>
       v1.7.1 更新日志 (2025-11-18)
      </h4>
@@ -1180,7 +1263,7 @@ Monitor of this License or out of the use or inability to use the
        <strong>
         【修复】
        </strong>
-       修复了手机端异常出现手机端导出预览的BUG。
+       修复了手机端异常出现手机端导出预览。
       </li>
      </ul>
     </div>
@@ -1336,4 +1419,3 @@ Monitor of this License or out of the use or inability to use the
   </script>
  </body>
 </html>
-

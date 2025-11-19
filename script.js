@@ -169,80 +169,49 @@
              * @type {object}
              */
             const App = {
-                // NEW: Pixabay API Key
                 pixabayApiKey: '53274475-6295c67fa26c85aa8b2331ee7',
-                // 数据库实例
-                db: null,
-                // 标记浏览器存储空间是否已满
-                isStorageFull: false,
-                // 应用的核心状态对象，包含所有用户数据和设置
-                state: {},
-                // 当前选中的编辑目标 (例如: 全局, 某个区块, 某个卡片)
-                selection: { type: 'global', cardId: null },
-                // 操作历史记录，用于实现撤销/重做
-                history: [],
-                // 当前历史记录的指针
-                historyIndex: -1,
-                // 标记是否正在从历史记录中恢复状态，防止触发不必要的回调
-                isRestoringState: false,
-                // 标记是否正在进行内联文本编辑，防止冲突
-                isEditingText: false,
-                // Cropper.js 实例
-                cropper: null,
-                // 当前裁剪操作的目标信息
-                currentCropTarget: null,
-                // 当前裁剪会话中的滤镜状态
-                currentFilterState: {},
-                // 当前图标选择器的目标信息
-                currentIconTarget: null,
-                // Quill.js 富文本编辑器实例
-                richTextEditor: null,
-                // 当前富文本编辑器的目标信息
-                currentRichTextTarget: null,
-                // SortableJS 实例
-                sortableLayers: null,
+                db: null, // 数据库实例
+                isStorageFull: false, // 标记浏览器存储空间是否已满
+                state: {}, // 应用的核心状态对象，包含所有用户数据和设置
+                selection: { type: 'global', cardId: null }, // 当前选中的编辑目标
+                history: [], // 操作历史记录，用于实现撤销/重做
+                historyIndex: -1, // 当前历史记录的指针
+                isRestoringState: false, // 标记是否正在从历史记录中恢复状态，防止触发不必要的回调
+                isEditingText: false, // 标记是否正在进行内联文本编辑，防止冲突
+                cropper: null, // Cropper.js 实例
+                currentCropTarget: null, // 当前裁剪操作的目标信息
+                currentFilterState: {}, // 当前裁剪会话中的滤镜状态
+                currentIconTarget: null, // 当前图标选择器的目标信息
+                richTextEditor: null, // Quill.js 富文本编辑器实例
+                currentRichTextTarget: null, // 当前富文本编辑器的目标信息
+                sortableLayers: null, // SortableJS 实例
                 sortablePreview: null,
                 sortableTags: null,
                 sortablePreviewTags: null,
                 cardLayerSortables: {},
                 cardSortables: {},
                 imageCardSortables: {},
-                buttonCardSortables: {}, // NEW: For button cards
-                // Masonry 瀑布流布局实例
-                masonryInstances: {},
-                // 防抖处理后的本地保存函数
-                debouncedSaveToLocal: null,
-                // 从用户本地系统加载的字体列表
-                localFonts: [],
-                // 用户上传的字体元信息列表
-                uploadedFonts: [],
-                // 内置的预设主题
-                presets: {},
-                // 自定义上传的图标列表
-                icons: [],
-                // 标记纹理选择器是否已初始化
-                texturePickerInitialized: false,
-                // 标记图标选择器是否已初始化
-                iconPickerInitialized: false,
-                // ColorThief 实例
-                colorThief: null,
-                // 移动端长按计时器
-                longPressTimer: null,
-                // 上一次从图片提取的调色板
-                lastPalette: [],
-                // 彩蛋点击计数器
-                easterEggCounter: 0,
-                // 彩蛋计时器
-                easterEggTimer: null,
-                // 提示框 (Tooltip) 的显示计时器
-                tooltipTimeout: null,
+                buttonCardSortables: {},
+                masonryInstances: {}, // Masonry 瀑布流布局实例
+                debouncedSaveToLocal: null, // 防抖处理后的本地保存函数
+                localFonts: [], // 从用户本地系统加载的字体列表
+                uploadedFonts: [], // 用户上传的字体元信息列表
+                presets: {}, // 内置的预设主题
+                icons: [], // 自定义上传的图标列表
+                texturePickerInitialized: false, // 标记纹理选择器是否已初始化
+                iconPickerInitialized: false, // 标记图标选择器是否已初始化
+                colorThief: null, // ColorThief 实例
+                longPressTimer: null, // 移动端长按计时器
+                lastPalette: [], // 上一次从图片提取的调色板
+                easterEggCounter: 0, // 彩蛋点击计数器
+                easterEggTimer: null, // 彩蛋计时器
+                tooltipTimeout: null, // 提示框 (Tooltip) 的显示计时器
 
                 /**
                  * @description 应用初始化入口函数。
                  */
                 init() {
-                    // MODIFIED: Version Log
-                    console.log("Blokko 初始化 v1.7.1 ...");
+                    console.log("Blokko 初始化 v1.8.0 ...");
 
                     this.elements = this.queryElements();
                     this.presets = this.getPresets();
@@ -251,10 +220,7 @@
 
                     this.initDB().then(async () => {
                         this.bindCoreEvents();
-                        // OPTIMIZATION: Defer non-critical initializations
-                        // this.bindEditorEvents(); // deferred
                         this.bindPreviewEvents();
-                        // this.initResizer(); // deferred
 
                         this.loadPreferences();
                         await this.loadFromLocal();
@@ -265,22 +231,19 @@
                         this.renderAll(true);
                         this.syncAllControls();
                         this.populateFontList();
-                        // this.initAllSortables(); // deferred
 
                         this.setSelection({ type: 'global' });
                         this.updateUndoRedoButtons();
-                        this.updatePreviewAspectRatio(); // NEW: Initial aspect ratio update
+                        this.updatePreviewAspectRatio();
 
-                        // OPTIMIZATION: Defer non-critical initializations to improve TTI
+                        // 延迟加载非关键任务，优化首次可交互时间(TTI)
                         setTimeout(() => {
                             this.bindEditorEvents();
                             this.initResizer();
                             this.initAllSortables();
                         }, 0);
 
-
-                        // MODIFIED: Version Bump
-                        const currentVersion = '1.7.1';
+                        const currentVersion = '1.8.0';
                         const lastVisitedVersion = localStorage.getItem('blokkoLastVersion');
                         const hasSeenTutorial = localStorage.getItem('blokkoHasSeenTutorial');
 
@@ -303,7 +266,7 @@
 
                     }).catch(err => {
                         console.error("数据库初始化失败:", err);
-                        this.showFatalErrorModal('初始化失败', '无法初始化本地数据库，这可能是由于浏览器缓存损坏。您可以尝试重置应用来解决此问题。', err);
+                        this.showFatalErrorModal('初始化失败', '无法初始化本地数据库，这可能是由于浏览器缓存损坏。您可以先尝试刷新页面，若刷新无果，请尝试备份数据后重置应用来解决此问题。', err);
                     });
                 },
 
@@ -313,10 +276,24 @@
                 getDefaultState() {
                     const lightTheme = this.getPresets().light;
                     return {
+                        ui: { // 用户界面相关的状态
+                           activeInspectorTab: 'global'
+                        },
+                        systemSettings: { // 系统级设置
+                            exportFilePrefix: 'Blokko'
+                        },
+                        globalTheme: { // 全局色板
+                            primary: '#007AFF',
+                            accent: '#007AFF',
+                            background: '#FFFFFF',
+                            text: '#1a1a1a',
+                        },
                         customIcons: [],
                         personalInfo: {
                             isVisible: true,
                             layout: 'default',
+                            statusBadge: 'none', // 状态挂件: 'none', 'online', 'dnd', 'idle', 'invisible', 'emoji'
+                            statusBadgeEmoji: '🟢',
                             nickname: "你的昵称", nicknameColor: lightTheme.pNicknameColor,
                             subtitle: "这是副标题，双击可编辑", subtitleColor: lightTheme.pSubtitleColor,
                             bio: "这是简介，双击可编辑", bioColor: lightTheme.pBioColor,
@@ -324,7 +301,6 @@
                             avatarShape: '50%', avatarBorderSize: 4, avatarBorderColor: '#ffffff',
                             avatarSize: 100,
                             avatarOffsetX: 0,
-                            // NEW: Floating Avatar Offset
                             avatarOffsetY: 0,
                             tags: [
                                 { id: this.generateId('t'), icon: 'mdi:palette', text: '设计师' },
@@ -335,7 +311,6 @@
                         pageStyles: {
                             pageBgMode: 'solid',
                             pageBgSolidColor: lightTheme.pageBgSolidColor, pageBgImageDataUrl: null,
-                            // NEW: Attribution for online images
                             pageBgImageAttribution: null,
                             pageBgGradientStart: lightTheme.pageBgGradientStart, pageBgGradientEnd: lightTheme.pageBgGradientEnd,
                             pageBgGradientAngle: 135,
@@ -347,18 +322,51 @@
                             headerBgGradientStart: lightTheme.headerBgGradientStart, headerBgGradientEnd: lightTheme.headerBgGradientEnd,
                             headerBgGradientAngle: 135,
                         },
+                        globalBorderSettings: { // 全局边框系统
+                            style: 'solid',
+                            width: 1,
+                            color: '#e0e0e0',
+                            shadowOffset: 4,
+                            shadowColor: '#000000',
+                            applyTo: {
+                                personalInfo: true,
+                                textBlocks: false,
+                                imageBlocks: false,
+                                buttonBlocks: false,
+                                musicBlocks: false,
+                                progressBlocks: false,
+                                timelineBlocks: false,
+                                cardsInTextBlocks: true,
+                                imagesInImageBlocks: true,
+                                buttonsInButtonBlocks: false
+                            }
+                        },
                         blocks: [
                             {
                                 id: this.generateId('b'), type: 'text', title: "单排卡片区块", isVisible: true, isExpanded: false, settings: { layout: 'single', masonryEnabled: false }, cards: [
-                                    { id: this.generateId('c'), icon: '', title: "这是单排卡片", content: "双击这里或手机端点击铅笔进行编辑，现在支持<b>富文本</b>了哦！", opacity: 1.0, followGlobalOpacity: true, textShadowEnabled: false, titleColor: null, titleFontSize: null, contentFontSize: null }
+                                    { id: this.generateId('c'), icon: '', title: "这是单排卡片", content: "双击这里或手机端点击铅笔进行编辑，现在支持<b>富文本</b>了哦！", sticker: 'none', imageFillMode: 'cover' }
                                 ]
                             },
-                            // NEW: Default Button Block
                             {
                                 id: this.generateId('b'), type: 'button', title: "按钮区块", isVisible: true, isExpanded: false, settings: { gap: 15 }, cards: [
                                     { id: this.generateId('c'), icon: 'mdi:github', text: "访问我的主页" }
                                 ]
                             },
+                            { id: this.generateId('b'), type: 'music', title: '音乐区块', isVisible: true, isExpanded: false, settings: {
+                                coverArt: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23cccccc'%3E%3Cpath d='M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z'/%3E%3C/svg%3E",
+                                songTitle: '歌曲名称',
+                                artist: '歌手',
+                                lyrics: '上一句歌词\n当前播放的高亮歌词\n下一句歌词',
+                                currentTime: '01:30', totalTime: '03:45',
+                                accentColor: lightTheme.accent, bgColor: '#ffffff', opacity: 1, radius: 12
+                            }},
+                            { id: this.generateId('b'), type: 'progress', title: '进度条区块', isVisible: true, isExpanded: false, settings: {
+                                label: '技能点', percentage: 75, color: '#007AFF', trackColor: '#eeeeee', thickness: 8
+                            }},
+                             { id: this.generateId('b'), type: 'timeline', title: '时间轴区块', isVisible: true, isExpanded: false, settings: {}, cards: [
+                                 {id: this.generateId('c'), time: '2015-11-21', content: '《时之歌Project》预告发布'},
+                                 {id: this.generateId('c'), time: '2025-11-21', content: '《时之歌Project》十周年快乐！'}
+                             ]},
                             { id: this.generateId('b'), type: 'separator', title: "分割线", isVisible: true, isExpanded: false, settings: { style: 'solid', color: '#dddddd', thickness: 1, margin: 20, text: '', icon: null, textColor: '#555555' } },
                             { id: this.generateId('b'), type: 'image', title: "图片区块", isVisible: true, isExpanded: false, settings: { layout: 'dual', masonryEnabled: false, textColor: '' }, cards: [] },
                             { id: this.generateId('b'), type: 'spacer', title: "留白块", isVisible: true, isExpanded: false, settings: { height: 20 } },
@@ -368,22 +376,19 @@
                             bgColor: lightTheme.gCardBgColor, textColor: lightTheme.gCardTextColor, opacity: 1.0,
                             bgGradientStart: lightTheme.gCardBgGradientStart, bgGradientEnd: lightTheme.gCardBgGradientEnd,
                             bgGradientAngle: 135,
-                            radius: 12, textAlign: "left", lineHeight: "1.5",
+                            radius: 12, textAlign: "left", lineHeight: "1.5", padding: 15,
                             fontFamily: "",
                             titleColor: null,
                             titleFontSize: "1.1em",
                             contentFontSize: "0.95em",
-                            textStrokeWidth: 0, textStrokeColor: "#000000",
-                            borderWidth: 0, borderStyle: 'none', borderColor: '#cccccc',
+                            textStrokeWidth: 0, textStrokeColor: "#000000"
                         },
-                        // NEW: Global Button Styles
                         globalButtonStyles: {
                             bgColor: '#007AFF',
                             textColor: '#FFFFFF',
                             radius: 8,
                             textAlign: 'center'
                         },
-                        // NEW: Export Settings State
                         exportSettings: {
                             lockAspectRatio: true,
                             customWidth: 1200,
@@ -456,8 +461,10 @@
                         previewHeader: q('#preview-header'),
                         addTextBlockBtn: q('#add-text-block-btn'), addImageBlockBtn: q('#add-image-block-btn'),
                         addSeparatorBlockBtn: q('#add-separator-block-btn'), addSpacerBlockBtn: q('#add-spacer-block-btn'),
-                        // NEW: Button block button
                         addButtonBlockBtn: q('#add-button-block-btn'),
+                        addMusicBlockBtn: q('#add-music-block-btn'),
+                        addProgressBlockBtn: q('#add-progress-block-btn'),
+                        addTimelineBlockBtn: q('#add-timeline-block-btn'),
                         cropperModal: q('#cropper-modal'), cropperImage: q('#cropper-image'),
                         cropperCancelBtn: q('#cropper-cancel-btn'), cropperSaveBtn: q('#cropper-save-btn'),
                         downloadModal: q('#download-modal'), downloadModalTitle: q('#download-modal-title'),
@@ -489,9 +496,7 @@
                         richTextEditorContainer: q('#rich-text-editor-container'),
                         richTextSaveBtn: q('#rich-text-save-btn'),
                         richTextCancelBtn: q('#rich-text-cancel-btn'),
-                        showExportModalBtn: q('#show-export-modal-btn'),
                         exportModal: q('#export-modal'),
-                        // NEW: Image Source and Pixabay Modals
                         imageSourceModal: q('#image-source-modal'),
                         pixabaySearchModal: q('#pixabay-search-modal'),
                     };
@@ -504,8 +509,10 @@
                     this.elements.themeToggleBtn.addEventListener('click', () => this.toggleTheme());
                     this.elements.addTextBlockBtn.addEventListener('click', () => this.addBlock('text'));
                     this.elements.addImageBlockBtn.addEventListener('click', () => this.addBlock('image'));
-                    // NEW: Button block event
                     this.elements.addButtonBlockBtn.addEventListener('click', () => this.addBlock('button'));
+                    this.elements.addMusicBlockBtn.addEventListener('click', () => this.addBlock('music'));
+                    this.elements.addProgressBlockBtn.addEventListener('click', () => this.addBlock('progress'));
+                    this.elements.addTimelineBlockBtn.addEventListener('click', () => this.addBlock('timeline'));
                     this.elements.addSeparatorBlockBtn.addEventListener('click', () => this.addBlock('separator'));
                     this.elements.addSpacerBlockBtn.addEventListener('click', () => this.addBlock('spacer'));
                     this.elements.downloadModalCloseBtn.addEventListener('click', () => this.hideDownloadModal());
@@ -513,20 +520,18 @@
                     this.elements.cropperSaveBtn.addEventListener('click', () => this.saveCrop());
                     this.elements.cropperModal.querySelector('.crop-ratios').addEventListener('change', () => this.updateCropAspectRatio());
 
-                    // NEW: Image Source Modal Events
                     this.elements.imageSourceModal.addEventListener('click', e => {
                         const target = e.target.closest('button');
                         if (!target) return;
                         if (target.id === 'upload-from-device-btn') {
-                            const pageBgUploadInput = this.elements.inspectorPanel.querySelector('#page-bg-upload-physical');
-                            if (pageBgUploadInput) pageBgUploadInput.click();
+                            const input = document.getElementById('physical-image-upload-input');
+                            if(input) input.click();
                         } else if (target.id === 'search-online-btn') {
                             this.showPixabaySearch();
                         }
                         this.elements.imageSourceModal.classList.remove('visible');
                     });
 
-                    // NEW: Pixabay Search Modal Events
                     this.elements.pixabaySearchModal.addEventListener('keydown', e => {
                         if (e.key === 'Enter') {
                             const input = this.elements.pixabaySearchModal.querySelector('#pixabay-search-input');
@@ -558,7 +563,6 @@
                     this.elements.mobileLayerToggle.addEventListener('click', () => this.togglePanelDrawer('layer-panel'));
                     this.elements.mobileInspectorToggle.addEventListener('click', () => this.togglePanelDrawer('inspector-panel'));
 
-                    // 优化: 移动端点击遮罩层关闭面板的逻辑，仅当直接点击背景时触发
                     this.elements.appContainer.addEventListener('click', (e) => {
                         if (e.target === this.elements.appContainer && this.elements.body.classList.contains('panels-open')) {
                             this.togglePanelDrawer(false);
@@ -569,11 +573,9 @@
                     this.elements.helpModalCloseBtn.addEventListener('click', () => this.elements.helpModal.classList.remove('visible'));
 
                     this.elements.storageWarningBanner.querySelector('#storage-warning-manage-link').addEventListener('click', () => {
-                        // Placeholder for future resource manager
                         this.showToast('资源管理器功能正在开发中...', 'info');
                     });
 
-                    // 帮助弹窗内的 Tab 切换逻辑
                     let aboutClickCount = 0;
                     let aboutClickTimer = null;
                     this.elements.helpModal.querySelector('.tabs').addEventListener('click', (e) => {
@@ -588,7 +590,6 @@
 
                             this.elements.helpModalCloseBtn.textContent = (tabBtn.dataset.tab === 'help-tutorial') ? "我已了解，开始使用" : "关闭";
 
-                            // 连续点击"关于"标签5次以上，激活调试模式
                             if (tabBtn.dataset.tab === 'help-about') {
                                 clearTimeout(aboutClickTimer);
                                 aboutClickCount++;
@@ -602,7 +603,6 @@
                         }
                     });
 
-                    // 图标选择器相关事件
                     this.elements.iconPickerCloseBtn.addEventListener('click', () => this.hideIconPicker());
                     this.elements.removeIconBtn.addEventListener('click', () => this.selectIcon(null));
                     this.elements.iconSearch.addEventListener('input', this.debounce((e) => this.renderIconGrid(e.target.value), 300));
@@ -620,14 +620,11 @@
                     this.elements.uploadIconBtn.addEventListener('click', () => this.elements.iconUploadInput.click());
                     this.elements.iconUploadInput.addEventListener('change', e => this.handleIconUpload(e));
 
-                    // 锁定模式切换
                     this.elements.lockModeToggle.addEventListener('click', () => this.toggleLockMode());
 
-                    // 富文本编辑器模态框事件
                     this.elements.richTextSaveBtn.addEventListener('click', () => this.saveRichText());
                     this.elements.richTextCancelBtn.addEventListener('click', () => this.hideRichTextEditor());
 
-                    // 导出模态框事件
                     this.elements.exportModal.addEventListener('click', async e => {
                         if (e.target.closest('#export-modal-close-btn') || e.target === this.elements.exportModal) {
                             this.elements.exportModal.classList.remove('visible');
@@ -646,7 +643,6 @@
                         }
                     });
 
-                    // 左侧图层面板的事件委托
                     this.elements.layerList.addEventListener('click', e => {
                         const layerItemContainer = e.target.closest('.layer-item-container');
                         if (!layerItemContainer) return;
@@ -654,14 +650,12 @@
                         const layerItem = layerItemContainer.querySelector('.layer-item');
                         const cardItem = e.target.closest('.card-layer-item');
 
-                        // 处理图层上的动作按钮 (可见性, 复制, 添加卡片, 展开/折叠)
                         const actionBtn = e.target.closest('.layer-actions button, .layer-toggle');
                         if (actionBtn) {
                             const id = layerItem.dataset.id;
                             const type = layerItem.dataset.type;
 
                             if (type === 'personalInfo') {
-                                // This action is now handled in the inspector, layer panel only has selection
                                 return;
                             }
 
@@ -671,17 +665,14 @@
                                 this.duplicateBlock(id);
                             } else if (actionBtn.matches('.add-card-to-block-btn')) {
                                 const block = this.findBlock(id);
-                                // MODIFIED: Handle button quick add
-                                if (block.type === 'text') this.addCard(id, true);
+                                if (['text', 'button', 'timeline'].includes(block.type)) this.addCard(block.type, id, true);
                                 else if (block.type === 'image') this.addImageCard(id);
-                                else if (block.type === 'button') this.addButtonCard(id, true);
                             } else if (actionBtn.matches('.layer-toggle')) {
                                 this.toggleLayerExpansion(id);
                             }
                             return;
                         }
 
-                        // 处理点击卡片子图层
                         if (cardItem) {
                             const blockId = cardItem.closest('.layer-item-container').dataset.blockId;
                             const cardId = cardItem.dataset.cardId;
@@ -691,14 +682,12 @@
                                 cardEditorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
                             }
                         }
-                        // 处理点击区块主图层
                         else {
                             const { type, id } = layerItem.dataset;
                             this.setSelection({ type, id });
                         }
                     });
 
-                    // 纹理选择器事件
                     this.elements.texturePickerCloseBtn.addEventListener('click', () => this.elements.texturePickerModal.classList.remove('visible'));
                     this.elements.removeTextureBtn.addEventListener('click', () => this.selectTexture(null));
                     this.elements.textureGrid.addEventListener('click', e => {
@@ -706,7 +695,6 @@
                         if (item) this.selectTexture(item.dataset.textureName);
                     });
 
-                    // 双击图层名称进行重命名
                     this.elements.layerList.addEventListener('dblclick', e => {
                         const layerNameEl = e.target.closest('.layer-name');
                         const layerItem = e.target.closest('.layer-item');
@@ -741,7 +729,6 @@
                         layerNameEl.addEventListener('keydown', handleKeydown);
                     });
 
-                    // 颜色右键菜单事件
                     this.elements.colorContextMenu.addEventListener('click', e => {
                         const action = e.target.dataset.action;
                         const color = this.elements.colorContextMenu.dataset.color;
@@ -754,7 +741,6 @@
                         }
                     });
 
-                    // 彩蛋: 连续点击标题
                     const titleEl = document.querySelector('.app-header-title');
                     if (titleEl) {
                         titleEl.addEventListener('click', () => {
@@ -772,7 +758,6 @@
                         });
                     }
 
-                    // 全局快捷键: 撤销/重做
                     document.addEventListener('keydown', e => {
                         if (this.richTextEditor && this.richTextEditor.hasFocus()) {
                             return;
@@ -800,32 +785,35 @@
                  */
                 bindEditorEvents() {
                     const panel = this.elements.inspectorPanel;
+                    
+                    // Inspector Tab 切换
+                    panel.querySelector('.inspector-tabs').addEventListener('click', (e) => {
+                        const tabBtn = e.target.closest('.inspector-tab-btn');
+                        if (tabBtn && !tabBtn.classList.contains('active')) {
+                            this.updateState('ui.activeInspectorTab', tabBtn.dataset.tab, false);
+                            this.renderInspector(); 
+                        }
+                    });
 
-                    // 使用事件委托处理所有输入控件的 `input` 事件
                     panel.addEventListener('input', e => {
                         if (this.isRestoringState) return;
                         const target = e.target;
 
-                        // 处理标签管理器中的文本输入
                         if (target.matches('.tag-manager-item .tag-text-input')) {
                             const tagItem = target.closest('.tag-manager-item');
                             if (tagItem) this.updateTag(tagItem.dataset.tagId, 'text', target.value, false);
                         }
 
-                        // 处理字体搜索
                         if (target.matches('#font-search-input')) {
                             this.populateFontList(target.value);
                             return;
                         }
 
-                        // 找到触发事件的控件的最近的数据源祖先元素
                         const updateSource = target.closest('[data-state-key], [data-setting-key], [data-card-key], [data-color-sync-key], [data-block-id-for-title]');
                         if (!updateSource) return;
 
-                        // 获取控件的值
                         let value = target.type === 'checkbox' ? target.checked : (target.type === 'number' || target.type === 'range') ? parseFloat(target.value) : target.value;
 
-                        // 同步颜色选择器和十六进制文本框
                         if (target.matches('.color-hex-input')) {
                             let hexValue = target.value.replace(/[^#0-9a-fA-F]/g, '');
                             const colorInput = target.previousElementSibling;
@@ -855,7 +843,6 @@
                         const cardKey = keySource.dataset.cardKey;
                         const blockIdForTitle = updateSource.dataset.blockIdForTitle;
 
-                        // 根据数据源更新相应的状态
                         if (stateKey) {
                             this.updateState(stateKey, value, false);
                         } else if (blockIdForTitle) {
@@ -863,13 +850,12 @@
                         } else if (blockEl && settingKey) {
                             this.updateBlockSettings(blockEl.dataset.blockId, settingKey, value, false);
                         } else if (blockEl && cardKey) {
-                            const cardEl = keySource.closest('.editor-card');
+                            const cardEl = keySource.closest('.editor-card, .timeline-event-editor');
                             if (cardEl) this.updateCard(blockEl.dataset.blockId, cardEl.dataset.cardId, cardKey, value, false);
                         }
 
-                        // 更新 range 输入条旁边的数值显示
                         if (target.type === 'range') {
-                            const valueDisplay = target.closest('.form-group').querySelector('.angle-value, .spacer-height-value, #gCardRadiusValue, .avatar-size-value, .avatar-offsetY-value, .header-radius-value, .shadow-blur-value, .shadow-offset-value');
+                            const valueDisplay = target.closest('.form-group').querySelector('span[class*="-value"]');
                             if (valueDisplay) valueDisplay.textContent = value;
                         }
                     });
@@ -884,27 +870,23 @@
                             if (/^[0-9a-fA-F]{6}$/.test(value)) {
                                 target.value = '#' + value;
                             } else {
-                                // If invalid, reset to the current state value
                                 const stateKey = target.dataset.stateKey;
                                 if (stateKey) {
                                     const currentStateValue = stateKey.split('.').reduce((o, k) => o && o[k], this.state);
                                     target.value = currentStateValue || '#000000';
                                 }
                             }
-                            // Trigger input and change to ensure state is updated if corrected
                             target.dispatchEvent(new Event('input', { bubbles: true }));
                             target.dispatchEvent(new Event('change', { bubbles: true }));
                         }
                     }, true);
 
-                    // 使用事件委托处理所有输入控件的 `change` 事件
                     panel.addEventListener('change', e => {
                         if (this.isRestoringState) return;
                         const target = e.target;
 
-                        // "高级设置" 开关
                         if (target.matches('.advanced-toggle')) {
-                            const section = target.closest('.editor-section, .editor-card-content');
+                            const section = target.closest('.editor-section, .editor-card-content, .editor-block-content');
                             const isOpen = section.classList.toggle('show-advanced');
                             if (section.id) {
                                 localStorage.setItem(`blokko-advanced-${section.id}`, isOpen);
@@ -912,23 +894,27 @@
                             return;
                         }
 
-                        // 如果是状态相关的修改，则推入历史记录
                         if (target.dataset.stateKey || target.closest('.editor-block') || target.dataset.colorSyncKey || target.matches('.tag-manager-item .tag-text-input')) {
                             let description = '修改样式';
-                            if (target.dataset.stateKey) description = `修改 ${target.dataset.stateKey}`;
+                            if (target.dataset.stateKey) description = `修改 ${target.dataset.stateKey.split('.').pop()}`;
                             if (target.closest('.editor-block')) description = `修改区块设置`;
+                            if (target.matches('.tag-text-input')) description = '修改标签';
                             this.pushHistory(description);
                         }
 
-                        // 如果切换了卡片内的单选按钮，重新渲染检查器以更新UI
-                        if (target.type === 'radio' && target.closest('.editor-card')) {
-                            this.renderInspector();
+                        if (target.type === 'radio') {
+                            if (target.name === 'avatarBadge') {
+                                const emojiContainer = panel.querySelector('#emoji-input-container');
+                                if (emojiContainer) emojiContainer.style.display = target.value === 'emoji' ? 'block' : 'none';
+                            }
+                            if (target.closest('.editor-card')) {
+                                this.renderInspectorContent();
+                            }
                         }
 
-                        // 处理文件上传
                         const fileInputs = {
                             '#avatar-upload': 'avatar',
-                            '#page-bg-upload-physical': 'pageBg', // MODIFIED: Physical upload input
+                            '#physical-image-upload-input': 'pageBg',
                             '#color-thief-upload': 'colorThief'
                         };
                         for (const selector in fileInputs) {
@@ -947,15 +933,16 @@
                                 this.handleImageGalleryUpload(blockEl.dataset.blockId, e.target.files);
                             }
                         }
+                        if (target.matches('#music-cover-upload')) {
+                           const blockEl = target.closest('.editor-block');
+                           if(blockEl) this.handleMusicCoverUpload(e, blockEl.dataset.blockId);
+                        }
 
-                        // NEW: Handle aspect ratio lock and custom dimensions
                         if (target.matches('#lock-aspect-ratio-toggle, #custom-width-input, #custom-height-input')) {
                             this.updatePreviewAspectRatio();
                         }
 
-                        // 处理导出选项的联动
                         if (target.matches('#hd-export-toggle, #custom-width-toggle, #export-rounded-corners-toggle, #export-corner-radius-input, #mobile-export-toggle, #lock-aspect-ratio-toggle')) { 
-                            // Mobile Export Logic
                             const mobileExportToggle = panel.querySelector('#mobile-export-toggle');
                             const customWidthToggle = panel.querySelector('#custom-width-toggle');
                             const customWidthInput = panel.querySelector('#custom-width-input');
@@ -981,7 +968,7 @@
 
                                 customWidthInput.disabled = !target.checked;
                                 lockRatioToggle.disabled = !target.checked;
-                                customHeightInput.disabled = !target.checked || lockRatioToggle.checked; // Height is disabled if custom is off OR lock is on
+                                customHeightInput.disabled = !target.checked || lockRatioToggle.checked;
 
                                 if (target.checked) {
                                     hdExportToggle.checked = false;
@@ -989,8 +976,7 @@
                                     this.elements.body.classList.remove('mobile-export-preview-mode');
                                 }
                                 this.updatePreviewAspectRatio();
-                            } else if (target.id === 'lock-aspect-ratio-toggle') { // NEW: Added logic for the lock toggle itself
-                                // Height input is only enabled when custom dimensions is on AND lock is off
+                            } else if (target.id === 'lock-aspect-ratio-toggle') {
                                 customHeightInput.disabled = target.checked || !customWidthToggle.checked;
                                 this.updatePreviewAspectRatio();
                             } else if (target.id === 'hd-export-toggle') {
@@ -1014,28 +1000,24 @@
                             this.updateExportSizePreview();
                         }
 
-                        // 处理布局切换时，是否显示瀑布流选项
                         if (target.matches('[name^="block-layout"]')) {
                             const blockEl = target.closest('.editor-block');
                             if (blockEl) {
                                 const masonryToggle = blockEl.querySelector('.masonry-toggle-container');
                                 if (masonryToggle) masonryToggle.style.display = ['dual', 'triple'].includes(target.value) ? 'block' : 'none';
                             }
-                            this.renderInspector();
+                            this.renderInspectorContent();
                         }
 
-                        // 处理卡片不透明度是否跟随全局的切换
                         if (target.matches('[data-card-key="followGlobalOpacity"]')) {
                             const opacitySliderGroup = target.closest('.editor-card-content').querySelector('.advanced-setting.opacity-control');
                             if (opacitySliderGroup) opacitySliderGroup.style.display = target.checked ? 'none' : 'block';
                         }
                     });
 
-                    // 使用事件委托处理所有 `click` 事件
                     panel.addEventListener('click', e => {
                         const target = e.target;
 
-                        // 触发富文本编辑器
                         const richTextTrigger = target.closest('.rich-text-editor-trigger, .edit-content-btn');
                         if (richTextTrigger) {
                             const cardEl = richTextTrigger.closest('.editor-card');
@@ -1049,7 +1031,6 @@
                             return;
                         }
 
-                        // +/- 微调按钮
                         const stepperBtn = e.target.closest('.btn-stepper');
                         if (stepperBtn) {
                             const rangeInput = stepperBtn.parentElement.querySelector('input[type="range"]');
@@ -1070,14 +1051,12 @@
                             return;
                         }
 
-                        // 可折叠区域的标题
                         const legend = target.closest('.editor-section > legend');
                         if (legend) {
                             legend.parentElement.classList.toggle('collapsed');
                             return;
                         }
 
-                        // 各种功能按钮
                         const actionButton = target.closest('button, .back-to-global-btn');
                         if (!actionButton) return;
 
@@ -1095,7 +1074,6 @@
                             '#clear-texture-btn': () => this.selectTexture(null),
                             '.back-to-global-btn': () => this.setSelection({ type: 'global' }),
                             '#reset-btn': () => this.resetToDefault(),
-                            // MODIFIED: Page background upload now opens source modal
                             '#page-bg-upload-btn': () => this.elements.imageSourceModal.classList.add('visible'),
                             '#clear-page-bg-btn': () => {
                                 const oldImageUrl = this.state.pageStyles.pageBgImageDataUrl;
@@ -1112,6 +1090,7 @@
                                 this.updateState('personalInfo.avatarOffsetY', 0, false);
                                 this.showToast('头像位置与大小已重置', 'info');
                             },
+                             '#random-palette-btn': () => this.applyRandomPalette(),
                         };
                         for (const selector in actions) {
                             if (actionButton.matches(selector)) {
@@ -1120,10 +1099,8 @@
                             }
                         }
 
-                        // 应用预设主题
                         if (actionButton.dataset.preset) this.applyPreset(this.presets[actionButton.dataset.preset]);
 
-                        // 重置颜色
                         if (actionButton.dataset.resetKey) {
                             const keyPath = actionButton.dataset.resetKey;
                             const keyMap = { nicknameColor: 'pNicknameColor', subtitleColor: 'pSubtitleColor', bioColor: 'pBioColor', tagBgColor: 'pTagBgColor', tagTextColor: 'pTagTextColor' };
@@ -1134,26 +1111,30 @@
                             this.showToast('颜色已重置', 'info');
                         }
 
-                        // 标签管理器内的按钮
                         const tagItem = target.closest('.tag-manager-item');
                         if (tagItem) {
                             if (target.closest('.tag-icon-btn')) { this.initIconPicker(); this.showIconPicker('tag', tagItem.dataset.tagId); }
                             if (target.closest('.tag-delete-btn')) this.deleteTag(tagItem.dataset.tagId);
                         }
+                        
+                        const historyItem = target.closest('.history-item');
+                        if (historyItem) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            this.jumpToHistory(parseInt(historyItem.dataset.index, 10));
+                            return;
+                        }
 
-                        // 区块编辑器内的按钮
                         const blockEl = target.closest('.editor-block');
                         if (blockEl) {
                             const blockId = blockEl.dataset.blockId;
                             if (target.closest('.block-delete-btn')) { this.deleteBlock(blockId); }
-                            else if (target.closest('.add-card-btn')) this.addCard(blockId);
-                            // NEW: Add button card
-                            else if (target.closest('.add-button-card-btn')) this.addButtonCard(blockId);
+                            else if (target.closest('.add-card-btn')) this.addCard('text', blockId);
+                            else if (target.closest('.add-button-card-btn')) this.addCard('button', blockId);
                             else if (target.closest('.add-image-btn')) this.addImageCard(blockId);
+                            else if (target.closest('.add-timeline-event-btn')) this.addCard('timeline', blockId);
 
-
-                            // 卡片编辑器内的按钮
-                            const cardEl = target.closest('.editor-card');
+                            const cardEl = target.closest('.editor-card, .timeline-event-editor');
                             if (cardEl) {
                                 const cardId = cardEl.dataset.cardId;
                                 if (target.closest('.card-delete-btn')) this.deleteCard(blockId, cardId);
@@ -1168,7 +1149,6 @@
                                 else if (target.closest('.select-icon-btn')) {
                                     this.initIconPicker();
                                     const block = this.findBlock(blockId);
-                                    // MODIFIED: Handle icon picker for buttons too
                                     const pickerType = block.type === 'button' ? 'button' : 'card';
                                     this.showIconPicker(pickerType, blockId, cardId);
                                 }
@@ -1187,7 +1167,6 @@
                             }
                         }
 
-                        // Tab 切换
                         const tabBtn = target.closest('.tabs .tab-btn');
                         if (tabBtn) {
                             const parent = tabBtn.closest('.tab-group-wrapper, .editor-section > .section-content, .editor-section > .inset-controls');
@@ -1211,7 +1190,6 @@
                         }
                     });
 
-                    // 字体管理器事件
                     const fontManagerModal = this.elements.fontManagerModal;
                     fontManagerModal.querySelector('#font-manager-close-btn').addEventListener('click', () => {
                         fontManagerModal.classList.remove('visible');
@@ -1226,7 +1204,6 @@
                         }
                     });
 
-                    // 悬浮提示框 (Tooltip)
                     panel.addEventListener('mouseover', e => {
                         const trigger = e.target.closest('.tooltip-trigger');
                         if (trigger) {
@@ -1270,7 +1247,6 @@
                  */
                 bindPreviewEvents() {
                     this.elements.previewPanel.addEventListener('click', e => {
-                        // 处理移动端的铅笔编辑图标
                         const pencil = e.target.closest('.mobile-edit-pencil');
                         if (pencil) {
                             e.preventDefault();
@@ -1284,7 +1260,6 @@
                             return;
                         }
 
-                        // 处理点击头像更换
                         if (e.target.closest('#preview-avatar')) {
                             if (this.selection.type !== 'personalInfo') {
                                 this.setSelection({ type: 'personalInfo' });
@@ -1298,56 +1273,47 @@
                             return;
                         }
 
-                        // 如果正在编辑文本，则忽略点击事件
                         if (this.isEditingText) return;
 
-                        // 点击头部区域，选中个人信息
                         const header = e.target.closest('.preview-header');
                         if (header) {
                             this.setSelection({ type: 'personalInfo' });
                             return;
                         }
 
-                        // 点击区块或卡片，进行选中
                         const blockWrapper = e.target.closest('.preview-block-wrapper');
                         if (blockWrapper && blockWrapper.dataset.blockId) {
-                            // MODIFIED: Handle button card selection
-                            const cardWrapper = e.target.closest('.preview-card, figure, .preview-button');
+                            const cardWrapper = e.target.closest('.preview-card, figure, .preview-button, .timeline-event, .progress-bar-preview, .music-card-preview');
                             const cardId = cardWrapper ? cardWrapper.dataset.cardId : null;
                             this.setSelection({ type: 'block', id: blockWrapper.dataset.blockId, cardId: cardId });
                             if (cardId) {
-                                const cardEditorEl = this.elements.inspectorPanel.querySelector(`.editor-card[data-card-id="${cardId}"]`);
+                                const cardEditorEl = this.elements.inspectorPanel.querySelector(`.editor-card[data-card-id="${cardId}"], .timeline-event-editor[data-card-id="${cardId}"]`);
                                 if (cardEditorEl) {
                                     cardEditorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
                                 }
                             }
                         } else {
-                            // 点击预览区空白处，选中全局
                             if (e.target.closest('.preview-wrapper')) {
                                 this.setSelection({ type: 'global' });
                             }
                         }
                     });
 
-                    // 双击预览区内容进行内联编辑
                     this.elements.previewWrapper.addEventListener('dblclick', e => {
                         if (this.elements.previewBlocksContainer.classList.contains('locked-mode')) return;
 
-                        // 双击卡片内容，打开富文本编辑器
                         const cardContentTarget = e.target.closest('.preview-card-content[data-card-key="content"]');
                         if (cardContentTarget) {
                             this.showRichTextEditor(cardContentTarget);
                             return;
                         }
 
-                        // 双击其他可编辑文本
                         const target = e.target.closest('[data-state-key], [data-card-key], [data-tag-text-id], [data-separator-text-key]');
                         if (target) {
                             this.triggerInlineEdit(target);
                         }
                     });
 
-                    // 内联编辑时，实时更新 state
                     this.elements.previewWrapper.addEventListener('input', e => {
                         const target = e.target;
                         if (target.contentEditable === 'true') {
@@ -1368,14 +1334,14 @@
                                 updateStateObject(stateKey, value);
                                 this.syncControl(stateKey);
                             } else if (cardKey) {
-                                const cardEl = target.closest('.preview-card, figure, .preview-button');
+                                const cardEl = target.closest('.preview-card, figure, .preview-button, .timeline-event');
                                 const blockEl = target.closest('.preview-block-wrapper');
                                 if (cardEl && blockEl) {
                                     const block = this.findBlock(blockEl.dataset.blockId);
                                     const card = block?.cards.find(c => c.id === cardEl.dataset.cardId);
                                     if (card) card[cardKey] = value;
 
-                                    const editorInput = this.elements.inspectorPanel.querySelector(`.editor-card[data-card-id="${cardEl.dataset.cardId}"] [data-card-key="${cardKey}"]`);
+                                    const editorInput = this.elements.inspectorPanel.querySelector(`[data-card-id="${cardEl.dataset.cardId}"] [data-card-key="${cardKey}"]`);
                                     if (editorInput) editorInput.value = value;
                                     this.renderLayerPanel();
                                 }
@@ -1395,7 +1361,6 @@
                         }
                     });
 
-                    // 移动端长按打开样式面板并定位 (修正版)
                     this.elements.previewWrapper.addEventListener('touchstart', e => {
                         if (this.elements.previewBlocksContainer.classList.contains('locked-mode')) return;
 
@@ -1417,7 +1382,7 @@
                                 const blockId = blockWrapperTarget.dataset.blockId;
                                 const cardId = cardTarget.dataset.cardId;
                                 selection = { type: 'block', id: blockId, cardId: cardId };
-                                controlToHighlight = `.editor-card[data-card-id="${cardId}"]`;
+                                controlToHighlight = `[data-card-id="${cardId}"]`;
                             } else if ((separatorTarget || spacerTarget) && blockWrapperTarget) {
                                 const blockId = blockWrapperTarget.dataset.blockId;
                                 selection = { type: 'block', id: blockId };
@@ -1440,7 +1405,7 @@
                                         const control = this.elements.inspectorPanel.querySelector(controlToHighlight);
                                         if (control) {
                                             control.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                            const highlightTarget = control.closest('.editor-section, .editor-card');
+                                            const highlightTarget = control.closest('.editor-section, .editor-card, .timeline-event-editor');
                                             if (highlightTarget) {
                                                 highlightTarget.classList.remove('highlight-animation');
                                                 void highlightTarget.offsetWidth;
@@ -1477,7 +1442,6 @@
 
                         this.pushHistory('编辑文本');
 
-                        // 如果在瀑布流布局中，编辑后需要重新计算布局
                         const blockEl = target.closest('.preview-block-wrapper');
                         if (blockEl && this.masonryInstances[blockEl.dataset.blockId]) {
                             this.masonryInstances[blockEl.dataset.blockId].layout();
@@ -1485,7 +1449,6 @@
                     };
 
                     const handleKeydown = (ev) => {
-                        // 按 Enter 结束编辑
                         if (ev.key === 'Enter' && !ev.shiftKey) {
                             ev.preventDefault();
                             target.blur();
@@ -1503,6 +1466,7 @@
                     const resizer = this.elements.resizer;
                     const inspectorPanel = this.elements.inspectorPanel;
                     let isResizing = false;
+                    let animationFrameId = null;
 
                     resizer.addEventListener('mousedown', (e) => {
                         isResizing = true;
@@ -1515,15 +1479,20 @@
 
                     const handleMouseMove = (e) => {
                         if (!isResizing) return;
-                        const newWidth = window.innerWidth - e.clientX;
-                        if (newWidth > 350 && newWidth < window.innerWidth * 0.6) {
-                            inspectorPanel.style.width = `${newWidth}px`;
-                            this.relayoutAllMasonry();
-                        }
+                        if (animationFrameId) return;
+                        animationFrameId = requestAnimationFrame(() => {
+                            const newWidth = window.innerWidth - e.clientX;
+                            if (newWidth > 350 && newWidth < window.innerWidth * 0.6) {
+                                inspectorPanel.style.width = `${newWidth}px`;
+                                this.relayoutAllMasonry();
+                            }
+                            animationFrameId = null;
+                        });
                     };
 
                     const stopResize = () => {
                         isResizing = false;
+                        if (animationFrameId) cancelAnimationFrame(animationFrameId);
                         document.body.style.cursor = 'default';
                         document.body.style.userSelect = 'auto';
                         document.removeEventListener('mousemove', handleMouseMove);
@@ -1545,7 +1514,9 @@
                  * @param {boolean} isInitial - 是否是首次渲染。
                  */
                 renderAll(isInitial = false) {
+                    this.updateGlobalThemeVars();
                     this.updateGlobalCardStyleVars();
+                    this.updateGlobalBorderVars();
                     this.renderPersonalInfo();
                     this.renderPageStyles();
                     this.renderLayerPanel();
@@ -1560,11 +1531,19 @@
                 async renderPersonalInfo() {
                     const info = this.state.personalInfo;
                     const header = this.elements.previewHeader;
+                    
+                    const borderSettings = this.state.globalBorderSettings;
+                    header.classList.toggle('apply-global-border', borderSettings.applyTo.personalInfo);
+                    header.dataset.borderStyle = borderSettings.style;
+                    
                     let innerHTML;
                     if (info.layout === 'card') {
                         innerHTML = `
                             <div class="info-left-col">
-                                <img id="preview-avatar" src="" alt="Avatar" title="点击更换头像">
+                                <div id="preview-avatar-wrapper">
+                                    <img id="preview-avatar" src="" alt="Avatar" title="点击更换头像">
+                                    <div id="avatar-status-badge"></div>
+                                </div>
                                 <h1 id="preview-nickname" data-state-key="personalInfo.nickname"></h1>
                             </div>
                             <div class="info-right-col">
@@ -1575,7 +1554,10 @@
                         `;
                     } else {
                         innerHTML = `
-                            <img id="preview-avatar" src="" alt="Avatar" title="点击更换头像">
+                            <div id="preview-avatar-wrapper">
+                                <img id="preview-avatar" src="" alt="Avatar" title="点击更换头像">
+                                <div id="avatar-status-badge"></div>
+                            </div>
                             <h1 id="preview-nickname" data-state-key="personalInfo.nickname"></h1>
                             <h2 id="preview-subtitle" data-state-key="personalInfo.subtitle"></h2>
                             <p id="preview-bio" data-state-key="personalInfo.bio"></p>
@@ -1584,10 +1566,27 @@
                     }
                     header.innerHTML = innerHTML;
                     const previewAvatar = header.querySelector('#preview-avatar');
+                    const statusBadge = header.querySelector('#avatar-status-badge');
                     const previewNickname = header.querySelector('#preview-nickname');
                     const previewSubtitle = header.querySelector('#preview-subtitle');
                     const previewBio = header.querySelector('#preview-bio');
                     const previewTagsContainer = header.querySelector('#preview-tags-container');
+
+                    // 渲染状态挂件
+                    const badgeMap = { online: '🟢', dnd: '⛔', idle: '🌙', invisible: '⚪', busy: '🔴', working: '💻' };
+                    statusBadge.className = '';
+                    if (info.statusBadge === 'none' || !info.statusBadge) {
+                        statusBadge.style.display = 'none';
+                    } else {
+                        statusBadge.style.display = 'flex';
+                        if (info.statusBadge === 'red-dot') {
+                            statusBadge.textContent = '99+';
+                            statusBadge.classList.add('badge-red-dot');
+                        } else {
+                            statusBadge.textContent = info.statusBadge === 'emoji' ? info.statusBadgeEmoji : badgeMap[info.statusBadge] || '❔';
+                        }
+                    }
+
                     const setAvatarSrc = async (url) => {
                         if (url && url.startsWith('idb://')) {
                             try {
@@ -1619,9 +1618,16 @@
                     const offsetY = info.avatarOffsetY || 0;
                     previewAvatar.style.width = `${newSize}px`;
                     previewAvatar.style.height = `${newSize}px`;
-                    previewAvatar.style.transform = `translateX(${offsetX}%)`;
+                    const wrapper = header.querySelector('#preview-avatar-wrapper');
+                    if (wrapper) {
+                        wrapper.style.transform = `translateX(${offsetX}%)`;
+                    }
                     const overflowAmount = (newSize * (offsetY / 100));
-                    previewAvatar.style.marginTop = `-${overflowAmount}px`;
+                    if (wrapper) {
+                        wrapper.style.marginTop = `-${overflowAmount}px`;
+                    }
+                    previewAvatar.style.transform = 'none';
+                    previewAvatar.style.marginTop = '0';
                     this.elements.previewWrapper.style.paddingTop = `${20 + overflowAmount / 2}px`;
                     previewAvatar.style.borderRadius = info.avatarShape;
                     previewAvatar.style.borderWidth = `${info.avatarBorderSize}px`;
@@ -1648,7 +1654,6 @@
                     let bgPositions = [];
                     let bgColor = 'transparent';
 
-                    // 1. 处理背景纹理
                     if (styles.pageBgPattern) {
                         const pattern = HeroPatterns.find(p => p.name === styles.pageBgPattern);
                         if (pattern) {
@@ -1660,7 +1665,6 @@
                         }
                     }
 
-                    // 2. 处理背景图片
                     if (styles.pageBgImageDataUrl) {
                         let imageUrl = styles.pageBgImageDataUrl;
                         if (imageUrl.startsWith('idb://')) {
@@ -1671,11 +1675,8 @@
                                     imageUrl = URL.createObjectURL(imageRecord.blob);
                                 }
                             } catch (e) { console.error('从数据库加载页面背景失败:', e); }
-                        } else if (!imageUrl.startsWith('http')) {
-                            // Fallback for potentially broken links after import
                         }
 
-                        // 添加图片遮罩层
                         const overlayOpacity = parseFloat(styles.pageOverlayOpacity);
                         if (overlayOpacity > 0) {
                             const finalOverlayColor = this.hexToRgba(styles.pageOverlayColor, overlayOpacity);
@@ -1688,7 +1689,6 @@
                         bgPositions.push('center');
                     }
 
-                    // 3. 处理背景颜色/渐变
                     if (styles.pageBgMode === 'gradient') {
                         bgLayers.push(`linear-gradient(${styles.pageBgGradientAngle}deg, ${styles.pageBgGradientStart}, ${styles.pageBgGradientEnd})`);
                         bgSizes.push('cover');
@@ -1697,13 +1697,11 @@
                         bgColor = styles.pageBgSolidColor;
                     }
 
-                    // 应用最终的背景样式
                     wrapper.style.backgroundColor = bgColor;
                     wrapper.style.backgroundImage = bgLayers.join(', ');
                     wrapper.style.backgroundSize = bgSizes.join(', ');
                     wrapper.style.backgroundPosition = bgPositions.join(', ');
 
-                    // 处理头部背景
                     if (styles.headerBgMode === 'gradient') {
                         const gradient = `linear-gradient(${styles.headerBgGradientAngle}deg, ${this.hexToRgba(styles.headerBgGradientStart, styles.headerOpacity)}, ${this.hexToRgba(styles.headerBgGradientEnd, styles.headerOpacity)})`;
                         this.elements.previewHeader.style.background = gradient;
@@ -1713,7 +1711,6 @@
 
                     this.elements.previewHeader.style.borderRadius = `${styles.headerBorderRadius}px`;
 
-                    // 确保头部文字颜色正确
                     const nicknameEl = this.elements.previewHeader.querySelector('#preview-nickname');
                     const subtitleEl = this.elements.previewHeader.querySelector('#preview-subtitle');
                     const bioEl = this.elements.previewHeader.querySelector('#preview-bio');
@@ -1731,7 +1728,6 @@
                     const info = this.state.personalInfo;
                     const isInfoHidden = info.isVisible === false;
 
-                    // 个人信息图层
                     let html = `<div class="layer-item-container">
                                     <div class="layer-item ${type === 'personalInfo' ? 'selected' : ''}" data-type="personalInfo">
                                         <button class="layer-toggle"></button>
@@ -1742,26 +1738,26 @@
                                     </div>
                                </div><hr>`;
 
-                    // 遍历所有区块并生成图层
                     html += this.state.blocks.map(b => {
-                        // MODIFIED: Added button icon
-                        const iconMap = { text: 'mdi:format-text-variant-outline', image: 'mdi:image-multiple-outline', button: 'mdi:button-pointer', separator: 'mdi:minus', spacer: 'mdi:arrow-expand-vertical' };
+                        const iconMap = { text: 'mdi:format-text-variant-outline', image: 'mdi:image-multiple-outline', button: 'mdi:button-pointer', separator: 'mdi:minus', spacer: 'mdi:arrow-expand-vertical', music: 'mdi:music-box-outline', progress: 'mdi:progress-check', timeline: 'mdi:timeline-text-outline' };
                         const isHidden = b.isVisible === false;
-                        // MODIFIED: Buttons are also expandable
-                        const isExpandable = ['text', 'image', 'button'].includes(b.type) && b.cards && b.cards.length > 0;
+                        const isExpandable = ['text', 'image', 'button', 'timeline'].includes(b.type) && b.cards && b.cards.length > 0;
                         const isExpanded = b.isExpanded ? 'is-expanded' : '';
-                        const hasQuickAdd = ['text', 'image', 'button'].includes(b.type);
+                        const hasQuickAdd = ['text', 'image', 'button', 'timeline'].includes(b.type);
 
-                        // 生成卡片子图层列表
                         const cardsListHTML = isExpandable ? `<ul class="card-layer-list" data-block-id="${b.id}">
                             ${b.cards.map(c => {
-                            // MODIFIED: Use text for buttons, title for others
-                            const cardName = b.type === 'button' ? (c.text || '无文字按钮') : (c.title || '无标题卡片');
+                            let cardName;
+                            switch(b.type) {
+                                case 'button': cardName = c.text || '无文字按钮'; break;
+                                case 'timeline': cardName = c.time || '无时间事件'; break;
+                                default: cardName = c.title || '无标题卡片';
+                            }
                             return `<li class="card-layer-item ${cardId === c.id ? 'selected' : ''}" data-card-id="${c.id}">${this.escapeHTML(cardName)}</li>`
                         }).join('')}
                         </ul>` : '';
 
-                        const quickAddBtn = hasQuickAdd ? `<button class="btn-icon add-card-to-block-btn" title="添加卡片/图片/按钮"><span class="iconify" data-icon="mdi:plus"></span></button>` : '';
+                        const quickAddBtn = hasQuickAdd ? `<button class="btn-icon add-card-to-block-btn" title="添加项目"><span class="iconify" data-icon="mdi:plus"></span></button>` : '';
 
                         return `<div class="layer-item-container ${isExpandable ? 'is-expandable' : ''} ${isExpanded}" data-block-id="${b.id}">
                                     <div class="layer-item ${type === 'block' && id === b.id ? 'selected' : ''} ${isHidden ? 'is-hidden' : ''}" data-type="block" data-id="${b.id}">
@@ -1779,7 +1775,6 @@
                     }).join('');
 
                     list.innerHTML = html;
-                    // 初始化嵌套的卡片拖拽排序
                     this.initNestedSortables();
                 },
 
@@ -1787,26 +1782,65 @@
                  * @description 根据当前 selection 渲染右侧的检查器面板。
                  */
                 renderInspector() {
+                    this.renderInspectorTabs();
+                    this.renderInspectorContent();
+                },
+                
+                /**
+                 * @description 渲染检查器顶部的 Tab 栏，并切换内容区域的显隐。
+                 */
+                renderInspectorTabs() {
                     const panel = this.elements.inspectorPanel;
-                    const { type, id } = this.selection;
-                    let html = '';
+                    const activeTab = this.state.ui.activeInspectorTab;
 
-                    switch (type) {
-                        case 'personalInfo':
-                            html = this.createPersonalInfoInspectorHTML();
-                            break;
-                        case 'block':
-                            const block = this.findBlock(id);
-                            if (block) html = this.createEditorBlockHTML(block);
-                            break;
-                        default:
+                    panel.querySelectorAll('.inspector-tab-btn').forEach(btn => {
+                        btn.classList.toggle('active', btn.dataset.tab === activeTab);
+                    });
+                    
+                    panel.querySelectorAll('.inspector-tab-content').forEach(content => {
+                        content.classList.toggle('active', content.id === `inspector-tab-content-${activeTab}`);
+                    });
+                },
+                
+                /**
+                 * @description 根据当前激活的 Tab 和 selection 渲染检查器的主体内容。
+                 */
+                renderInspectorContent() {
+                    const activeTab = this.state.ui.activeInspectorTab;
+                    const contentContainerId = `#inspector-tab-content-${activeTab}`;
+                    const container = this.elements.inspectorPanel.querySelector(contentContainerId);
+                    if (!container) return;
+
+                    let html = '';
+                    switch (activeTab) {
+                        case 'global':
                             html = this.createGlobalInspectorHTML();
+                            break;
+                        case 'selected':
+                            const { type, id } = this.selection;
+                            if (type === 'personalInfo') {
+                                html = this.createPersonalInfoInspectorHTML();
+                            } else if (type === 'block') {
+                                const block = this.findBlock(id);
+                                if (block) {
+                                    html = this.createEditorBlockHTML(block);
+                                } else {
+                                    // 保护逻辑：如果选中的区块ID不存在（可能刚被删除），显示占位符并重置选中状态
+                                    html = `<div class="inspector-placeholder"><span class="iconify" data-icon="mdi:alert-circle-outline"></span><p>未找到选中的区块<br>请重新选择。</p></div>`;
+                                }
+                            } else {
+                                html = `<div class="inspector-placeholder"><span class="iconify" data-icon="mdi:cursor-default-click-outline"></span><p>在左侧预览区点击一个元素<br>或在内容图层中选择一项<br>来编辑其样式。</p></div>`;
+                            }
+                            break;
+                        case 'system':
+                            html = this.createSystemInspectorHTML();
+                            break;
                     }
 
-                    panel.innerHTML = html;
-
+                    container.innerHTML = html;
+                    
                     // 恢复"高级设置"的展开状态
-                    panel.querySelectorAll('.editor-section').forEach(section => {
+                    container.querySelectorAll('.editor-section').forEach(section => {
                         if (section.id) {
                             const isOpen = localStorage.getItem(`blokko-advanced-${section.id}`) === 'true';
                             if (isOpen) {
@@ -1817,455 +1851,257 @@
                         }
                     });
 
-                    if (this.selection.type === 'global') {
+                    // 根据当前激活的 Tab 初始化特定功能
+                    if (activeTab === 'global') {
                         this.populateFontList();
                         this.bindColorThiefEvents();
                         if (this.lastPalette && this.lastPalette.length > 0) {
                             this.renderPalette(this.lastPalette);
                         }
-                    }
+                    } else if (activeTab === 'system') {
+                        this.renderHistoryList();
+                    } else if (activeTab === 'selected') {
+                        // 异步加载图片缩略图
+                        container.querySelectorAll('.thumbnail-wrapper img, .music-cover-thumb img').forEach(img => {
+                             let cardId, blockId;
+                             const cardEl = img.closest('.editor-card, .timeline-event-editor');
+                             if(cardEl) cardId = cardEl.dataset.cardId;
+                             
+                             const blockEl = img.closest('.editor-block');
+                             if(blockEl) blockId = blockEl.dataset.blockId;
 
-                    // 异步加载图片缩略图
-                    panel.querySelectorAll('.thumbnail-wrapper img').forEach(img => {
-                        const cardEl = img.closest('.editor-card');
-                        if (!cardEl) return;
-                        const cardId = cardEl.dataset.cardId;
-                        const blockEl = img.closest('.editor-block');
-                        if (!blockEl) return;
-                        const blockId = blockEl.dataset.blockId;
-                        const block = this.findBlock(blockId);
-                        const card = block?.cards.find(c => c.id === cardId);
-                        if (card && card.url) {
-                            const setSrc = async (url) => {
-                                if (url && url.startsWith('idb://')) {
-                                    const imageId = url.substring(6);
-                                    const record = await this.getImageFromDB(imageId);
-                                    if (record && record.blob) img.src = URL.createObjectURL(record.blob);
-                                } else {
-                                    img.src = url;
-                                }
-                            };
-                            setSrc(card.url);
+                             if (blockId) {
+                                 const block = this.findBlock(blockId);
+                                 if (!block) return;
+                                 
+                                 let dataObject = block.settings; // 默认为区块设置 (用于音乐封面)
+                                 let urlKey = 'coverArt';
+                                 
+                                 if(cardId) { // 如果是卡片内图片
+                                     dataObject = block.cards?.find(c => c.id === cardId);
+                                     urlKey = 'url';
+                                 }
+
+                                 if (dataObject && dataObject[urlKey]) {
+                                     const setSrc = async (url) => {
+                                         if (url && url.startsWith('idb://')) {
+                                             const imageId = url.substring(6);
+                                             const record = await this.getImageFromDB(imageId);
+                                             if (record && record.blob) img.src = URL.createObjectURL(record.blob);
+                                         } else {
+                                             img.src = url;
+                                         }
+                                     };
+                                     setSrc(dataObject[urlKey]);
+                                 }
+                             }
+                        });
+
+                        // 初始化拖拽排序
+                        const { type, id } = this.selection;
+                        if (type === 'block') {
+                            const block = this.findBlock(id);
+                            if (block) {
+                                if (block.type === 'text') this.initSortableCards(id);
+                                else if (block.type === 'image') this.initSortableImageCards(id);
+                                else if (block.type === 'button') this.initSortableButtonCards(id);
+                                else if (block.type === 'timeline') this.initSortableTimelineEvents(id);
+                            }
+                        } else if (type === 'personalInfo') {
+                            this.renderTagManager();
+                            this.initSortableTags();
                         }
-                    });
-
-                    // 同步所有控件的值
+                    }
+                    
                     this.syncAllControls();
                     this.updateUndoRedoButtons();
-
-                    // 初始化拖拽排序
-                    if (type === 'block') {
-                        const block = this.findBlock(id);
-                        if (block.type === 'text') {
-                            this.initSortableCards(id);
-                        } else if (block.type === 'image') {
-                            this.initSortableImageCards(id);
-                        } else if (block.type === 'button') { // NEW: Init sortable buttons
-                            this.initSortableButtonCards(id);
-                        }
-                    } else if (type === 'personalInfo') {
-                        this.renderTagManager();
-                        this.initSortableTags();
-                    }
                 },
 
                 createGlobalInspectorHTML() {
-                    const backBtn = this.selection.type !== 'global' ? `<button class="back-to-global-btn">← 返回全局</button>` : '';
-                    const headerBorderRadiusHTML = `
-                        <div class="form-group advanced-setting">
-                            <label>头部圆角 (px): <span class="header-radius-value">16</span></label>
-                            <div class="input-group simple stepper-group">
-                                <button class="btn btn-default btn-stepper minus" aria-label="减少">-</button>
-                                <input type="range" data-state-key="pageStyles.headerBorderRadius" min="0" max="50" step="1">
-                                <button class="btn btn-default btn-stepper plus" aria-label="增加">+</button>
-                            </div>
-                        </div>`;
-                    // NEW: Watermark/Attribution Checkbox HTML
-                    const attributionLink = this.state.pageStyles.pageBgImageAttribution ? `<a href="${this.state.pageStyles.pageBgImageAttribution.pageURL}" target="_blank" style="margin-left: 5px; font-weight: normal;">(查看作者)</a>` : `<a href="https://weibo.com/u/5095783616" target="_blank" style="margin-left: 5px; font-weight: normal;">(开发者主页)</a>`;
-                    
-                    
-
-
                     return `
-                        <h3 class="panel-header">全局样式与导出 ${backBtn}</h3>
-                        <div class="inspector-state active">
-                             <fieldset class="editor-section" id="page-styles-section">
-                                <legend>页面与头部样式</legend>
-                                <div class="section-content">
-                                 <!-- MOVED: personalInfo.isVisible checkbox -->
-                                 <div class="form-group">
-                                     <label class="checkbox-group" style="font-weight: bold;"><input type="checkbox" data-state-key="personalInfo.isVisible"> 显示个人信息区域</label>
-                                 </div>
-                                 <hr class="separator">
-								 <div class="tab-group-wrapper">
-                                 <div class="section-header" style="margin-bottom: 5px;">
-                                 <h4 style="margin: 0;">头部背景</h4>
-                                 <label class="checkbox-group advanced-toggle-label"><input type="checkbox" class="advanced-toggle"> 高级</label>
-                                    </div>
-                                        <div class="tabs"><button class="tab-btn" data-tab="header-bg-solid">纯色</button><button class="tab-btn advanced-setting" data-tab="header-bg-gradient">渐变</button></div>
-                                        <div id="header-bg-solid" class="tab-content"><div class="form-group"><label>头部背景颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.headerBgColor"><input type="text" class="color-hex-input" data-state-key="pageStyles.headerBgColor"></div></div></div>
-                                        <div id="header-bg-gradient" class="tab-content advanced-setting"><div class="gradient-controls"><div class="form-group"><label>起始颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.headerBgGradientStart"><input type="text" class="color-hex-input" data-state-key="pageStyles.headerBgGradientStart"></div></div><div class="form-group"><label>结束颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.headerBgGradientEnd"><input type="text" class="color-hex-input" data-state-key="pageStyles.headerBgGradientEnd"></div></div><div class="gradient-angle-control form-group"><label>角度 (<span class="angle-value">135</span>°):<span class="tooltip-trigger" data-tooltip="设置渐变的方向，0度为从下到上，90度为从左到右。"><span class="iconify" data-icon="mdi:help-circle-outline"></span></span></label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-state-key="pageStyles.headerBgGradientAngle" min="0" max="360" step="1"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div></div></div>
-                                        <div class="form-group advanced-setting"><label>头部不透明度:</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-state-key="pageStyles.headerOpacity" min="0" max="1" step="0.05"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div>
-                                        ${headerBorderRadiusHTML}
-                                    </div>
-								<hr class="separator">
-                                    <div class="tab-group-wrapper">
-                                        <div class="section-header" style="margin-bottom: 5px;">
-                                            <h4 style="margin: 0;">页面背景</h4>   
-                                        </div>
-                                        <div class="tabs"><button class="tab-btn" data-tab="page-bg-solid">纯色/图片</button><button class="tab-btn advanced-setting" data-tab="page-bg-gradient">渐变</button></div>
-                                        <div id="page-bg-solid" class="tab-content">
-                                            <div class="form-group"><label>页面背景颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.pageBgSolidColor"><input type="text" class="color-hex-input" data-state-key="pageStyles.pageBgSolidColor"></div></div>
-                                            <!-- MODIFIED: Background upload buttons -->
-                                            <div class="form-group"><label>背景图 (可选):</label>
-                                                <div class="input-group simple">
-                                                    <button id="page-bg-upload-btn" class="btn btn-default">选择图片...</button>
-                                                    <button id="clear-page-bg-btn" class="btn btn-default btn-small">清除</button>
-                                                    <input type="file" id="page-bg-upload-physical" accept="image/*" style="display: none;">
-                                                </div>
-                                            </div>
-                                            <div id="page-image-controls" class="advanced-setting">
-                                                <div class="form-group"><label>图片遮罩颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.pageOverlayColor"><input type="text" class="color-hex-input" data-state-key="pageStyles.pageOverlayColor"></div></div>
-                                                <div class="form-group"><label>图片遮罩不透明度:</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-state-key="pageStyles.pageOverlayOpacity" min="0" max="1" step="0.05"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div>
-                                            </div>
-                                        </div>
-                                        <div id="page-bg-gradient" class="tab-content advanced-setting"><div class="gradient-controls"><div class="form-group"><label>起始颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.pageBgGradientStart"><input type="text" class="color-hex-input" data-state-key="pageStyles.pageBgGradientStart"></div></div><div class="form-group"><label>结束颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.pageBgGradientEnd"><input type="text" class="color-hex-input" data-state-key="pageStyles.pageBgGradientEnd"></div></div><div class="gradient-angle-control form-group"><label>角度 (<span class="angle-value">135</span>°):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-state-key="pageStyles.pageBgGradientAngle" min="0" max="360" step="1"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div></div></div>
-                                        <div class="advanced-setting" style="margin-top: 10px;">
-                                            <div class="form-group"><button id="show-texture-picker-btn" class="btn btn-default">🎨 添加纹理</button></div>
-                                            <div id="page-texture-controls" class="inset-controls">
-                                                <div class="form-group"><label>当前纹理: <span
-                                                            id="current-texture-name">无</span></label><button
-                                                        id="clear-texture-btn"
-                                                        class="btn btn-default btn-small">清除纹理</button></div>
-                                                <div class="color-control-row">
-                                                    <div class="color-control-group"><label>纹理颜色:</label>
-                                                        <div class="input-group"><input type="color"
-                                                                data-state-key="pageStyles.pageBgPatternColor"><input
-                                                                type="text" class="color-hex-input"
-                                                                data-state-key="pageStyles.pageBgPatternColor"></div>
-                                                    </div>
-                                                    <div class="color-control-group"><label>纹理不透明度:</label>
-                                                        <div class="input-group simple stepper-group"><button
-                                                                class="btn btn-default btn-stepper minus"
-                                                                aria-label="减少">-</button><input type="range"
-                                                                data-state-key="pageStyles.pageBgPatternOpacity" min="0"
-                                                                max="1" step="0.05"><button
-                                                                class="btn btn-default btn-stepper plus"
-                                                                aria-label="增加">+</button></div>
-                                                    </div>
-                                                </div>
-                                                <div class="form-group"><label>纹理密度:</label>
-                                                    <div class="input-group simple stepper-group"><button
-                                                            class="btn btn-default btn-stepper minus"
-                                                            aria-label="减少">-</button><input type="range"
-                                                            data-state-key="pageStyles.pageBgPatternDensity" min="10"
-                                                            max="100" step="2"><button
-                                                            class="btn btn-default btn-stepper plus"
-                                                            aria-label="增加">+</button></div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
+                        <fieldset class="editor-section" id="page-styles-section">
+                            <legend>页面与头部样式</legend>
+                            <div class="section-content">
+                             <div class="form-group">
+                                 <label class="checkbox-group" style="font-weight: bold;"><input type="checkbox" data-state-key="personalInfo.isVisible"> 显示个人信息区域</label>
+                             </div>
+                             <hr class="separator">
+                             <div class="tab-group-wrapper">
+                             <div class="section-header" style="margin-bottom: 5px;">
+                             <h4 style="margin: 0;">头部背景</h4>
+                             <label class="checkbox-group advanced-toggle-label"><input type="checkbox" class="advanced-toggle"> 高级</label>
                                 </div>
-                            </fieldset>
-                            <fieldset class="editor-section" id="color-thief-section">
-                                <legend>🎨 智能取色</legend>
-                                <div class="section-content">
-                                    <p style="font-size: 0.9rem; color: var(--text-secondary); margin-top: -10px; margin-bottom: 15px;">
-                                        上传图片，自动提取调色板。右键 (PC) 或长按 (手机) 色块可快捷应用。</p>
-                                    <button id="pick-color-btn" class="btn btn-default">上传图片分析颜色</button>
-                                    <input type="file" id="color-thief-upload" accept="image/*" style="display: none;">
-                                    <div class="palette-container" id="color-thief-palette"></div>
-                                </div>
-                            </fieldset>
-                            <fieldset class="editor-section" id="global-card-styles-section">
-                                <legend>全局卡片样式</legend>
-                                <div class="section-content">
-                                    <div style="text-align: right; margin-bottom: 10px;">
-                                        <label class="checkbox-group advanced-toggle-label"><input type="checkbox"
-                                                class="advanced-toggle"> 高级</label>
-                                    </div>
-                                    <div class="tabs"><button class="tab-btn" data-tab="card-bg-solid">纯色</button><button
-                                            class="tab-btn advanced-setting" data-tab="card-bg-gradient">渐变</button>
-                                    </div>
-                                    <div id="card-bg-solid" class="tab-content">
-                                        <div class="color-control-row">
-                                            <div class="color-control-group"><label>背景色:</label>
-                                                <div class="input-group"><input type="color"
-                                                        data-state-key="globalCardStyles.bgColor"><input type="text"
-                                                        class="color-hex-input"
-                                                        data-state-key="globalCardStyles.bgColor"></div>
-                                            </div>
-                                            <div class="color-control-group"><label>不透明度:</label>
-                                                <div class="input-group simple stepper-group"><button
-                                                        class="btn btn-default btn-stepper minus"
-                                                        aria-label="减少">-</button><input type="range"
-                                                        data-state-key="globalCardStyles.opacity" min="0" max="1"
-                                                        step="0.05"><button class="btn btn-default btn-stepper plus"
-                                                        aria-label="增加">+</button></div>
+                                    <div class="tabs"><button class="tab-btn" data-tab="header-bg-solid">纯色</button><button class="tab-btn advanced-setting" data-tab="header-bg-gradient">渐变</button></div>
+                                    <div id="header-bg-solid" class="tab-content"><div class="form-group"><label>头部背景颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.headerBgColor"><input type="text" class="color-hex-input" data-state-key="pageStyles.headerBgColor"></div></div></div>
+                                    <div id="header-bg-gradient" class="tab-content advanced-setting"><div class="gradient-controls"><div class="form-group"><label>起始颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.headerBgGradientStart"><input type="text" class="color-hex-input" data-state-key="pageStyles.headerBgGradientStart"></div></div><div class="form-group"><label>结束颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.headerBgGradientEnd"><input type="text" class="color-hex-input" data-state-key="pageStyles.headerBgGradientEnd"></div></div><div class="gradient-angle-control form-group"><label>角度 (<span class="angle-value">135</span>°):<span class="tooltip-trigger" data-tooltip="设置渐变的方向，0度为从下到上，90度为从左到右。"><span class="iconify" data-icon="mdi:help-circle-outline"></span></span></label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-state-key="pageStyles.headerBgGradientAngle" min="0" max="360" step="1"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div></div></div>
+                                    <div class="form-group advanced-setting"><label>头部不透明度:</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-state-key="pageStyles.headerOpacity" min="0" max="1" step="0.05"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div>
+                                    <div class="form-group advanced-setting"><label>头部圆角 (px): <span class="header-radius-value">16</span></label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-state-key="pageStyles.headerBorderRadius" min="0" max="50" step="1"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div>
+                            </div>
+                            <hr class="separator">
+                                <div class="tab-group-wrapper">
+                                    <div class="section-header" style="margin-bottom: 5px;"><h4 style="margin: 0;">页面背景</h4></div>
+                                    <div class="tabs"><button class="tab-btn" data-tab="page-bg-solid">纯色/图片</button><button class="tab-btn advanced-setting" data-tab="page-bg-gradient">渐变</button></div>
+                                    <div id="page-bg-solid" class="tab-content">
+                                        <div class="form-group"><label>页面背景颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.pageBgSolidColor"><input type="text" class="color-hex-input" data-state-key="pageStyles.pageBgSolidColor"></div></div>
+                                        <div class="form-group"><label>背景图 (可选):</label>
+                                            <div class="input-group simple">
+                                                <button id="page-bg-upload-btn" class="btn btn-default">选择图片...</button>
+                                                <button id="clear-page-bg-btn" class="btn btn-default btn-small">清除</button>
+                                                <input type="file" id="physical-image-upload-input" accept="image/*" style="display: none;">
                                             </div>
                                         </div>
-                                    </div>
-                                    <div id="card-bg-gradient" class="tab-content advanced-setting">
-                                        <div class="gradient-controls">
-                                            <div class="form-group"><label>起始颜色:</label>
-                                                <div class="input-group"><input type="color"
-                                                        data-state-key="globalCardStyles.bgGradientStart"><input
-                                                        type="text" class="color-hex-input"
-                                                        data-state-key="globalCardStyles.bgGradientStart"></div>
-                                            </div>
-                                            <div class="form-group"><label>结束颜色:</label>
-                                                <div class="input-group"><input type="color"
-                                                        data-state-key="globalCardStyles.bgGradientEnd"><input
-                                                        type="text" class="color-hex-input"
-                                                        data-state-key="globalCardStyles.bgGradientEnd"></div>
-                                            </div>
-                                            <div class="gradient-angle-control form-group"><label>角度 (<span
-                                                        class="angle-value">135</span>°):</label>
-                                                <div class="input-group simple stepper-group"><button
-                                                        class="btn btn-default btn-stepper minus"
-                                                        aria-label="减少">-</button><input type="range"
-                                                        data-state-key="globalCardStyles.bgGradientAngle" min="0"
-                                                        max="360" step="1"><button
-                                                        class="btn btn-default btn-stepper plus"
-                                                        aria-label="增加">+</button></div>
-                                            </div>
+                                        <div id="page-image-controls" class="advanced-setting">
+                                            <div class="form-group"><label>图片遮罩颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.pageOverlayColor"><input type="text" class="color-hex-input" data-state-key="pageStyles.pageOverlayColor"></div></div>
+                                            <div class="form-group"><label>图片遮罩不透明度:</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-state-key="pageStyles.pageOverlayOpacity" min="0" max="1" step="0.05"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div>
                                         </div>
                                     </div>
-                                    <div class="form-group advanced-setting"><label>圆角 (px): <span
-                                                id="gCardRadiusValue">12</span></label>
-                                        <div class="input-group simple stepper-group"><button
-                                                class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input
-                                                type="range" data-state-key="globalCardStyles.radius" min="0" max="40"
-                                                step="1"><button class="btn btn-default btn-stepper plus"
-                                                aria-label="增加">+</button></div>
-                                    </div>
-                                    <div class="advanced-setting">
-                                        <hr class="separator"><label>卡片边框:<span class="tooltip-trigger"
-                                                data-tooltip="边框在编辑器预览区可能显示不完美（如产生缝隙），但在最终导出的图片中是正常的。"><span class="iconify"
-                                                    data-icon="mdi:help-circle-outline"></span></span></label>
-                                        <div class="form-group inset-controls">
-                                            <div class="form-group"><label>样式:</label><select
-                                                    data-state-key="globalCardStyles.borderStyle">
-                                                    <option value="none">无</option>
-                                                    <option value="solid">实线</option>
-                                                    <option value="dashed">虚线</option>
-                                                    <option value="dotted">点状</option>
-                                                    <option value="double">双实线</option>
-                                                </select></div>
+                                    <div id="page-bg-gradient" class="tab-content advanced-setting"><div class="gradient-controls"><div class="form-group"><label>起始颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.pageBgGradientStart"><input type="text" class="color-hex-input" data-state-key="pageStyles.pageBgGradientStart"></div></div><div class="form-group"><label>结束颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.pageBgGradientEnd"><input type="text" class="color-hex-input" data-state-key="pageStyles.pageBgGradientEnd"></div></div><div class="gradient-angle-control form-group"><label>角度 (<span class="angle-value">135</span>°):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-state-key="pageStyles.pageBgGradientAngle" min="0" max="360" step="1"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div></div></div>
+                                    <div class="advanced-setting" style="margin-top: 10px;">
+                                        <div class="form-group"><button id="show-texture-picker-btn" class="btn btn-default">🎨 添加纹理</button></div>
+                                        <div id="page-texture-controls" class="inset-controls">
+                                            <div class="form-group"><label>当前纹理: <span id="current-texture-name">无</span></label><button id="clear-texture-btn" class="btn btn-default btn-small">清除纹理</button></div>
                                             <div class="color-control-row">
-                                                <div class="color-control-group"><label>粗细(px):</label>
-                                                    <div class="input-group simple stepper-group"><button
-                                                            class="btn btn-default btn-stepper minus"
-                                                            aria-label="减少">-</button><input type="range"
-                                                            data-state-key="globalCardStyles.borderWidth" min="0"
-                                                            max="10" step="1"><button
-                                                            class="btn btn-default btn-stepper plus"
-                                                            aria-label="增加">+</button></div>
-                                                </div>
-                                                <div class="color-control-group"><label>颜色:</label>
-                                                    <div class="input-group"><input type="color"
-                                                            data-state-key="globalCardStyles.borderColor"><input
-                                                            type="text" class="color-hex-input"
-                                                            data-state-key="globalCardStyles.borderColor"></div>
-                                                </div>
+                                                <div class="color-control-group"><label>纹理颜色:</label><div class="input-group"><input type="color" data-state-key="pageStyles.pageBgPatternColor"><input type="text" class="color-hex-input" data-state-key="pageStyles.pageBgPatternColor"></div></div>
+                                                <div class="color-control-group"><label>纹理不透明度:</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-state-key="pageStyles.pageBgPatternOpacity" min="0" max="1" step="0.05"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div>
                                             </div>
-                                        </div>
-                                    </div>
-                                    <hr class="separator">
-                                    <div class="color-control-row">
-                                        <div class="color-control-group"><label>标题颜色:</label>
-                                            <div class="input-group"><input type="color"
-                                                    data-state-key="globalCardStyles.titleColor"><input type="text"
-                                                    class="color-hex-input" data-state-key="globalCardStyles.titleColor"
-                                                    placeholder="同正文色"></div>
-                                        </div>
-                                        <div class="color-control-group"><label>正文颜色:</label>
-                                            <div class="input-group"><input type="color"
-                                                    data-state-key="globalCardStyles.textColor"><input type="text"
-                                                    class="color-hex-input"
-                                                    data-state-key="globalCardStyles.textColor"></div>
-                                        </div>
-                                    </div>
-                                    <div class="form-group"><label>对齐:</label>
-                                        <div class="radio-group"><label><input type="radio" name="gCardAlign"
-                                                    value="left" data-state-key="globalCardStyles.textAlign">居左</label><label><input
-                                                    type="radio" name="gCardAlign" value="center"
-                                                    data-state-key="globalCardStyles.textAlign">居中</label><label><input
-                                                    type="radio" name="gCardAlign" value="right"
-                                                    data-state-key="globalCardStyles.textAlign">居右</label></div>
-                                    </div>
-                                    <div class="form-group"><label>行高:</label>
-                                        <div class="radio-group"><label><input type="radio" name="gCardLineHeight"
-                                                    value="1.4"
-                                                    data-state-key="globalCardStyles.lineHeight">紧凑</label><label><input
-                                                    type="radio" name="gCardLineHeight" value="1.5"
-                                                    data-state-key="globalCardStyles.lineHeight">中等</label><label><input
-                                                    type="radio" name="gCardLineHeight" value="1.6"
-                                                    data-state-key="globalCardStyles.lineHeight">宽松</label></div>
-                                    </div>
-                                    <hr class="separator">
-                                    <div class="form-group"><label>字体:</label>
-                                        <div class="font-controls"><input type="text" id="font-search-input"
-                                                placeholder="搜索本地字体..." style="margin-bottom: 5px;"><select
-                                                id="font-family-select"
-                                                data-state-key="globalCardStyles.fontFamily"></select>
-                                            <div class="buttons"><button id="load-local-fonts-btn"
-                                                    class="btn btn-default">加载本地</button><button id="upload-font-btn"
-                                                    class="btn btn-default">上传字体</button><button id="manage-fonts-btn"
-                                                    class="btn btn-default">管理</button></div><input type="file"
-                                                id="font-upload-input" accept=".ttf,.woff,.woff2,.otf" multiple
-                                                style="display: none;">
-                                        </div>
-                                    </div>
-                                    <div class="color-control-row">
-                                        <div class="color-control-group"><label>标题字号:</label><select
-                                                data-state-key="globalCardStyles.titleFontSize">
-                                                <option value="1em">小</option>
-                                                <option value="1.1em">中</option>
-                                                <option value="1.2em">大</option>
-                                                <option value="1.4em">特大</option>
-                                            </select></div>
-                                        <div class="color-control-group"><label>正文字号:</label><select
-                                                data-state-key="globalCardStyles.contentFontSize">
-                                                <option value="0.8em">特小</option>
-                                                <option value="0.95em">小</option>
-                                                <option value="1em">中</option>
-                                                <option value="1.1em">大</option>
-                                            </select></div>
-                                    </div>
-                                    <div class="advanced-setting"><label>文字描边:<span class="tooltip-trigger"
-                                                data-tooltip="为文字添加边框，建议宽度不超过2px，以保证可读性。"><span class="iconify"
-                                                    data-icon="mdi:help-circle-outline"></span></span></label>
-                                        <div class="color-control-row">
-                                            <div class="color-control-group"><label>粗细(px):</label>
-                                                <div class="input-group simple stepper-group"><button
-                                                        class="btn btn-default btn-stepper minus"
-                                                        aria-label="减少">-</button><input type="range"
-                                                        data-state-key="globalCardStyles.textStrokeWidth" min="0"
-                                                        max="5" step="0.5"><button
-                                                        class="btn btn-default btn-stepper plus"
-                                                        aria-label="增加">+</button></div>
-                                            </div>
-                                            <div class="color-control-group"><label>颜色:</label>
-                                                <div class="input-group"><input type="color"
-                                                        data-state-key="globalCardStyles.textStrokeColor"><input
-                                                        type="text" class="color-hex-input"
-                                                        data-state-key="globalCardStyles.textStrokeColor"></div>
-                                            </div>
+                                            <div class="form-group"><label>纹理密度:</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-state-key="pageStyles.pageBgPatternDensity" min="10" max="100" step="2"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div>
                                         </div>
                                     </div>
                                 </div>
-                            </fieldset>
-                            <!-- NEW: Global Button Styles Section -->
-                            <fieldset class="editor-section" id="global-button-styles-section">
-                                <legend>全局按钮样式</legend>
-                                <div class="section-content">
-                                    <div class="color-control-row">
-                                        <div class="color-control-group"><label>背景色:</label>
-                                            <div class="input-group"><input type="color"
-                                                    data-state-key="globalButtonStyles.bgColor"><input type="text"
-                                                    class="color-hex-input" data-state-key="globalButtonStyles.bgColor">
-                                            </div>
-                                        </div>
-                                        <div class="color-control-group"><label>文字颜色:</label>
-                                            <div class="input-group"><input type="color"
-                                                    data-state-key="globalButtonStyles.textColor"><input type="text"
-                                                    class="color-hex-input"
-                                                    data-state-key="globalButtonStyles.textColor"></div>
-                                        </div>
-                                    </div>
-                                    <div class="form-group" style="margin-top: 15px;"><label>圆角 (px):</label>
-                                        <div class="input-group simple stepper-group"><button
-                                                class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input
-                                                type="range" data-state-key="globalButtonStyles.radius" min="0" max="40"
-                                                step="1"><button class="btn btn-default btn-stepper plus"
-                                                aria-label="增加">+</button></div>
-                                    </div>
-                                    <div class="form-group"><label>内容对齐:</label>
-                                        <div class="radio-group">
-                                            <label><input type="radio" name="gButtonAlign" value="flex-start"
-                                                    data-state-key="globalButtonStyles.textAlign">居左</label>
-                                            <label><input type="radio" name="gButtonAlign" value="center"
-                                                    data-state-key="globalButtonStyles.textAlign">居中</label>
-                                            <label><input type="radio" name="gButtonAlign" value="flex-end"
-                                                    data-state-key="globalButtonStyles.textAlign">居右</label>
-                                        </div>
-                                    </div>
+                            </div>
+                        </fieldset>
+                        <fieldset class="editor-section" id="global-border-section">
+                            <legend>🖼️ 全局边框样式</legend>
+                            <div class="section-content">
+                                <h4>1. 定义边框风格</h4>
+                                <div class="form-group"><label>样式:</label><select data-state-key="globalBorderSettings.style"><option value="none">无</option><option value="solid">实线</option><option value="dashed">虚线</option><option value="dotted">点状</option><option value="pixel">像素</option><option value="neo-brutalism">新丑</option><option value="double-offset">双层</option></select></div>
+                                <div class="color-control-row">
+                                    <div class="color-control-group"><label>粗细 (px):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-state-key="globalBorderSettings.width" min="1" max="10" step="1"><button class="btn btn-default btn-stepper plus">+</button></div></div>
+                                    <div class="color-control-group"><label>颜色:</label><div class="input-group"><input type="color" data-state-key="globalBorderSettings.color"><input type="text" class="color-hex-input" data-state-key="globalBorderSettings.color"></div></div>
                                 </div>
-                            </fieldset>
-                            <fieldset class="editor-section" id="export-section">
-                                <legend>操作</legend>
-                                <div class="section-content">
-                                    <div class="form-group" style="display: flex; gap: 10px;"> <button id="undo-btn"
-                                            class="btn btn-default" disabled>撤回</button> <button id="redo-btn"
-                                            class="btn btn-default" disabled>重做</button> </div>
-                                    <div class="form-group" style="display: flex; gap: 10px;"> <button id="import-btn"
-                                            class="btn btn-secondary">导入配置</button> <button
-                                            id="show-export-modal-btn" class="btn btn-secondary">导出数据...</button>
-                                    </div>
-                                    <div class="form-group">
-                                        <div id="mobile-export-toggle-container">
-                                            <div class="checkbox-group" style="margin-bottom: 10px;"><label><input
-                                                        type="checkbox" id="mobile-export-toggle"> 手机端导出预览</label></div>
-                                        </div>
-                                        <div class="checkbox-group" style="margin-bottom: 10px;"><label><input
-                                                    type="checkbox" id="hd-export-toggle"> 超清导出 (1800px)</label></div>
-                                        <div class="checkbox-group" style="margin-bottom: 10px;"><label><input
-                                                    type="checkbox" id="custom-width-toggle"> 自定义尺寸</label></div>
-                                        <div id="custom-dimensions-controls" style="display: none; padding-left: 20px;">
-                                            <div class="checkbox-group" style="margin-bottom: 10px;"><label><input type="checkbox" id="lock-aspect-ratio-toggle" data-state-key="exportSettings.lockAspectRatio" checked> 锁定比例</label></div>
-                                            <div style="display: flex; gap: 10px; align-items: center;">
-                                                <input type="number" id="custom-width-input" data-state-key="exportSettings.customWidth" value="1200" style="width: 80px; padding: 4px 8px;">
-                                                <span>x</span>
-                                                <input type="number" id="custom-height-input" data-state-key="exportSettings.customHeight" value="750" style="width: 80px; padding: 4px 8px;" disabled>
-                                            </div>
-                                        </div>
-                                        <div class="checkbox-group" style="margin-bottom: 10px;"><label><input
-                                                    type="checkbox" id="export-rounded-corners-toggle"> 导出为圆角图片</label><input
-                                                type="number" id="export-corner-radius-input" value="20"
-                                                style="width: 60px; padding: 4px 8px;" disabled></div>
-                                        <!-- NEW: Watermark/Attribution Checkbox -->
-                                        <div class="checkbox-group" style="margin-bottom: 10px;">
-                                            <label><input type="checkbox" id="export-attribution-toggle">
-                                                显示Blokko水印/背景作者</label>
-                                            <span id="attribution-link-wrapper"></span>
-                                        </div>
-                                        <div id="export-size-preview"
-                                            style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 5px;">
-                                        </div>
-                                        <button id="export-png-btn" class="btn btn-primary"
-                                            style="margin-top:10px;">导出为图片 (1200px)</button>
-                                    </div>
-                                    <hr class="separator">
-                                    <div class="form-group"><label>预设主题:</label>
-                                        <div class="input-group simple"> <button data-preset="light"
-                                                class="btn btn-default btn-small">明亮</button> <button
-                                                data-preset="dark" class="btn btn-default btn-small">暗黑</button> <button
-                                                data-preset="mint" class="btn btn-default btn-small">薄荷</button> <button
-                                                data-preset="coffee" class="btn btn-default btn-small">咖啡</button>
-                                        </div>
-                                    </div>
-                                    <div class="form-group"><button id="reset-btn"
-                                            class="btn btn-danger">恢复默认模板</button></div>
-                                    <input type="file" id="config-file-input" accept=".json,.zip"
-                                        style="display: none;">
+                                <div class="form-group" data-style-specific="neo-brutalism" style="display:none;"><label>阴影偏移 (px):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-state-key="globalBorderSettings.shadowOffset" min="1" max="15" step="1"><button class="btn btn-default btn-stepper plus">+</button></div></div>
+                                <div class="form-group" data-style-specific="double-offset" style="display:none;"><label>图层偏移 (px):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-state-key="globalBorderSettings.shadowOffset" min="1" max="15" step="1"><button class="btn btn-default btn-stepper plus">+</button></div></div>
+                                <hr class="separator">
+                                <h4>2. 选择应用目标</h4>
+                                <div class="form-group border-apply-to-list">
+                                    <label class="checkbox-group is-parent"><input type="checkbox" data-state-key="globalBorderSettings.applyTo.personalInfo">个人信息面板</label>
+                                    <label class="checkbox-group is-parent"><input type="checkbox" data-state-key="globalBorderSettings.applyTo.cardsInTextBlocks">文本卡片</label>
+                                    <label class="checkbox-group is-parent"><input type="checkbox" data-state-key="globalBorderSettings.applyTo.imagesInImageBlocks">图片</label>
+                                    <label class="checkbox-group is-parent"><input type="checkbox" data-state-key="globalBorderSettings.applyTo.buttonsInButtonBlocks">按钮</label>
                                 </div>
-                            </fieldset>
-                        </div>
+                            </div>
+                        </fieldset>
+                        <fieldset class="editor-section" id="global-card-styles-section">
+                            <legend>全局卡片样式</legend>
+                            <div class="section-content">
+                                <div style="text-align: right; margin-bottom: 10px;"><label class="checkbox-group advanced-toggle-label"><input type="checkbox" class="advanced-toggle"> 高级</label></div>
+                                <div class="tabs"><button class="tab-btn" data-tab="card-bg-solid">纯色</button><button class="tab-btn advanced-setting" data-tab="card-bg-gradient">渐变</button></div>
+                                <div id="card-bg-solid" class="tab-content"><div class="color-control-row"><div class="color-control-group"><label>背景色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.bgColor"><input type="text" class="color-hex-input" data-state-key="globalCardStyles.bgColor"></div></div><div class="color-control-group"><label>不透明度:</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-state-key="globalCardStyles.opacity" min="0" max="1" step="0.05"><button class="btn btn-default btn-stepper plus">+</button></div></div></div></div>
+                                <div id="card-bg-gradient" class="tab-content advanced-setting"><div class="gradient-controls"><div class="form-group"><label>起始颜色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.bgGradientStart"><input type="text" class="color-hex-input" data-state-key="globalCardStyles.bgGradientStart"></div></div><div class="form-group"><label>结束颜色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.bgGradientEnd"><input type="text" class="color-hex-input" data-state-key="globalCardStyles.bgGradientEnd"></div></div><div class="gradient-angle-control form-group"><label>角度 (<span class="angle-value">135</span>°):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-state-key="globalCardStyles.bgGradientAngle" min="0" max="360" step="1"><button class="btn btn-default btn-stepper plus">+</button></div></div></div></div>
+                                <div class="form-group"><label>圆角 (px): <span id="gCardRadiusValue">12</span></label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-state-key="globalCardStyles.radius" min="0" max="40" step="1"><button class="btn btn-default btn-stepper plus">+</button></div></div>
+                                <div class="form-group"><label>内边距 (px): <span class="padding-value">15</span></label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-state-key="globalCardStyles.padding" min="0" max="40" step="1"><button class="btn btn-default btn-stepper plus">+</button></div></div>
+                                <hr class="separator">
+                                <div class="color-control-row">
+                                    <div class="color-control-group"><label>标题颜色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.titleColor"><input type="text" class="color-hex-input" data-state-key="globalCardStyles.titleColor" placeholder="同正文色"></div></div>
+                                    <div class="color-control-group"><label>正文颜色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.textColor"><input type="text" class="color-hex-input" data-state-key="globalCardStyles.textColor"></div></div>
+                                </div>
+                                <div class="form-group"><label>对齐:</label><div class="radio-group"><label><input type="radio" name="gCardAlign" value="left" data-state-key="globalCardStyles.textAlign">居左</label><label><input type="radio" name="gCardAlign" value="center" data-state-key="globalCardStyles.textAlign">居中</label><label><input type="radio" name="gCardAlign" value="right" data-state-key="globalCardStyles.textAlign">居右</label></div></div>
+                                <div class="form-group"><label>行高:</label><div class="radio-group"><label><input type="radio" name="gCardLineHeight" value="1.4" data-state-key="globalCardStyles.lineHeight">紧凑</label><label><input type="radio" name="gCardLineHeight" value="1.5" data-state-key="globalCardStyles.lineHeight">中等</label><label><input type="radio" name="gCardLineHeight" value="1.6" data-state-key="globalCardStyles.lineHeight">宽松</label></div></div>
+                                <hr class="separator">
+                                <div class="form-group"><label>字体:</label><div class="font-controls"><input type="text" id="font-search-input" placeholder="搜索本地字体..." style="margin-bottom: 5px;"><select id="font-family-select" data-state-key="globalCardStyles.fontFamily"></select><div class="buttons"><button id="load-local-fonts-btn" class="btn btn-default">加载本地</button><button id="upload-font-btn" class="btn btn-default">上传字体</button><button id="manage-fonts-btn" class="btn btn-default">管理</button></div><input type="file" id="font-upload-input" accept=".ttf,.woff,.woff2,.otf" multiple style="display: none;"></div></div>
+                                <div class="color-control-row">
+                                    <div class="color-control-group"><label>标题字号:</label><select data-state-key="globalCardStyles.titleFontSize"><option value="1em">小</option><option value="1.1em">中</option><option value="1.2em">大</option><option value="1.4em">特大</option></select></div>
+                                    <div class="color-control-group"><label>正文字号:</label><select data-state-key="globalCardStyles.contentFontSize"><option value="0.8em">特小</option><option value="0.95em">小</option><option value="1em">中</option><option value="1.1em">大</option></select></div>
+                                </div>
+                                <div class="advanced-setting"><label>文字描边:<span class="tooltip-trigger" data-tooltip="为文字添加边框，建议宽度不超过2px，以保证可读性。"><span class="iconify" data-icon="mdi:help-circle-outline"></span></span></label><div class="color-control-row"><div class="color-control-group"><label>粗细(px):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-state-key="globalCardStyles.textStrokeWidth" min="0" max="5" step="0.5"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div><div class="color-control-group"><label>颜色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.textStrokeColor"><input type="text" class="color-hex-input" data-state-key="globalCardStyles.textStrokeColor"></div></div></div></div>
+                            </div>
+                        </fieldset>
+                        <fieldset class="editor-section" id="global-button-styles-section">
+                            <legend>全局按钮样式</legend>
+                            <div class="section-content">
+                                <div class="color-control-row">
+                                    <div class="color-control-group"><label>背景色:</label><div class="input-group"><input type="color" data-state-key="globalButtonStyles.bgColor"><input type="text" class="color-hex-input" data-state-key="globalButtonStyles.bgColor"></div></div>
+                                    <div class="color-control-group"><label>文字颜色:</label><div class="input-group"><input type="color" data-state-key="globalButtonStyles.textColor"><input type="text" class="color-hex-input" data-state-key="globalButtonStyles.textColor"></div></div>
+                                </div>
+                                <div class="form-group" style="margin-top: 15px;"><label>圆角 (px):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-state-key="globalButtonStyles.radius" min="0" max="40" step="1"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div>
+                                <div class="form-group"><label>内容对齐:</label><div class="radio-group"><label><input type="radio" name="gButtonAlign" value="flex-start" data-state-key="globalButtonStyles.textAlign">居左</label><label><input type="radio" name="gButtonAlign" value="center" data-state-key="globalButtonStyles.textAlign">居中</label><label><input type="radio" name="gButtonAlign" value="flex-end" data-state-key="globalButtonStyles.textAlign">居右</label></div></div>
+                            </div>
+                        </fieldset>
                     `;
                 },
 
+                createSystemInspectorHTML() {
+                     return `
+                         <fieldset class="editor-section" id="actions-section">
+                             <legend>⚙️ 核心操作</legend>
+                             <div class="section-content">
+                                 <div class="form-group"><button id="random-palette-btn" class="btn btn-secondary">✨ 随机生成配色</button></div>
+                                 <hr class="separator">
+                                 <div class="form-group">
+                                     <label>操作历史:</label>
+                                     <div id="history-list"></div>
+                                 </div>
+                                 <div class="form-group" style="display: flex; gap: 10px;">
+                                     <button id="undo-btn" class="btn btn-default" disabled>撤销</button>
+                                     <button id="redo-btn" class="btn btn-default" disabled>重做</button>
+                                 </div>
+                             </div>
+                         </fieldset>
+                         <fieldset class="editor-section" id="export-section">
+                             <legend>📥 导入与导出</legend>
+                             <div class="section-content">
+                                 <div class="form-group" style="display: flex; gap: 10px;">
+                                     <button id="import-btn" class="btn btn-secondary">导入数据 (.json/.zip)</button>
+                                     <button id="show-export-modal-btn" class="btn btn-secondary">导出数据...</button>
+                                 </div>
+                                 <hr class="separator">
+                                 <div class="form-group">
+                                    <label>导出文件名前缀:</label>
+                                    <input type="text" data-state-key="systemSettings.exportFilePrefix">
+                                 </div>
+                                 <div id="mobile-export-toggle-container">
+                                     <div class="checkbox-group" style="margin-bottom: 10px;"><label><input type="checkbox" id="mobile-export-toggle"> 手机端导出预览</label></div>
+                                 </div>
+                                 <div class="checkbox-group" style="margin-bottom: 10px;"><label><input type="checkbox" id="hd-export-toggle"> 超清导出 (1800px)</label></div>
+                                 <div class="checkbox-group" style="margin-bottom: 10px;"><label><input type="checkbox" id="custom-width-toggle"> 自定义尺寸</label></div>
+                                 <div id="custom-dimensions-controls" style="display: none; padding-left: 20px;">
+                                     <div class="checkbox-group" style="margin-bottom: 10px;"><label><input type="checkbox" id="lock-aspect-ratio-toggle" data-state-key="exportSettings.lockAspectRatio" checked> 锁定比例</label></div>
+                                     <div style="display: flex; gap: 10px; align-items: center;">
+                                         <input type="number" id="custom-width-input" data-state-key="exportSettings.customWidth" value="1200" style="width: 80px; padding: 4px 8px;">
+                                         <span>x</span>
+                                         <input type="number" id="custom-height-input" data-state-key="exportSettings.customHeight" value="750" style="width: 80px; padding: 4px 8px;" disabled>
+                                     </div>
+                                 </div>
+                                 <div class="checkbox-group" style="margin-bottom: 10px;"><label><input type="checkbox" id="export-rounded-corners-toggle"> 导出为圆角图片</label><input type="number" id="export-corner-radius-input" value="20" style="width: 60px; padding: 4px 8px;" disabled></div>
+                                 <div class="checkbox-group" style="margin-bottom: 10px;">
+                                     <label><input type="checkbox" id="export-attribution-toggle">显示Blokko水印/背景作者</label>
+                                     <span id="attribution-link-wrapper"></span>
+                                 </div>
+                                 <div id="export-size-preview" style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 5px;"></div>
+                                 <button id="export-png-btn" class="btn btn-primary" style="margin-top:10px;">导出为图片 (1200px)</button>
+                             </div>
+                         </fieldset>
+                         <fieldset class="editor-section" id="manage-section">
+                             <legend>🗂️ 资源管理</legend>
+                             <div class="section-content">
+                                 <div class="form-group" style="display: flex; gap: 10px;">
+                                     <button id="manage-fonts-btn" class="btn btn-default">管理字体</button>
+                                 </div>
+                                  <hr class="separator">
+                                 <div class="form-group"><button id="reset-btn" class="btn btn-danger">恢复默认模板</button></div>
+                                 <input type="file" id="config-file-input" accept=".json,.zip" style="display: none;">
+                             </div>
+                         </fieldset>
+                     `;
+                 },
+
                 createPersonalInfoInspectorHTML() {
-                    const backBtn = this.selection.type !== 'global' ? `<button class="back-to-global-btn">← 返回全局</button>` : '';
                     return `
-                        <h3 class="panel-header">个人信息设置 ${backBtn}</h3>
                         <div class="inspector-state active">
                              <fieldset class="editor-section" id="personal-info-section">
                                 <legend>个人信息</legend>
                                 <div class="section-content">
                                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                        <!-- MOVED: Layout controls -->
                                         <div class="form-group" style="margin: 0;">
                                             <label>布局:</label>
                                             <div class="radio-group" style="padding: 5px;">
@@ -2276,23 +2112,25 @@
                                         <label class="checkbox-group advanced-toggle-label"><input type="checkbox" class="advanced-toggle"> 高级</label>
                                     </div>
                                     <div class="form-group"><label>头像上传 (点击左侧预览区的头像也可上传):</label><input type="file" id="avatar-upload" accept="image/*"></div>
+                                    <div class="form-group"><label>状态挂件:</label><div class="radio-group">
+                                        <label><input type="radio" name="avatarBadge" value="none" data-state-key="personalInfo.statusBadge">无</label>
+                                        <label><input type="radio" name="avatarBadge" value="online" data-state-key="personalInfo.statusBadge">🟢在线</label>
+                                        <label><input type="radio" name="avatarBadge" value="busy" data-state-key="personalInfo.statusBadge">🔴忙碌</label>
+                                        <label><input type="radio" name="avatarBadge" value="dnd" data-state-key="personalInfo.statusBadge">⛔勿扰</label>
+                                        <label><input type="radio" name="avatarBadge" value="idle" data-state-key="personalInfo.statusBadge">🌙闲置</label>
+                                        <label><input type="radio" name="avatarBadge" value="working" data-state-key="personalInfo.statusBadge">💻工作</label>
+                                        <label><input type="radio" name="avatarBadge" value="invisible" data-state-key="personalInfo.statusBadge">⚪隐身</label>
+                                        <label><input type="radio" name="avatarBadge" value="red-dot" data-state-key="personalInfo.statusBadge">🔴99+</label>
+                                        <label><input type="radio" name="avatarBadge" value="emoji" data-state-key="personalInfo.statusBadge">😊自定义</label>
+                                    </div></div>
+                                    <div class="form-group" id="emoji-input-container" style="display:none;"><label>自定义Emoji:</label><input type="text" data-state-key="personalInfo.statusBadgeEmoji" maxlength="2"></div>
                                     <div class="form-group advanced-setting"><label>头像形状:</label><div class="radio-group"><label><input type="radio" name="avatarShape" value="50%" data-state-key="personalInfo.avatarShape">圆形</label><label><input type="radio" name="avatarShape" value="16px" data-state-key="personalInfo.avatarShape">圆角</label><label><input type="radio" name="avatarShape" value="0px" data-state-key="personalInfo.avatarShape">方形</label></div></div>
                                     <div class="form-group advanced-setting"><label>头像边框:</label><div class="color-control-row"><div class="color-control-group"><label>粗细(px):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-state-key="personalInfo.avatarBorderSize" min="0" max="10" step="1"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div><div class="color-control-group"><label>颜色:</label><div class="input-group"><input type="color" data-state-key="personalInfo.avatarBorderColor"><input type="text" class="color-hex-input" data-state-key="personalInfo.avatarBorderColor"><button class="btn btn-default btn-small" data-reset-key="personalInfo.avatarBorderColor">重置</button></div></div></div></div>
-                                    
                                     <hr class="separator advanced-setting">
                                     <div class="form-group advanced-setting"><label>头像大小 (%): <span class="avatar-size-value">100</span></label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-state-key="personalInfo.avatarSize" min="50" max="200" step="1"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div>
                                     <div class="form-group advanced-setting"><label>头像水平位置:</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-state-key="personalInfo.avatarOffsetX" min="-100" max="100" step="1"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div>
-                                    <!-- NEW: Floating Avatar Control -->
-<div id="avatar-offsetY-control" class="form-group advanced-setting">
-                                        <label>头像垂直偏移 (悬浮): <span class="avatar-offsetY-value">0</span>%</label>
-                                        <div class="input-group simple stepper-group">
-                                            <button class="btn btn-default btn-stepper minus" aria-label="减少">-</button>
-                                            <input type="range" data-state-key="personalInfo.avatarOffsetY" min="0" max="100" step="1">
-                                            <button class="btn btn-default btn-stepper plus" aria-label="增加">+</button>
-                                        </div>
-                                    </div>
+                                    <div id="avatar-offsetY-control" class="form-group advanced-setting"><label>头像垂直偏移 (悬浮): <span class="avatar-offsetY-value">0</span>%</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-state-key="personalInfo.avatarOffsetY" min="0" max="100" step="1"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div>
                                     <div class="form-group advanced-setting"><button id="reset-avatar-transform-btn" class="btn btn-default btn-small">恢复默认位置与大小</button></div>
-
                                     <hr class="separator">
                                     <div class="form-group"><label>昵称:</label><input type="text" data-state-key="personalInfo.nickname" data-preview-target="#preview-nickname"></div>
                                     <div class="form-group"><label>昵称颜色:</label><div class="input-group"><input type="color" data-state-key="personalInfo.nicknameColor"><input type="text" class="color-hex-input" data-state-key="personalInfo.nicknameColor"><button class="btn btn-default btn-small" data-reset-key="personalInfo.nicknameColor">重置</button></div></div>
@@ -2313,7 +2151,17 @@
                  * @description 渲染所有区块的预览效果。
                  */
                 renderPreviewBlocks() {
-                    this.elements.previewBlocksContainer.innerHTML = this.state.blocks.length ? this.state.blocks.map(b => `<div class="preview-block-wrapper ${b.isVisible === false ? 'is-hidden' : ''}" data-block-id="${b.id}">${this.createPreviewBlockHTML(b)}</div>`).join('') : '<div class="empty-placeholder">(预览区) 无区块</div>';
+                    const borderSettings = this.state.globalBorderSettings;
+                    this.elements.previewBlocksContainer.innerHTML = this.state.blocks.length ? this.state.blocks.map(b => {
+                        const applyToKey = `${b.type}Blocks`;
+                        const shouldApplyBorder = borderSettings.applyTo[applyToKey];
+                        const borderClass = shouldApplyBorder ? 'apply-global-border' : '';
+                        
+                        return `<div class="preview-block-wrapper ${b.isVisible === false ? 'is-hidden' : ''} ${borderClass}" data-block-id="${b.id}" data-border-style="${borderSettings.style}">
+                                  ${this.createPreviewBlockHTML(b)}
+                                </div>`;
+                    }).join('') : '<div class="empty-placeholder">(预览区) 无区块</div>';
+
                     this.postRenderAsyncUpdates(this.elements.previewBlocksContainer);
                     this.updateHighlights();
                     this.renderMobileEditPencils();
@@ -2321,7 +2169,6 @@
 
                 createEditorBlockHTML(block) {
                     let content = '';
-                    const backBtn = this.selection.type !== 'global' ? `<button class="back-to-global-btn">← 返回全局</button>` : '';
                     const masonryCheckboxHTML = `
                         <div class="masonry-toggle-container" style="${['dual', 'triple'].includes(block.settings.layout) ? 'display: block;' : 'display: none;'}">
                             <div class="checkbox-group" style="margin-top: 10px;">
@@ -2347,11 +2194,56 @@
                                    <div class="form-group"><label>文字颜色:</label><div class="input-group"><input type="color" data-setting-key="textColor" value="${block.settings.textColor || ''}"><input type="text" class="color-hex-input" data-setting-key="textColor" value="${block.settings.textColor || ''}" placeholder="全局默认"><button class="btn btn-default btn-small" data-reset-block-key="textColor">重置</button></div></div>
                                    <hr class="separator"><div class="image-card-editors-list">${imageCardsHTML}</div><button class="btn btn-default add-image-btn" style="margin-top: 15px;">➕ 添加图片</button>
                                    <input type="file" class="image-upload-input" multiple accept="image/*" style="display: none;">`;
-                        // NEW: Button block editor
                     } else if (block.type === 'button') {
                         let buttonCardsHTML = !block.cards?.length ? '<div class="empty-placeholder">暂无按钮</div>' : block.cards.map(c => `<div class="editor-card ${this.selection.cardId === c.id ? 'is-active' : ''}" data-card-id="${c.id}">${this.createEditorButtonCardHTML(c)}</div>`).join('');
                         content = `<div class="form-group"><label>按钮间距 (px):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-setting-key="gap" min="0" max="40" value="${block.settings.gap || 15}"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div>
                                    <hr class="separator"><div class="button-card-editors-list">${buttonCardsHTML}</div><button class="btn btn-default add-button-card-btn" style="margin-top: 15px;">➕ 添加按钮</button>`;
+                    } else if (block.type === 'music') {
+                        content = this.createEditorMusicBlockHTML(block);
+                    } else if (block.type === 'progress') {
+                        const s = block.settings;
+                        content = `
+                            <div class="form-group"><label>标签:</label><input type="text" data-setting-key="label" value="${this.escapeHTML(s.label)}"></div>
+                            <div class="form-group"><label>百分比: <span class="progress-value">${s.percentage}</span>%</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-setting-key="percentage" min="0" max="100" step="1" value="${s.percentage}"><button class="btn btn-default btn-stepper plus">+</button></div></div>
+                            <div class="color-control-row">
+                                <div class="color-control-group"><label>进度颜色:</label><div class="input-group"><input type="color" data-setting-key="color" value="${s.color}"><input type="text" class="color-hex-input" data-setting-key="color" value="${s.color}"></div></div>
+                                <div class="color-control-group"><label>轨道颜色:</label><div class="input-group"><input type="color" data-setting-key="trackColor" value="${s.trackColor}"><input type="text" class="color-hex-input" data-setting-key="trackColor" value="${s.trackColor}"></div></div>
+                            </div>
+                            <div class="form-group" style="margin-top: 10px;"><label>粗细 (px):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-setting-key="thickness" min="2" max="30" step="1" value="${s.thickness}"><button class="btn btn-default btn-stepper plus">+</button></div></div>
+                            <hr class="separator"><div style="text-align: right; margin-bottom: 10px;"><label class="checkbox-group advanced-toggle-label"><input type="checkbox" class="advanced-toggle"> 🎨 独立外观设置</label></div>
+                            <div class="advanced-setting">
+                                 <div class="color-control-row">
+                                    <div class="color-control-group"><label>背景色:</label><div class="input-group"><input type="color" data-setting-key="bgColor" value="${s.bgColor||''}"><input type="text" class="color-hex-input" data-setting-key="bgColor" value="${s.bgColor||''}" placeholder="默认透明"><button class="btn btn-default btn-small" data-reset-block-key="bgColor">重置</button></div></div>
+                                    <div class="color-control-group"><label>文字色:</label><div class="input-group"><input type="color" data-setting-key="textColor" value="${s.textColor||''}"><input type="text" class="color-hex-input" data-setting-key="textColor" value="${s.textColor||''}" placeholder="全局"><button class="btn btn-default btn-small" data-reset-block-key="textColor">重置</button></div></div>
+                                </div>
+                                <div class="color-control-row" style="margin-top:10px;">
+                                    <div class="color-control-group"><label>不透明度:</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-setting-key="opacity" min="0" max="1" step="0.1" value="${s.opacity!==undefined&&s.opacity!==''?s.opacity:1}"><button class="btn btn-default btn-stepper plus">+</button></div><button class="btn btn-default btn-small" data-reset-block-key="opacity" style="margin-top:5px; width:100%;">重置</button></div>
+                                    <div class="color-control-group"><label>圆角(px):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-setting-key="radius" min="0" max="40" step="1" value="${s.radius!==undefined&&s.radius!==''?s.radius:12}"><button class="btn btn-default btn-stepper plus">+</button></div><button class="btn btn-default btn-small" data-reset-block-key="radius" style="margin-top:5px; width:100%;">重置</button></div>
+                                </div>
+                                <div class="form-group" style="margin-top: 10px;"><label>内边距(px):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-setting-key="padding" min="0" max="40" step="1" value="${s.padding!==undefined&&s.padding!==''?s.padding:0}"><button class="btn btn-default btn-stepper plus">+</button></div><button class="btn btn-default btn-small" data-reset-block-key="padding" style="margin-top:5px; width:100%;">重置</button></div>
+                            </div>
+                        `;
+                    } else if (block.type === 'timeline') {
+                        let eventsHTML = !block.cards?.length ? '<div class="empty-placeholder">暂无事件</div>' : block.cards.map(c => this.createEditorTimelineEventHTML(c)).join('');
+                        const s = block.settings;
+                        const g = this.state.globalCardStyles;
+                        content = `
+                            <div class="color-control-row">
+                                <div class="color-control-group"><label>时间点颜色:</label><div class="input-group"><input type="color" data-setting-key="timeColor" value="${s.timeColor||''}"><input type="text" class="color-hex-input" data-setting-key="timeColor" value="${s.timeColor||''}" placeholder="默认灰色"></div></div>
+                                <div class="color-control-group"><label>节点/线颜色:</label><div class="input-group"><input type="color" data-setting-key="accentColor" value="${s.accentColor||''}"><input type="text" class="color-hex-input" data-setting-key="accentColor" value="${s.accentColor||''}" placeholder="默认主色"></div></div>
+                            </div>
+                            <hr class="separator"><div style="text-align: right; margin-bottom: 10px;"><label class="checkbox-group advanced-toggle-label"><input type="checkbox" class="advanced-toggle"> 🎨 独立外观设置</label></div>
+                            <div class="advanced-setting">
+                                <div class="color-control-row">
+                                    <div class="color-control-group"><label>背景色:</label><div class="input-group"><input type="color" data-setting-key="bgColor" value="${s.bgColor||''}"><input type="text" class="color-hex-input" data-setting-key="bgColor" value="${s.bgColor||''}" placeholder="${g.bgColor} (全局)"><button class="btn btn-default btn-small" data-reset-block-key="bgColor">重置</button></div></div>
+                                    <div class="color-control-group"><label>内容颜色:</label><div class="input-group"><input type="color" data-setting-key="textColor" value="${s.textColor||''}"><input type="text" class="color-hex-input" data-setting-key="textColor" value="${s.textColor||''}" placeholder="${g.textColor} (全局)"><button class="btn btn-default btn-small" data-reset-block-key="textColor">重置</button></div></div>
+                                </div>
+                                <div class="color-control-row" style="margin-top:10px;">
+                                    <div class="color-control-group"><label>不透明度:</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-setting-key="opacity" min="0" max="1" step="0.1" value="${s.opacity!==undefined&&s.opacity!==''?s.opacity:g.opacity}"><button class="btn btn-default btn-stepper plus">+</button></div><button class="btn btn-default btn-small" data-reset-block-key="opacity" style="margin-top:5px; width:100%;">重置 (跟随全局)</button></div>
+                                    <div class="color-control-group"><label>圆角(px):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-setting-key="radius" min="0" max="40" step="1" value="${s.radius!==undefined&&s.radius!==''?s.radius:g.radius}"><button class="btn btn-default btn-stepper plus">+</button></div><button class="btn btn-default btn-small" data-reset-block-key="radius" style="margin-top:5px; width:100%;">重置 (跟随全局)</button></div>
+                                </div>
+                            </div>
+                            <hr class="separator"><div class="timeline-editors-list">${eventsHTML}</div><button class="btn btn-default add-timeline-event-btn" style="margin-top: 15px;">➕ 添加事件</button>`;
                     } else if (block.type === 'separator') {
                         const s = block.settings;
                         const iconHTML = s.icon ? `<span class="iconify" data-icon="${s.icon}"></span>` : '选择图标';
@@ -2361,7 +2253,7 @@
                         content = `<div class="form-group"><label>高度 (px): <span class="spacer-height-value">${s.height}</span></label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-setting-key="height" min="1" max="200" value="${s.height}"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div>`;
                     }
 
-                    return `<h3 class="panel-header">区块设置 ${backBtn}</h3><div class="editor-block" data-block-id="${block.id}"><div class="editor-block-header"><input type="text" class="editor-block-title-input" data-block-id-for-title="${block.id}" value="${this.escapeHTML(block.title || '')}" placeholder="区块标题 (可编辑)"><div class="block-actions"><button class="btn btn-danger btn-small block-delete-btn">删除</button></div></div><div class="editor-block-content">${content}</div></div>`;
+                    return `<div class="editor-block" data-block-id="${block.id}"><div class="editor-block-header"><input type="text" class="editor-block-title-input" data-block-id-for-title="${block.id}" value="${this.escapeHTML(block.title || '')}" placeholder="区块标题 (可编辑)"><div class="block-actions"><button class="btn btn-danger btn-small block-delete-btn">删除</button></div></div><div class="editor-block-content">${content}</div></div>`;
                 },
 
                 createPreviewBlockHTML(block) {
@@ -2371,10 +2263,9 @@
 
                     let cardsHTML = '';
                     if (block.type === 'text') {
-                        cardsHTML = (block.cards || []).map(card => this.createPreviewCardHTML(card)).join('');
+                        cardsHTML = (block.cards || []).map(card => this.createPreviewCardHTML(card, block.type)).join('');
                     } else if (block.type === 'image') {
                         cardsHTML = (block.cards || []).map(card => this.createPreviewImageCardHTML(card, block.settings)).join('');
-                        // NEW: Render button previews
                     } else if (block.type === 'button') {
                         return `<div class="preview-buttons-container" style="gap: ${block.settings.gap || 15}px;">
                             ${(block.cards || []).map(card => this.createPreviewButtonCardHTML(card)).join('')}
@@ -2383,6 +2274,12 @@
 
                     if (block.type === 'text' || block.type === 'image') {
                         return `<div class="preview-cards-container ${layoutClass}">${cardsHTML}</div>`;
+                    } else if (block.type === 'music') {
+                        return this.createPreviewMusicBlockHTML(block);
+                    } else if (block.type === 'progress') {
+                        return this.createPreviewProgressBlockHTML(block);
+                    } else if (block.type === 'timeline') {
+                        return this.createPreviewTimelineBlockHTML(block);
                     } else if (block.type === 'separator') {
                         const s = block.settings;
                         const hasTextOrIcon = s.text || s.icon;
@@ -2396,10 +2293,18 @@
                     return '';
                 },
 
-                createPreviewCardHTML(card) {
+                createPreviewCardHTML(card, blockType) {
+                    const borderSettings = this.state.globalBorderSettings;
+                    const applyToKey = `cardsIn${blockType.charAt(0).toUpperCase() + blockType.slice(1)}Blocks`;
+                    const shouldApplyBorder = borderSettings.applyTo[applyToKey];
+                    const borderClass = shouldApplyBorder ? 'apply-global-border' : '';
+                    
+                    const stickerHTML = card.sticker && card.sticker !== 'none' ? `<div class="preview-card-sticker ${card.sticker}"></div>` : '';
+
                     const cardEl = document.createElement('div');
-                    cardEl.className = 'preview-card';
+                    cardEl.className = `preview-card ${borderClass}`;
                     cardEl.dataset.cardId = card.id;
+                    cardEl.dataset.borderStyle = borderSettings.style;
                     cardEl.style.setProperty('--card-transition-name', `card-${card.id}`);
                     const iconHTML = card.icon ? `<span class="iconify" data-icon="${card.icon}"></span>` : '';
 
@@ -2408,7 +2313,9 @@
                     const justifyContent = { left: 'flex-start', center: 'center', right: 'flex-end' }[finalAlign] || 'flex-start';
                     const finalTitleColor = card.titleColor || g.titleColor || g.textColor;
 
-                    cardEl.innerHTML = `<div class="preview-card-inner">
+                    cardEl.innerHTML = `
+                        ${stickerHTML}
+                        <div class="preview-card-inner">
                             <h3 class="preview-card-title" data-card-key="title" style="justify-content: ${justifyContent}; color: ${finalTitleColor};">${iconHTML}${this.escapeHTML(card.title || '')}</h3>
                             <div class="preview-card-content" data-card-key="content">${this.sanitizeHTML(card.content || '')}</div>
                         </div>`;
@@ -2416,6 +2323,10 @@
                 },
 
                 createPreviewImageCardHTML(card, blockSettings = {}) {
+                    const borderSettings = this.state.globalBorderSettings;
+                    const shouldApplyBorder = borderSettings.applyTo.imagesInImageBlocks;
+                    const borderClass = shouldApplyBorder ? 'apply-global-border' : '';
+                    
                     const textColorStyle = blockSettings.textColor ? `style="color: ${blockSettings.textColor};"` : '';
                     const figcaptionContent = (card.title || card.description) ?
                         `<figcaption ${textColorStyle}>
@@ -2424,16 +2335,19 @@
                         </figcaption>`
                         : '';
 
-                    const figureHTML = `<figure data-card-id="${card.id}">
-                        <img src="" alt="${this.escapeHTML(card.title || '')}" loading="lazy">
+                    const figureHTML = `<figure data-card-id="${card.id}" class="${borderClass}" data-border-style="${borderSettings.style}">
+                        <img src="" alt="${this.escapeHTML(card.title || '')}" loading="lazy" style="object-fit: ${card.imageFillMode || 'cover'};">
                         ${figcaptionContent}
                     </figure>`;
 
                     return figureHTML;
                 },
 
-                // NEW: Function to render a single preview button
                 createPreviewButtonCardHTML(card) {
+                    const borderSettings = this.state.globalBorderSettings;
+                    const shouldApplyBorder = borderSettings.applyTo.buttonsInButtonBlocks;
+                    const borderClass = shouldApplyBorder ? 'apply-global-border' : '';
+                    
                     const g = this.state.globalButtonStyles;
                     const iconHTML = card.icon ? `<span class="iconify" data-icon="${card.icon}"></span>` : '';
                     const alignSelf = { 'left': 'flex-start', 'center': 'center', 'right': 'flex-end' }[card.textAlign] || 'center';
@@ -2441,14 +2355,91 @@
                     const styles = [];
                     if (card.bgColor) styles.push(`--button-bg-color: ${card.bgColor}`);
                     if (card.textColor) styles.push(`--button-text-color: ${card.textColor}`);
-                    if (card.radius != null) styles.push(`--button-border-radius: ${card.radius}px`); // Use != null to allow 0
+                    if (card.radius != null) styles.push(`--button-border-radius: ${card.radius}px`);
                     if (card.textAlign) styles.push(`--button-text-align: ${card.textAlign}`);
                     if (card.width) styles.push(`--button-width: ${card.width}`);
                     styles.push(`--button-align-self: ${alignSelf}`);
                     const styleString = styles.join(';');
-                    return `<div class="preview-button" data-card-id="${card.id}" style="${styleString}">
+                    
+                    return `<div class="preview-button ${borderClass}" data-card-id="${card.id}" style="${styleString}" data-border-style="${borderSettings.style}">
                         ${iconHTML}<span data-card-key="text">${this.escapeHTML(card.text || '')}</span>
                     </div>`;
+                },
+                
+                createPreviewMusicBlockHTML(block) {
+                    const s = block.settings;
+                    return `
+                        <div class="music-card-preview">
+                            <img src="" class="music-cover" alt="Album Cover">
+                            <div class="music-info">
+                                <div class="music-title" data-setting-key="songTitle">${this.escapeHTML(s.songTitle)}</div>
+                                <div class="music-artist" data-setting-key="artist">${this.escapeHTML(s.artist)}</div>
+                                <div class="music-lyrics" data-setting-key="lyrics">${this.escapeHTML(s.lyrics)}</div>
+                                <div class="music-progress-bar">
+                                    <div class="music-progress-fill" style="width: ${s.progress}%;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                },
+
+                createPreviewProgressBlockHTML(block) {
+                    const s = block.settings;
+                    const h = s.thickness || 8;
+                    const g = this.state.globalCardStyles;
+                    
+                    const rawBg = s.bgColor || 'transparent';
+                    const opacity = (s.opacity !== undefined && s.opacity !== '') ? s.opacity : (s.bgColor ? g.opacity : 1);
+                    const bgStyle = s.bgColor ? `background-color: ${this.hexToRgba(rawBg, opacity)};` : '';
+                    
+                    const textColor = s.textColor || g.textColor;
+                    const radius = (s.radius !== undefined && s.radius !== '') ? s.radius : (s.bgColor ? g.radius : 0);
+                    const padding = (s.padding !== undefined && s.padding !== '') ? s.padding : 0;
+                    
+                    return `
+                        <div class="progress-bar-preview" style="${bgStyle} padding: ${padding}px; border-radius: ${radius}px;">
+                            <div class="progress-bar-header" style="color: ${textColor};">
+                                <span class="progress-bar-label" data-setting-key="label">${this.escapeHTML(s.label)}</span>
+                                <span class="progress-bar-value">${s.percentage}%</span>
+                            </div>
+                            <div class="progress-bar-track" style="background-color: ${s.trackColor || '#eee'}; height: ${h}px; border-radius: ${h/2}px;">
+                                <div class="progress-bar-fill" style="width: ${s.percentage}%; background-color: ${s.color};"></div>
+                            </div>
+                        </div>
+                    `;
+                },
+                
+                createPreviewTimelineBlockHTML(block) {
+                    const s = block.settings;
+                    const g = this.state.globalCardStyles;
+                    
+                    const rawBg = s.bgColor || g.bgColor;
+                    const opacity = (s.opacity !== undefined && s.opacity !== '') ? s.opacity : g.opacity;
+                    const bgColor = this.hexToRgba(rawBg, opacity);
+                    
+                    const textColor = s.textColor || g.textColor;
+                    const radius = (s.radius !== undefined && s.radius !== '') ? s.radius : g.radius;
+                    
+                    const styleVars = `
+                        --tl-bg-color: ${bgColor};
+                        --tl-text-color: ${textColor};
+                        --tl-time-color: ${s.timeColor || 'var(--text-secondary)'};
+                        --tl-accent-color: ${s.accentColor || 'var(--g-theme-primary)'};
+                        --tl-radius: ${radius}px;
+                    `;
+                    
+                    const eventsHTML = (block.cards || []).map(event => `
+                        <div class="timeline-event" data-card-id="${event.id}">
+                             <div class="timeline-dot" style="border-color: var(--tl-accent-color); background-color: var(--bg-preview-page);"></div>
+                             <div class="timeline-time" data-card-key="time" style="color: var(--tl-time-color);">${this.escapeHTML(event.time)}</div>
+                             <div class="timeline-content" data-card-key="content" style="color: var(--tl-text-color);">${this.escapeHTML(event.content)}</div>
+                        </div>
+                    `).join('');
+                    
+                    return `<div class="timeline-preview" style="${styleVars} background-color: var(--tl-bg-color); border-radius: var(--tl-radius);">
+                                <div class="timeline-line" style="background-color: var(--border-color);"></div>
+                                ${eventsHTML}
+                            </div>`;
                 },
 
                 createEditorCardHTML(card) {
@@ -2481,6 +2472,7 @@
                             <div class="advanced-setting">
                                 <hr class="separator">
                                 <h4>独立样式</h4>
+                                <div class="form-group"><label>装饰贴纸:</label><div class="radio-group"><label><input type="radio" name="card-${card.id}-sticker" value="none" data-card-key="sticker" ${card.sticker === 'none' || !card.sticker ? 'checked': ''}>无</label><label><input type="radio" name="card-${card.id}-sticker" value="tape" data-card-key="sticker" ${card.sticker === 'tape' ? 'checked' : ''}>胶带</label><label><input type="radio" name="card-${card.id}-sticker" value="pushpin" data-card-key="sticker" ${card.sticker === 'pushpin' ? 'checked' : ''}>图钉</label></div></div>
                                 <div class="color-control-row">
                                     <div class="color-control-group"><label>背景色:</label><div class="input-group"><input type="color" data-card-key="bgColor" value="${card.bgColor || ''}"><input class="color-hex-input" type="text" data-card-key="bgColor" value="${card.bgColor || ''}" placeholder="${g.bgColor} (全局)"><button class="btn btn-default btn-small" data-reset-card-key="bgColor">重置</button></div></div>
                                     <div class="color-control-group"><label>正文颜色:</label><div class="input-group"><input type="color" data-card-key="textColor" value="${card.textColor || ''}"><input class="color-hex-input" type="text" data-card-key="textColor" value="${card.textColor || ''}" placeholder="${g.textColor} (全局)"><button class="btn btn-default btn-small" data-reset-card-key="textColor">重置</button></div></div>
@@ -2499,7 +2491,6 @@
                         </div>`;
                 },
 
-                // NEW: Function to create the editor for a single button card
                 createEditorButtonCardHTML(card) {
                     const iconHTML = card.icon ? `<span class="iconify" data-icon="${card.icon}"></span>` : '图标';
                     return `
@@ -2561,6 +2552,109 @@
                                     <div class="form-group"><label>描述:</label><textarea data-card-key="description" rows="2">${this.escapeHTML(card.description || '')}</textarea></div>
                                 </div>
                             </div>
+                            <div class="form-group" style="margin-top: 10px;">
+                                <label>图片填充模式:</label>
+                                <div class="radio-group">
+                                    <label><input type="radio" name="img-fill-${card.id}" value="cover" data-card-key="imageFillMode" ${card.imageFillMode === 'cover' || !card.imageFillMode ? 'checked' : ''}>填充 (Cover)</label>
+                                    <label><input type="radio" name="img-fill-${card.id}" value="contain" data-card-key="imageFillMode" ${card.imageFillMode === 'contain' ? 'checked' : ''}>完整 (Contain)</label>
+                                </div>
+                            </div>
+                        </div>`;
+                },
+                
+                createEditorMusicBlockHTML(block) {
+                    const s = block.settings;
+                    const g = this.state.globalCardStyles;
+                    const gTheme = this.state.globalTheme;
+                    return `
+                        <div class="form-group"><label>专辑封面:</label>
+                             <div class="image-card-editor-content">
+                                <div class="music-cover-thumb" style="width: 80px; flex-shrink: 0;"><div class="thumbnail-wrapper"><img src="" loading="lazy"></div></div>
+                                <div class="image-card-editor-fields"><input type="file" id="music-cover-upload" accept="image/*">
+                                <div class="form-group" style="margin-top:5px; margin-bottom:0;"><label style="font-size:0.8rem">高亮色:</label><div class="input-group simple"><input type="color" data-setting-key="accentColor" value="${s.accentColor||''}"><input type="text" class="color-hex-input" data-setting-key="accentColor" value="${s.accentColor||''}" placeholder="${gTheme.accent}"><button class="btn btn-default btn-small" data-reset-block-key="accentColor">重置</button></div></div></div>
+                            </div>
+                        </div>
+                        <div class="form-group"><label>歌曲名称:</label><input type="text" data-setting-key="songTitle" value="${this.escapeHTML(s.songTitle || '')}"></div>
+                        <div class="form-group"><label>歌手:</label><input type="text" data-setting-key="artist" value="${this.escapeHTML(s.artist || '')}"></div>
+                        <div class="form-group"><label>播放进度 (输入时间自动计算):</label><div class="input-group simple"><input type="text" data-setting-key="currentTime" value="${s.currentTime||'00:00'}" placeholder="01:20" style="text-align:center;"><span style="padding:0 5px;">/</span><input type="text" data-setting-key="totalTime" value="${s.totalTime||'03:00'}" placeholder="03:00" style="text-align:center;"></div></div>
+                        <div class="form-group"><label>歌词 (居中显示):</label><textarea data-setting-key="lyrics" rows="3" placeholder="上一句&#10;当前句(高亮)&#10;下一句">${this.escapeHTML(s.lyrics || '')}</textarea></div>
+                        <hr class="separator"><div style="text-align: right; margin-bottom: 10px;"><label class="checkbox-group advanced-toggle-label"><input type="checkbox" class="advanced-toggle"> 🎨 独立外观设置</label></div>
+                        <div class="advanced-setting">
+                            <div class="color-control-row">
+                                <div class="color-control-group"><label>背景色:</label><div class="input-group"><input type="color" data-setting-key="bgColor" value="${s.bgColor||''}"><input type="text" class="color-hex-input" data-setting-key="bgColor" value="${s.bgColor||''}" placeholder="${g.bgColor} (全局)"><button class="btn btn-default btn-small" data-reset-block-key="bgColor">重置</button></div></div>
+                                <div class="color-control-group"><label>文字色:</label><div class="input-group"><input type="color" data-setting-key="textColor" value="${s.textColor||''}"><input type="text" class="color-hex-input" data-setting-key="textColor" value="${s.textColor||''}" placeholder="${g.textColor} (全局)"><button class="btn btn-default btn-small" data-reset-block-key="textColor">重置</button></div></div>
+                            </div>
+                            <div class="color-control-row" style="margin-top:10px;">
+                                <div class="color-control-group"><label>不透明度:</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-setting-key="opacity" min="0" max="1" step="0.05" value="${s.opacity!==undefined && s.opacity!=='' ? s.opacity : g.opacity}"><button class="btn btn-default btn-stepper plus">+</button></div><button class="btn btn-default btn-small" data-reset-block-key="opacity" style="margin-top:5px; width:100%;">重置 (跟随全局)</button></div>
+                                <div class="color-control-group"><label>圆角(px):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-setting-key="radius" min="0" max="40" step="1" value="${s.radius!==undefined && s.radius!=='' ? s.radius : g.radius}"><button class="btn btn-default btn-stepper plus">+</button></div><button class="btn btn-default btn-small" data-reset-block-key="radius" style="margin-top:5px; width:100%;">重置 (跟随全局)</button></div>
+                            </div>
+                        </div>`;
+                },
+                
+                parseTimeToSeconds(timeStr) {
+                    if (!timeStr) return 0;
+                    const parts = timeStr.split(':');
+                    if (parts.length !== 2) return 0;
+                    return parseInt(parts[0]) * 60 + parseInt(parts[1]);
+                },
+
+                createPreviewMusicBlockHTML(block) {
+                    const s = block.settings;
+                    const currentSec = this.parseTimeToSeconds(s.currentTime);
+                    const totalSec = this.parseTimeToSeconds(s.totalTime);
+                    const percent = totalSec > 0 ? (currentSec / totalSec) * 100 : 0;
+                    const lines = (s.lyrics || '').split('\n');
+                    
+                    const g = this.state.globalCardStyles;
+                    const rawBg = s.bgColor || g.bgColor;
+                    const opacity = (s.opacity !== undefined && s.opacity !== '') ? s.opacity : g.opacity;
+                    const bgVar = this.hexToRgba(rawBg, opacity);
+                    
+                    const textVar = s.textColor || g.textColor;
+                    const accentVar = s.accentColor || this.state.globalTheme.accent;
+                    const radiusVar = (s.radius !== undefined && s.radius !== '') ? `${s.radius}px` : `${g.radius}px`;
+
+                    const l1 = lines[0] || '&nbsp;';
+                    const l2 = lines[1] || '暂无歌词';
+                    const l3 = lines[2] || '&nbsp;';
+
+                    return `
+                        <div class="music-card-preview" style="--music-bg-color:${bgVar}; --music-text-color:${textVar}; --music-radius:${radiusVar}; --music-accent-color:${accentVar};">
+                            <img src="" class="music-cover" alt="Cover">
+                            <div class="music-info">
+                                <div class="music-header">
+                                    <div class="music-title" data-setting-key="songTitle">${this.escapeHTML(s.songTitle)}</div>
+                                    <div class="music-artist" data-setting-key="artist">${this.escapeHTML(s.artist)}</div>
+                                </div>
+                                <div class="music-lyrics-container">
+                                    <div class="lyrics-line prev">${this.escapeHTML(l1)}</div>
+                                    <div class="lyrics-line active">${this.escapeHTML(l2)}</div>
+                                    <div class="lyrics-line next">${this.escapeHTML(l3)}</div>
+                                </div>
+                                <div class="music-bottom-area">
+                                    <div class="music-progress-area">
+                                        <div class="music-progress-bar"><div class="music-progress-fill" style="width: ${percent}%;"></div></div>
+                                        <div class="music-time-labels"><span>${s.currentTime||'00:00'}</span><span>${s.totalTime||'00:00'}</span></div>
+                                    </div>
+                                    <div class="music-controls">
+                                        <span class="iconify" data-icon="mdi:skip-previous"></span>
+                                        <span class="iconify" data-icon="mdi:play-circle" style="font-size: 1.4em;"></span>
+                                        <span class="iconify" data-icon="mdi:skip-next"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>`;
+                },
+                
+                createEditorTimelineEventHTML(card) {
+                    return `
+                        <div class="timeline-event-editor" data-card-id="${card.id}">
+                            <span class="card-drag-handle">☰</span>
+                            <div class="editor-card-header" style="padding: 4px 8px;"><button class="btn btn-danger btn-small card-delete-btn">删</button></div>
+                            <div class="editor-card-content" style="padding: 10px;">
+                                <div class="form-group"><label>时间点:</label><input type="text" data-card-key="time" value="${this.escapeHTML(card.time || '')}"></div>
+                                <div class="form-group" style="margin-bottom:0;"><label>事件内容:</label><textarea data-card-key="content" rows="2">${this.escapeHTML(card.content || '')}</textarea></div>
+                            </div>
                         </div>`;
                 },
 
@@ -2617,7 +2711,6 @@
 
                     if (parseFloat(finalOpacity) < 0.01) {
                         innerEl.style.boxShadow = 'none';
-                        innerEl.style.border = 'var(--active-card-border)';
                     } else {
                         innerEl.style.setProperty('--card-text-color', finalTextColor);
                         innerEl.style.setProperty('--active-card-text-shadow', 'none');
@@ -2625,7 +2718,6 @@
                         innerEl.style.setProperty('--card-overlay-color', cardData.overlayColor || '#FFF');
                         innerEl.style.setProperty('--card-overlay-opacity', parseFloat(overlayOpacity) > 0 ? overlayOpacity : 0);
                         innerEl.style.boxShadow = 'var(--active-card-shadow)';
-                        innerEl.style.border = 'var(--active-card-border)';
                     }
                 },
 
@@ -2638,9 +2730,31 @@
                  */
                 updateState(keyPath, value, pushHistory = true, historyDescription = null) {
                     if (pushHistory && !this.isRestoringState) {
-                        this.pushHistory(historyDescription || '修改样式');
+                        let desc = historyDescription;
+                        if (!desc) {
+                            const parts = keyPath.split('.');
+                            const keyName = parts[parts.length - 1];
+                            const nameMap = {
+                                'bgColor': '背景色', 'textColor': '文字色', 'radius': '圆角', 'opacity': '不透明度',
+                                'text': '文本', 'title': '标题', 'songTitle': '歌名', 'artist': '歌手', 'lyrics': '歌词',
+                                'percentage': '进度', 'label': '标签', 'time': '时间', 'content': '内容',
+                                'gap': '间距', 'width': '宽度', 'height': '高度', 'margin': '边距',
+                                'layout': '布局', 'masonryEnabled': '瀑布流开关', 'coverArt': '封面',
+                                'accentColor': '高亮色', 'trackColor': '轨道色', 'thickness': '粗细',
+                                'timeColor': '时间色', 'style': '样式', 'color': '颜色',
+                                'isVisible': '可见性', 'headerBgColor': '头部背景', 'headerTextColor': '头部文字',
+                                'pageBgSolidColor': '页面背景', 'nickname': '昵称', 'subtitle': '副标题', 'bio': '简介'
+                            };
+                            const parentMap = {
+                                'blocks': '区块', 'personalInfo': '个人信息', 'pageStyles': '页面样式',
+                                'globalCardStyles': '全局卡片', 'globalButtonStyles': '全局按钮'
+                            };
+                            const actionName = nameMap[keyName] || keyName;
+                            const scopeName = parentMap[parts[0]] || '';
+                            desc = `修改 ${scopeName}${actionName}`;
+                        }
+                        this.pushHistory(desc);
                     }
-                    // 通过路径字符串安全地更新深层嵌套的对象属性
                     let obj = this.state;
                     const keys = keyPath.split('.');
                     for (let i = 0; i < keys.length - 1; i++) { obj = obj?.[keys[i]]; }
@@ -2648,7 +2762,10 @@
 
                     this.debouncedSaveToLocal();
                     this.triggerRender(keyPath);
-                    this.syncControl(keyPath);
+                    
+                    if (!document.activeElement.matches('input[type="text"].color-hex-input')) {
+                         this.syncControl(keyPath);
+                    }
                 },
 
                 /**
@@ -2658,30 +2775,42 @@
                 triggerRender(keyPath) {
                     const styles = this.state.pageStyles;
                     const gCard = this.state.globalCardStyles;
-                    const gButton = this.state.globalButtonStyles; // NEW
+                    const gButton = this.state.globalButtonStyles;
+                    const gBorder = this.state.globalBorderSettings;
+                    const gTheme = this.state.globalTheme;
                     const info = this.state.personalInfo;
                     const r = document.documentElement.style;
 
-                    // 定义一个映射表，对于某些特定的状态更新，直接操作DOM，避免重渲染整个组件
                     const directUpdateMap = {
+                        // 全局主题
+                        'globalTheme.primary': () => r.setProperty('--g-theme-primary', gTheme.primary),
+                        'globalTheme.accent': () => r.setProperty('--g-theme-accent', gTheme.accent),
+                        'globalTheme.background': () => r.setProperty('--g-theme-background', gTheme.background),
+                        'globalTheme.text': () => r.setProperty('--g-theme-text', gTheme.text),
+                        
+                        // 头部样式
                         'pageStyles.headerBgColor': () => { if (styles.headerBgMode === 'solid') this.elements.previewHeader.style.background = this.hexToRgba(styles.headerBgColor, styles.headerOpacity); },
                         'pageStyles.headerBgGradientStart': () => { if (styles.headerBgMode === 'gradient') this.elements.previewHeader.style.background = `linear-gradient(${styles.headerBgGradientAngle}deg, ${this.hexToRgba(styles.headerBgGradientStart, styles.headerOpacity)}, ${this.hexToRgba(styles.headerBgGradientEnd, styles.headerOpacity)})` },
                         'pageStyles.headerBgGradientEnd': () => { if (styles.headerBgMode === 'gradient') this.elements.previewHeader.style.background = `linear-gradient(${styles.headerBgGradientAngle}deg, ${this.hexToRgba(styles.headerBgGradientStart, styles.headerOpacity)}, ${this.hexToRgba(styles.headerBgGradientEnd, styles.headerOpacity)})` },
                         'pageStyles.headerBgGradientAngle': () => { if (styles.headerBgMode === 'gradient') this.elements.previewHeader.style.background = `linear-gradient(${styles.headerBgGradientAngle}deg, ${this.hexToRgba(styles.headerBgGradientStart, styles.headerOpacity)}, ${this.hexToRgba(styles.headerBgGradientEnd, styles.headerOpacity)})` },
                         'pageStyles.headerOpacity': () => this.renderPageStyles(),
                         'pageStyles.headerBorderRadius': () => { this.elements.previewHeader.style.borderRadius = `${styles.headerBorderRadius}px`; },
+                        
+                        // 页面背景
                         'pageStyles.pageBgSolidColor': () => { if (styles.pageBgMode === 'solid') this.elements.previewWrapper.style.backgroundColor = styles.pageBgSolidColor; },
                         'pageStyles.pageBgGradientStart': () => { if (styles.pageBgMode === 'gradient') this.renderPageStyles(); },
                         'pageStyles.pageBgGradientEnd': () => { if (styles.pageBgMode === 'gradient') this.renderPageStyles(); },
                         'pageStyles.pageBgGradientAngle': () => { if (styles.pageBgMode === 'gradient') this.renderPageStyles(); },
                         'pageStyles.pageOverlayOpacity': () => this.renderPageStyles(),
                         'pageStyles.pageOverlayColor': () => this.renderPageStyles(),
-                        // NEW: Global button style direct updates
+                        
+                        // 全局按钮
                         'globalButtonStyles.bgColor': () => r.setProperty('--g-button-bg-color', gButton.bgColor),
                         'globalButtonStyles.textColor': () => r.setProperty('--g-button-text-color', gButton.textColor),
                         'globalButtonStyles.radius': () => r.setProperty('--g-button-border-radius', `${gButton.radius}px`),
                         'globalButtonStyles.textAlign': () => r.setProperty('--g-button-text-align', gButton.textAlign),
 
+                        // 全局卡片
                         'globalCardStyles.opacity': () => { r.setProperty('--g-card-opacity', gCard.opacity); this.renderPreviewBlocks(); },
                         'globalCardStyles.radius': () => r.setProperty('--g-card-border-radius', `${gCard.radius}px`),
                         'globalCardStyles.bgColor': () => { r.setProperty('--g-card-bg-color', gCard.bgColor); if (gCard.bgMode === 'solid') this.renderPreviewBlocks(); },
@@ -2689,15 +2818,24 @@
                         'globalCardStyles.bgGradientStart': () => { if (gCard.bgMode === 'gradient') this.renderPreviewBlocks(); },
                         'globalCardStyles.bgGradientEnd': () => { if (gCard.bgMode === 'gradient') this.renderPreviewBlocks(); },
                         'globalCardStyles.bgGradientAngle': () => { if (gCard.bgMode === 'gradient') this.renderPreviewBlocks(); },
-                        'globalCardStyles.borderWidth': () => { r.setProperty('--active-card-border', gCard.borderWidth > 0 && gCard.borderStyle !== 'none' ? `${gCard.borderWidth}px ${gCard.borderStyle} ${gCard.borderColor}` : 'none'); },
-                        'globalCardStyles.borderStyle': () => { r.setProperty('--active-card-border', gCard.borderWidth > 0 && gCard.borderStyle !== 'none' ? `${gCard.borderWidth}px ${gCard.borderStyle} ${gCard.borderColor}` : 'none'); },
-                        'globalCardStyles.borderColor': () => { r.setProperty('--active-card-border', gCard.borderWidth > 0 && gCard.borderStyle !== 'none' ? `${gCard.borderWidth}px ${gCard.borderStyle} ${gCard.borderColor}` : 'none'); },
                         'globalCardStyles.textStrokeWidth': () => { r.setProperty('--g-card-text-stroke', gCard.textStrokeWidth > 0 ? `${gCard.textStrokeWidth}px ${gCard.textStrokeColor}` : '0px transparent'); },
                         'globalCardStyles.textStrokeColor': () => { r.setProperty('--g-card-text-stroke', gCard.textStrokeWidth > 0 ? `${gCard.textStrokeWidth}px ${gCard.textStrokeColor}` : '0px transparent'); },
                         'globalCardStyles.titleColor': () => { this.renderPreviewBlocks(); },
                         'globalCardStyles.titleFontSize': () => { r.setProperty('--g-card-title-font-size', gCard.titleFontSize); },
                         'globalCardStyles.contentFontSize': () => { r.setProperty('--g-card-content-font-size', gCard.contentFontSize); },
+                        'globalCardStyles.padding': () => { r.setProperty('--g-card-padding', `${gCard.padding}px`); },
+                        
+                        // 全局边框
+                        'globalBorderSettings.style': () => { this.updateGlobalBorderVars(); this.renderPreviewBlocks(); },
+                        'globalBorderSettings.width': () => this.updateGlobalBorderVars(),
+                        'globalBorderSettings.color': () => this.updateGlobalBorderVars(),
+                        'globalBorderSettings.shadowOffset': () => this.updateGlobalBorderVars(),
+                        'globalBorderSettings.applyTo.personalInfo': () => this.renderPersonalInfo(),
+                        'globalBorderSettings.applyTo.cardsInTextBlocks': () => this.renderPreviewBlocks(),
+                        'globalBorderSettings.applyTo.imagesInImageBlocks': () => this.renderPreviewBlocks(),
+                        'globalBorderSettings.applyTo.buttonsInButtonBlocks': () => this.renderPreviewBlocks(),
 
+                        // 个人信息
                         'personalInfo.nicknameColor': () => { this.elements.previewHeader.querySelector('#preview-nickname').style.color = info.nicknameColor; },
                         'personalInfo.subtitleColor': () => { this.elements.previewHeader.querySelector('#preview-subtitle').style.color = info.subtitleColor; },
                         'personalInfo.bioColor': () => { this.elements.previewHeader.querySelector('#preview-bio').style.color = info.bioColor; },
@@ -2715,36 +2853,40 @@
                     const mainKey = keyPath.split('.')[0];
                     const keyParts = keyPath.split('.');
 
-                    // 如果更新的是个人信息相关
                     if (mainKey === 'personalInfo') {
                         const subKey = keyParts[1];
-
                         const previewAvatar = this.elements.previewHeader.querySelector('#preview-avatar');
                         switch (subKey) {
                             case 'nickname': this.elements.previewHeader.querySelector('#preview-nickname').textContent = this.state.personalInfo.nickname; break;
                             case 'subtitle': this.elements.previewHeader.querySelector('#preview-subtitle').textContent = this.state.personalInfo.subtitle; break;
                             case 'bio': this.elements.previewHeader.querySelector('#preview-bio').textContent = this.state.personalInfo.bio; break;
                             case 'avatarSize':
-                        case 'avatarOffsetX':
-                        case 'avatarOffsetY':
-                            if (previewAvatar) {
-                                const baseSize = 90;
-                                const newSize = baseSize * ((info.avatarSize || 100) / 100);
-                                const offsetX = info.avatarOffsetX || 0;
-                                const offsetY = info.avatarOffsetY || 0;
-                                previewAvatar.style.width = `${newSize}px`;
-                                previewAvatar.style.height = `${newSize}px`;
-                                previewAvatar.style.transform = `translateX(${offsetX}%)`;
-                                const overflowAmount = (newSize * (offsetY / 100));
-                                previewAvatar.style.marginTop = `-${overflowAmount}px`;
-                                this.elements.previewWrapper.style.paddingTop = `${20 + (overflowAmount / 2.5)}px`;
-                            }
-                            break;
+                            case 'avatarOffsetX':
+                            case 'avatarOffsetY':
+                                if (previewAvatar) {
+                                    const baseSize = 90;
+                                    const newSize = baseSize * ((info.avatarSize || 100) / 100);
+                                    const offsetX = info.avatarOffsetX || 0;
+                                    const offsetY = info.avatarOffsetY || 0;
+                                    previewAvatar.style.width = `${newSize}px`;
+                                    previewAvatar.style.height = `${newSize}px`;
+                                    const wrapper = this.elements.previewHeader.querySelector('#preview-avatar-wrapper');
+                                    if (wrapper) {
+                                        wrapper.style.transform = `translateX(${offsetX}%)`;
+                                    }
+                                    const overflowAmount = (newSize * (offsetY / 100));
+                                    if (wrapper) {
+                                        wrapper.style.marginTop = `-${overflowAmount}px`;
+                                    }
+                                    previewAvatar.style.transform = 'none';
+                                    previewAvatar.style.marginTop = '0';
+                                    this.elements.previewWrapper.style.paddingTop = `${20 + (overflowAmount / 2.5)}px`;
+                                }
+                                break;
                             case 'avatarShape':
                                 if (previewAvatar) previewAvatar.style.borderRadius = info.avatarShape;
                                 break;
                             default:
-                                // Only fully re-render for layout changes or tag additions/deletions
                                 this.renderPersonalInfo();
                                 this.renderLayerPanel();
                                 if (subKey === 'tags') this.renderTagManager();
@@ -2753,9 +2895,10 @@
                         return;
                     }
 
-                    // 如果更新的是页面或全局卡片样式
-                    if (mainKey === 'pageStyles' || mainKey === 'globalCardStyles' || mainKey === 'globalButtonStyles' || mainKey === 'exportSettings') {
-                        if (mainKey === 'globalCardStyles' || mainKey === 'globalButtonStyles') this.updateGlobalCardStyleVars();
+                    if (['pageStyles', 'globalCardStyles', 'globalButtonStyles', 'globalBorderSettings', 'globalTheme', 'exportSettings', 'systemSettings'].includes(mainKey)) {
+                        this.updateGlobalThemeVars();
+                        this.updateGlobalCardStyleVars();
+                        this.updateGlobalBorderVars();
                         if (mainKey === 'exportSettings') this.updatePreviewAspectRatio();
                         this.renderPageStyles();
                         this.renderPreviewBlocks();
@@ -2763,7 +2906,6 @@
                         return;
                     }
 
-                    // 如果更新的是区块或卡片
                     if (mainKey === 'blocks') {
                         if (keyParts.length <= 2) {
                             this.renderLayerPanel();
@@ -2807,10 +2949,9 @@
                             const card = block.cards[cardIndex];
                             if (!card) return;
                             
-                            // OPTIMIZATION: More granular rendering
-                            if (['title', 'content', 'icon', 'text', 'bgColor', 'textColor'].includes(cardProp)) {
+                            if (['title', 'content', 'icon', 'text', 'time'].includes(cardProp)) {
                                 this.renderPreviewCardById(block.id, card.id);
-                                if (cardProp === 'title' || cardProp === 'text') {
+                                if (['title', 'text', 'time'].includes(cardProp)) {
                                     this.renderLayerPanel();
                                 }
                             } else {
@@ -2822,87 +2963,62 @@
                 },
 
                 /**
-                 * @description 向指定区块添加一个新卡片。
+                 * @description 向指定区块添加一个新卡片或项目。
+                 * @param {string} blockType - 目标区块的类型。
                  * @param {string} blockId - 目标区块的ID。
                  * @param {boolean} isQuickAdd - 是否是通过图层面板的快捷按钮添加。
                  */
-                addCard(blockId, isQuickAdd = false) {
+                addCard(blockType, blockId, isQuickAdd = false) {
                     const block = this.findBlock(blockId);
-                    if (!block || block.type !== 'text') return;
+                    if (!block) return;
+                    
+                    let newCard;
+                    switch(blockType) {
+                        case 'text':
+                            newCard = { id: this.generateId('c'), icon: '', title: `新卡片`, content: '点击编辑内容', sticker: 'none' };
+                            break;
+                        case 'button':
+                            newCard = { id: this.generateId('c'), icon: '', text: '新按钮' };
+                            break;
+                        case 'timeline':
+                             newCard = { id: this.generateId('c'), time: '新时间点', content: '新事件内容' };
+                             break;
+                        default:
+                            return;
+                    }
 
-                    const newCard = { id: this.generateId('c'), icon: '', title: `新卡片`, content: '点击编辑内容', opacity: 1.0, followGlobalOpacity: true, textShadowEnabled: false, titleColor: null, titleFontSize: null, contentFontSize: null };
-
-                    this.pushHistory('添加卡片');
+                    this.pushHistory(`添加 ${blockType === 'timeline' ? '事件' : '项目'}`);
+                    if (!block.cards) block.cards = [];
                     block.cards.push(newCard);
                     this.debouncedSaveToLocal();
 
                     if (isQuickAdd) {
                         const cardListEl = this.elements.layerList.querySelector(`.layer-item-container[data-block-id="${blockId}"] .card-layer-list`);
                         if (cardListEl) {
-                            const newCardLayerItem = document.createElement('li');
-                            newCardLayerItem.className = 'card-layer-item';
-                            newCardLayerItem.dataset.cardId = newCard.id;
-                            newCardLayerItem.textContent = newCard.title || '无标题卡片';
-                            cardListEl.appendChild(newCardLayerItem);
-                            this.toggleLayerExpansion(blockId, true);
+                             const newCardLayerItem = document.createElement('li');
+                             newCardLayerItem.className = 'card-layer-item';
+                             newCardLayerItem.dataset.cardId = newCard.id;
+                             newCardLayerItem.textContent = newCard.title || newCard.text || newCard.time;
+                             cardListEl.appendChild(newCardLayerItem);
+                             this.toggleLayerExpansion(blockId, true);
                         }
                     } else {
                         this.renderLayerPanel();
                     }
 
-                    this.renderInspector();
+                    this.renderInspectorContent();
+                    this.renderPreviewBlockById(blockId);
 
-                    const container = this.elements.previewBlocksContainer.querySelector(`[data-block-id="${blockId}"] > div`);
-                    if (!container) {
-                        this.renderPreviewBlockById(blockId);
-                        return;
-                    };
-
-                    // 动态添加新卡片到预览区并播放动画
-                    const tempDiv = document.createElement('div');
-                    tempDiv.innerHTML = this.createPreviewCardHTML(newCard);
-                    const newCardEl = tempDiv.firstChild;
-                    this.applyCardStyles(newCardEl, newCard);
-                    container.appendChild(newCardEl);
-
-                    const masonry = this.masonryInstances[blockId];
-                    if (masonry) {
-                        masonry.appended(newCardEl);
-                        masonry.layout();
-                    }
-
-                    newCardEl.classList.add('adding');
-                    newCardEl.addEventListener('animationend', () => newCardEl.classList.remove('adding'), { once: true });
-
-                    const newCardEditorEl = this.elements.inspectorPanel.querySelector(`.editor-card[data-card-id="${newCard.id}"]`);
+                    const newCardEditorEl = this.elements.inspectorPanel.querySelector(`[data-card-id="${newCard.id}"]`);
                     if (newCardEditorEl) {
                         newCardEditorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     }
                 },
-
-                // NEW: Add Button Card
-                addButtonCard(blockId, isQuickAdd = false) {
+                
+                handleMusicCoverUpload(event, blockId) {
                     const block = this.findBlock(blockId);
-                    if (!block || block.type !== 'button') return;
-
-                    const newButton = { id: this.generateId('c'), icon: '', text: '新按钮' };
-
-                    this.pushHistory('添加按钮');
-                    block.cards.push(newButton);
-                    this.debouncedSaveToLocal();
-
-                    this.renderLayerPanel();
-                    this.renderInspector();
-                    this.renderPreviewBlockById(blockId);
-
-                    if (isQuickAdd) {
-                        this.toggleLayerExpansion(blockId, true);
-                    }
-
-                    const newButtonEditorEl = this.elements.inspectorPanel.querySelector(`.editor-card[data-card-id="${newButton.id}"]`);
-                    if (newButtonEditorEl) {
-                        newButtonEditorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }
+                    if (!block) return;
+                    this.handleImageUpload(event, 'musicCover', { blockId, oldImageUrl: block.settings.coverArt });
                 },
 
                 /**
@@ -2917,11 +3033,10 @@
                 },
 
                 /**
-                 * @description 从指定区块中删除一个卡片。
+                 * @description 从指定区块中删除一个卡片或项目。
                  * @param {string} blockId - 目标区块的ID。
                  * @param {string} cardId - 目标卡片的ID。
                  */
-                // MODIFIED: Simplified and more robust deleteCard function
                 async deleteCard(blockId, cardId) {
                     const block = this.findBlock(blockId);
                     if (!block) return;
@@ -2929,26 +3044,22 @@
                     const confirmed = await this.showConfirm('确认删除', '确定要删除这个项目吗？');
                     if (!confirmed) return;
 
-                    //  删除卡片前，先清理其可能引用的图片资源
                     const cardToDelete = block.cards.find(c => c.id === cardId);
                     if (cardToDelete) {
                         await this.deleteImageByUrl(cardToDelete.url);
                         await this.deleteImageByUrl(cardToDelete.bgImageDataUrl);
                     }
 
-                    this.pushHistory('删除卡片/按钮');
+                    this.pushHistory('删除项目');
                     block.cards = block.cards.filter(c => c.id !== cardId);
                     this.debouncedSaveToLocal();
 
-                    // 如果当前选中的就是这个被删除的卡片，则切换回选择区块
                     if (this.selection.cardId === cardId) {
                         this.setSelection({ type: 'block', id: blockId });
                     } else {
-                        // 否则，仅重新渲染检查器以移除卡片编辑器
-                        this.renderInspector();
+                        this.renderInspectorContent();
                     }
 
-                    // 重新渲染图层和预览区
                     this.renderLayerPanel();
                     this.renderPreviewBlockById(blockId);
 
@@ -2960,6 +3071,7 @@
                  */
                 async loadFromLocal() {
                     const json = localStorage.getItem('blokkoState');
+                    const historyJson = localStorage.getItem('blokkoHistory');
                     if (!json) {
                         await this.loadFontsFromDB();
                         return;
@@ -2967,17 +3079,14 @@
                     try {
                         let saved = JSON.parse(json);
                         if (saved && saved.personalInfo) {
-                            // 迁移旧版 (v1.6.0之前) 的 base64 图片数据到 IndexedDB
                             saved = await this.processStateForImageMigration(saved);
 
-                            // 迁移旧版标签数据格式
                             if (typeof saved.personalInfo.tags === 'string') {
                                 saved.personalInfo.tags = saved.personalInfo.tags.split(/[,，、]/).map(t => t.trim()).filter(Boolean)
                                     .map(text => ({ id: this.generateId('t'), icon: null, text }));
                                 this.showToast('旧版配置已加载，标签数据已自动转换。', 'info');
                             }
 
-                            // 迁移旧版图片区块数据格式
                             let migrated = false;
                             saved.blocks.forEach(block => {
                                 if (block.type === 'image' && block.images && !block.cards) {
@@ -2990,11 +3099,9 @@
                             });
                             if (migrated) this.showToast('旧版图片区块已自动升级', 'info');
 
-                            // 合并加载的数据和默认状态，以兼容未来新增的配置项
                             const defaultState = this.getDefaultState();
                             this.state = this.mergeDeep(defaultState, saved);
 
-                            // 迁移旧版 (localStorage) 字体数据到 IndexedDB
                             if (saved.uploadedFonts) {
                                 for (const font of saved.uploadedFonts) {
                                     if (font.data) {
@@ -3007,6 +3114,15 @@
                                 delete this.state.uploadedFonts;
                                 this.saveToLocal();
                             }
+                        }
+                        if (historyJson) {
+                            try {
+                                const savedHistory = JSON.parse(historyJson);
+                                if (Array.isArray(savedHistory) && savedHistory.length > 0) {
+                                    this.history = savedHistory;
+                                    this.historyIndex = this.history.length - 1;
+                                }
+                            } catch (e) {}
                         }
                     } catch (e) {
                         localStorage.removeItem('blokkoState');
@@ -3063,7 +3179,7 @@
                             }
 
                             if (input.type === 'range') {
-                                const valueDisplay = input.closest('.form-group').querySelector('.angle-value, .spacer-height-value, #gCardRadiusValue, .avatar-size-value, .avatar-offsetY-value, .header-radius-value, .shadow-blur-value, .shadow-offset-value');
+                                const valueDisplay = input.closest('.form-group').querySelector('span[class*="-value"]');
                                 if (valueDisplay) valueDisplay.textContent = value;
                             }
                         });
@@ -3110,14 +3226,13 @@
                                         }
                                     }
                                     if (input.type === 'range') {
-                                        const valueDisplay = input.closest('.form-group').querySelector('.angle-value, .spacer-height-value, #gCardRadiusValue, .avatar-size-value, .avatar-offsetY-value, .header-radius-value, .shadow-blur-value, .shadow-offset-value');
+                                        const valueDisplay = input.closest('.form-group').querySelector('span[class*="-value"]');
                                         if (valueDisplay) valueDisplay.textContent = value;
                                     }
                                 }
                             } catch (e) { }
                         });
 
-                        // NEW: Sync attribution checkbox
                         const attrToggle = this.elements.inspectorPanel.querySelector('#export-attribution-toggle');
                         if (attrToggle) {
                             if (this.state.pageStyles.pageBgImageAttribution) {
@@ -3135,7 +3250,6 @@
                             gCardSection.querySelectorAll(':scope > .section-content > .tab-content').forEach(c => c.classList.toggle('active', c.id === gCardActiveTab));
                         }
                         
-                        // NEW: Sync export dimension controls visibility
                         const customDimControls = this.elements.inspectorPanel.querySelector('#custom-dimensions-controls');
                         if(customDimControls) {
                             const customWidthToggle = this.elements.inspectorPanel.querySelector('#custom-width-toggle');
@@ -3163,6 +3277,15 @@
                             const currentTextureName = pageTextureControls.querySelector('#current-texture-name');
                             if (currentTextureName) currentTextureName.textContent = this.state.pageStyles.pageBgPattern || '无';
                         }
+                        
+                        const emojiInputContainer = this.elements.inspectorPanel.querySelector('#emoji-input-container');
+                        if(emojiInputContainer) {
+                            emojiInputContainer.style.display = this.state.personalInfo.statusBadge === 'emoji' ? 'block' : 'none';
+                        }
+                        
+                        this.elements.inspectorPanel.querySelectorAll('[data-style-specific]').forEach(el => {
+                            el.style.display = this.state.globalBorderSettings.style === el.dataset.styleSpecific ? '' : 'none';
+                        });
 
                     } finally {
                         this.isRestoringState = false;
@@ -3199,7 +3322,6 @@
                     this.renderMobileEditPencils();
                 },
                 
-                // OPTIMIZATION: More granular card rendering
                 renderPreviewCardById(blockId, cardId) {
                     const block = this.findBlock(blockId);
                     const cardData = block?.cards.find(c => c.id === cardId);
@@ -3207,12 +3329,11 @@
                     
                     const cardEl = this.elements.previewBlocksContainer.querySelector(`[data-card-id="${cardId}"]`);
                     if (!cardEl) {
-                        // Element not found, fall back to full block render
                         this.renderPreviewBlockById(blockId);
                         return;
                     }
 
-                    if (cardEl.matches('.preview-card')) { // Handle text card
+                    if (cardEl.matches('.preview-card')) {
                         const titleEl = cardEl.querySelector('.preview-card-title');
                         const contentEl = cardEl.querySelector('.preview-card-content');
                         
@@ -3224,7 +3345,7 @@
                             contentEl.innerHTML = this.sanitizeHTML(cardData.content || '');
                         }
                         this.applyCardStyles(cardEl, cardData);
-                    } else if (cardEl.matches('.preview-button')) { // Handle button card
+                    } else if (cardEl.matches('.preview-button')) {
                         const textSpan = cardEl.querySelector('span[data-card-key="text"]');
                         const iconSpan = cardEl.querySelector('.iconify');
                         if(textSpan) textSpan.textContent = cardData.text || '';
@@ -3241,7 +3362,6 @@
                         } else if (iconSpan) {
                             iconSpan.remove();
                         }
-                        // Re-apply inline styles for buttons
                         const g = this.state.globalButtonStyles;
                         const alignSelf = { 'left': 'flex-start', 'center': 'center', 'right': 'flex-end' }[cardData.textAlign] || 'center';
                         cardEl.style.setProperty('--button-bg-color', cardData.bgColor || g.bgColor);
@@ -3250,11 +3370,14 @@
                         cardEl.style.setProperty('--button-text-align', cardData.textAlign || g.textAlign);
                         cardEl.style.setProperty('--button-width', cardData.width || '100%');
                         cardEl.style.setProperty('--button-align-self', alignSelf);
-
+                    } else if (cardEl.matches('.timeline-event')) {
+                        const timeEl = cardEl.querySelector('.timeline-time');
+                        const contentEl = cardEl.querySelector('.timeline-content');
+                        if(timeEl) timeEl.textContent = cardData.time || '';
+                        if(contentEl) contentEl.textContent = cardData.content || '';
                     }
                 },
 
-                // ... 历史记录 (撤销/重做) 相关函数 ...
                 pushHistory(description = '操作') {
                     if (this.isRestoringState) return;
                     if (this.historyIndex < this.history.length - 1) {
@@ -3264,40 +3387,60 @@
                     if (this.history.length > 50) this.history.shift();
                     this.historyIndex = this.history.length - 1;
                     this.updateUndoRedoButtons();
+                    this.renderHistoryList();
                 },
                 undo() {
                     if (document.activeElement && (document.activeElement.isContentEditable || /INPUT|TEXTAREA/.test(document.activeElement.tagName))) {
                         document.activeElement.blur();
                     }
                     if (this.historyIndex <= 0) return;
-
                     const actionDescription = this.history[this.historyIndex].description;
-
-                    this.isRestoringState = true;
-                    this.historyIndex--;
-                    this.state = this.deepClone(this.history[this.historyIndex].state);
-                    this.renderAll();
-                    this.syncAllControls();
-                    this.updateUndoRedoButtons();
-                    this.isRestoringState = false;
-                    this.showToast(`已撤销: ${actionDescription}`, 'info');
+                    this.jumpToHistory(this.historyIndex - 1, `已撤销: ${actionDescription}`);
                 },
                 redo() {
                     if (document.activeElement && (document.activeElement.isContentEditable || /INPUT|TEXTAREA/.test(document.activeElement.tagName))) {
                         document.activeElement.blur();
                     }
                     if (this.historyIndex >= this.history.length - 1) return;
+                    const actionDescription = this.history[this.historyIndex + 1].description;
+                    this.jumpToHistory(this.historyIndex + 1, `已重做: ${actionDescription}`);
+                },
+                jumpToHistory(index, toastMessage = null) {
+                    if(index < 0 || index >= this.history.length) return;
+                    
                     this.isRestoringState = true;
-                    this.historyIndex++;
-
-                    const actionDescription = this.history[this.historyIndex].description;
-
+                    const currentInspectorTab = this.state.ui.activeInspectorTab;
+                    this.historyIndex = index;
                     this.state = this.deepClone(this.history[this.historyIndex].state);
+                    this.state.ui.activeInspectorTab = currentInspectorTab;
+                    
                     this.renderAll();
                     this.syncAllControls();
                     this.updateUndoRedoButtons();
                     this.isRestoringState = false;
-                    this.showToast(`已重做: ${actionDescription}`, 'info');
+                    
+                    if(toastMessage) this.showToast(toastMessage, 'info');
+                    if (currentInspectorTab === 'system') {
+                        const historyContainer = this.elements.inspectorPanel.querySelector('#history-list');
+                        if (historyContainer) {
+                            const activeItem = historyContainer.querySelector('.history-item.active');
+                            if (activeItem) activeItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    }
+                },
+                renderHistoryList() {
+                    const container = this.elements.inspectorPanel.querySelector('#history-list');
+                    if (!container) return;
+                    if (this.history.length <= 1) {
+                        container.innerHTML = `<div class="empty-history-list">暂无操作历史</div>`;
+                        return;
+                    }
+                    
+                    container.innerHTML = [...this.history].reverse().map((item, i) => {
+                        const index = this.history.length - 1 - i;
+                        const desc = (typeof item.description === 'string') ? item.description : '未知操作';
+                        return `<div class="history-item ${index === this.historyIndex ? 'active' : ''}" data-index="${index}">${this.escapeHTML(desc)}</div>`;
+                    }).join('');
                 },
                 updateUndoRedoButtons() {
                     const undoBtn = this.elements.inspectorPanel.querySelector('#undo-btn');
@@ -3320,7 +3463,6 @@
                     }
                 },
 
-                // ... 图片处理相关函数 ...
                 async handleImageUpload(event, target, cardInfo = null) {
                     const file = event.target.files[0];
                     if (!file) return;
@@ -3338,13 +3480,10 @@
                             return;
                         }
 
-                        // 对于头像和页面背景，图片尺寸可以大一些
                         const maxDim = (target === 'pageBg') ? 1920 : 1200;
                         const compressedUrl = await this.compressImage(objectUrl, 0.9, maxDim);
 
-                        // 显示裁剪器
-                        if (['avatar', 'pageBg', 'cardBg', 'imageCard'].includes(target)) {
-                            // NEW: For page background, clear attribution info
+                        if (['avatar', 'pageBg', 'cardBg', 'imageCard', 'musicCover'].includes(target)) {
                             if (target === 'pageBg') {
                                 this.updateState('pageStyles.pageBgImageAttribution', null, false);
                             }
@@ -3362,7 +3501,6 @@
 
                 handleCardBgUpload(event, blockId, cardId) {
                     const card = this.findBlock(blockId)?.cards.find(c => c.id === cardId);
-                    // 在上传新图前，记录旧图的URL，以便后续清理
                     this.handleImageUpload(event, 'cardBg', { blockId, cardId, oldImageUrl: card?.bgImageDataUrl });
                 },
 
@@ -3379,14 +3517,13 @@
                     const successCards = [];
                     const failedFiles = [];
 
-                    // 使用 Promise.allSettled 并行处理所有文件，收集成功和失败的结果
                     const results = await Promise.allSettled(Array.from(files).map(async file => {
                         const objectUrl = URL.createObjectURL(file);
                         const compressedUrl = await this.compressImage(objectUrl, 0.9, 1200, file.type);
                         const blob = this.dataURLToBlob(compressedUrl);
                         const imageId = this.generateId('img');
                         await this.saveImageToDB({ id: imageId, blob });
-                        return { id: this.generateId('ic'), url: `idb://${imageId}`, title: '', description: '' };
+                        return { id: this.generateId('ic'), url: `idb://${imageId}`, title: '', description: '', imageFillMode: 'cover' };
                     }));
 
                     results.forEach((result, index) => {
@@ -3404,7 +3541,7 @@
                         this.debouncedSaveToLocal();
                     }
 
-                    this.renderInspector();
+                    this.renderInspectorContent();
                     this.renderLayerPanel();
                     this.renderPreviewBlockById(blockId);
                     this.hideLoading();
@@ -3414,7 +3551,6 @@
                     }
                 },
 
-                // NEW: Pixabay related functions
                 showPixabaySearch() {
                     this.elements.pixabaySearchModal.classList.add('visible');
                     this.elements.pixabaySearchModal.querySelector('#pixabay-search-input').focus();
@@ -3449,17 +3585,14 @@
                 },
                 handlePixabayImageSelection(imageData) {
                     this.showLoading('正在加载高清图片...');
-                    // Store attribution info
                     const attribution = {
                         user: imageData.user,
                         pageURL: imageData.pageURL
                     };
                     this.updateState('pageStyles.pageBgImageAttribution', attribution, true);
-                    // Show cropper with the selected image
                     this.showCropper(imageData.largeImageURL, { type: 'pageBg', originalType: 'image/jpeg' });
                 },
 
-                // ... 裁剪器与滤镜相关函数 ...
                 async cropImage(blockId, cardId) {
                     const block = this.findBlock(blockId);
                     const card = block?.cards.find(c => c.id === cardId);
@@ -3493,7 +3626,6 @@
                     }
                     cropperImage.src = '';
 
-                    //  Reset and bind filter controls
                     this.resetAndBindFilterControls();
 
                     const initializeCropper = () => {
@@ -3514,7 +3646,7 @@
                                 document.getElementById('filter-controls').style.display = 'block';
                                 this.applyFiltersAndPreview();
                             },
-                            crop: this.debounce(() => { // Debounce crop event
+                            crop: this.debounce(() => {
                                 if (this.cropper && this.cropper.ready) {
                                     this.applyFiltersAndPreview();
                                 }
@@ -3533,7 +3665,7 @@
                         this.hideLoading();
                     };
 
-                    cropperImage.crossOrigin = "anonymous"; // IMPORTANT for online images
+                    cropperImage.crossOrigin = "anonymous";
                     cropperImage.addEventListener('load', initializeCropper);
                     cropperImage.addEventListener('error', handleLoadError);
 
@@ -3558,7 +3690,6 @@
                         const { type, blockId, cardId, originalType, oldImageUrl } = this.currentCropTarget;
                         let quality = 0.9;
 
-                        // Use the preview canvas which has filters applied
                         let finalCanvas = document.getElementById('cropper-preview-canvas');
 
                         if (!finalCanvas || finalCanvas.width === 0) {
@@ -3588,6 +3719,8 @@
                                 this.updateCard(blockId, cardId, 'url', idbUrl, false);
                             } else if (type === 'cardBg') {
                                 this.updateCard(blockId, cardId, 'bgImageDataUrl', idbUrl, false);
+                            } else if (type === 'musicCover') {
+                                this.updateBlockSettings(blockId, 'coverArt', idbUrl, false);
                             }
                             this.hideCropper();
                             this.hideLoading();
@@ -3607,7 +3740,6 @@
                     }
                 },
 
-                //  Filter logic
                 applyFiltersAndPreview() {
                     if (!this.cropper || !this.cropper.ready) return;
 
@@ -3660,7 +3792,6 @@
                         sliderEl.value = config.default;
                         valueEl.textContent = config.default;
 
-                        // Remove old listener before adding new one
                         sliderEl.replaceWith(sliderEl.cloneNode(true));
                         document.getElementById(config.slider).addEventListener('input', (e) => {
                             valueEl.textContent = e.target.value;
@@ -3670,7 +3801,6 @@
                     document.getElementById('filter-controls').style.display = 'none';
                 },
 
-                // ... 富文本编辑器相关函数 ...
                 /**
                  * @description 显示富文本编辑器模态框。
                  * @param {HTMLElement} targetElement - 触发编辑的预览区内容元素。
@@ -3692,16 +3822,14 @@
                     const card = block.cards.find(c => c.id === this.currentRichTextTarget.cardId);
 
                     const container = this.elements.richTextEditorContainer;
-                    const parent = container.parentElement; // 获取父容器 (modal-container)
+                    const parent = container.parentElement;
 
-                    // 1寻找并移除旧的工具栏
                     const oldToolbar = parent.querySelector('.ql-toolbar');
                     if (oldToolbar) {
                         oldToolbar.remove();
                     }
 
-                    // 清空编辑器容器并重置实例
-                    container.innerHTML = ''; // 使用 innerHTML = '' 更简洁
+                    container.innerHTML = '';
                     this.richTextEditor = null;
 
                     const isMobile = window.innerWidth <= 768;
@@ -3936,7 +4064,6 @@
                     this.showToast('预设已应用', 'success');
                 },
 
-                // ... 文件读写与格式转换工具函数 ...
                 readFileAsDataURL(file) {
                     return new Promise((resolve, reject) => {
                         const reader = new FileReader();
@@ -3956,7 +4083,7 @@
                 compressImage(imageUrl, quality = 0.9, maxWidth = 1024, originalType = 'image/jpeg') {
                     return new Promise((resolve, reject) => {
                         const img = new Image();
-                        img.crossOrigin = "Anonymous"; // IMPORTANT for online images
+                        img.crossOrigin = "Anonymous";
                         img.onload = () => {
                             let { width, height } = img;
                             if (width > maxWidth) {
@@ -3986,7 +4113,6 @@
                     })
                 },
 
-                // ... UI 状态切换函数 ...
                 toggleTheme() {
                     const isDark = document.documentElement.classList.toggle('dark-mode');
                     localStorage.setItem('blokkoTheme', isDark ? 'dark' : 'light');
@@ -4002,9 +4128,9 @@
                 saveToLocal() {
                     try {
                         const stateToSave = this.deepClone(this.state);
-                        // 不将字体数据存入 localStorage
                         delete stateToSave.uploadedFonts;
                         localStorage.setItem('blokkoState', JSON.stringify(stateToSave));
+                        localStorage.setItem('blokkoHistory', JSON.stringify(this.history.slice(-20)));
                         if (this.isStorageFull) {
                             this.isStorageFull = false;
                             this.removeStorageFullToast();
@@ -4018,13 +4144,12 @@
                     }
                 },
 
-                // ... 导入/导出相关函数 ...
                 generateFilename(type) {
-                    const nickname = (this.state.personalInfo.nickname || '').replace(/[^a-z0-9\u4e00-\u9fa5]/gi, '_').substring(0, 15) || 'Blokko';
+                    const prefix = this.state.systemSettings.exportFilePrefix || 'Blokko';
                     const date = new Date();
                     const dateString = `${date.getFullYear()}${(date.getMonth() + 1).toString().padStart(2, '0')}${date.getDate().toString().padStart(2, '0')}`;
                     const randomString = Math.random().toString(36).substring(2, 8);
-                    return `${nickname}-${dateString}-${type}-${randomString}`;
+                    return `${prefix}-${dateString}-${type}-${randomString}`;
                 },
 
                 exportConfig(isTemplate = false) {
@@ -4041,18 +4166,16 @@
                         stateToSave.customIcons = [];
 
                         stateToSave.blocks.forEach(block => {
-                            if (block.type === 'text' || block.type === 'image' || block.type === 'button') {
-                                block.title = block.type === 'text' ? "文本区块" : (block.type === 'image' ? "图片区块" : "按钮区块");
-                                block.cards.forEach(card => {
-                                    if (block.type === 'text') {
-                                        card.title = "卡片标题";
-                                        card.content = "卡片内容";
-                                        card.bgImageDataUrl = null;
-                                    } else if (block.type === 'button') {
-                                        card.text = "按钮文字";
-                                    }
-                                });
-                                if (block.type === 'image') block.cards = [];
+                            if (['text', 'image', 'button', 'music', 'progress', 'timeline'].includes(block.type)) {
+                                 block.title = this.getDefaultState().blocks.find(b => b.type === block.type)?.title || block.title;
+                                 if (block.type === 'image') {
+                                     block.cards = [];
+                                 } else if (block.cards) {
+                                     block.cards = this.getDefaultState().blocks.find(b => b.type === block.type)?.cards || [];
+                                 }
+                                 if (block.type === 'music' || block.type === 'progress') {
+                                     block.settings = this.getDefaultState().blocks.find(b => b.type === block.type)?.settings || {};
+                                 }
                             }
                         });
                         this.showToast('模板已导出', 'success');
@@ -4106,7 +4229,7 @@
                         await processObject(stateClone);
 
                         zip.file("config.json", JSON.stringify(stateClone, null, 2));
-                        zip.file("readme.txt", `Blokko 强化导出备份\n版本: 1.7.1\n导出时间: ${new Date().toLocaleString()}\n\n此 .zip 文件包含了您的配置文件 (config.json) 和所有图片资源 (images/ 文件夹)。`);
+                        zip.file("readme.txt", `Blokko 强化导出备份\n版本: 1.8.0\n导出时间: ${new Date().toLocaleString()}\n\n此 .zip 文件包含了您的配置文件 (config.json) 和所有图片资源 (images/ 文件夹)。`);
 
                         const blob = await zip.generateAsync({ type: "blob" });
                         const filename = this.generateFilename('Enhanced-Backup') + '.zip';
@@ -4202,7 +4325,6 @@
                         await processObject(importedState);
 
                         this.state = this.mergeDeep(this.getDefaultState(), importedState);
-                        // 导入成功后立即保存
                         localStorage.setItem('blokkoState', JSON.stringify(this.state));
 
                         this.history = [{ state: this.deepClone(this.state), description: '导入ZIP配置' }];
@@ -4267,7 +4389,6 @@
                             if (migrated) this.showToast('旧版图片区块已自动升级', 'info');
 
                             this.state = this.mergeDeep(this.getDefaultState(), importedState);
-                            //导入成功后立即保存
                             localStorage.setItem('blokkoState', JSON.stringify(this.state));
 
                             if (importedState.uploadedFonts) {
@@ -4304,7 +4425,6 @@
                     e.target.value = '';
                 },
 
-                // ... 导出PNG相关函数 ...
                 async bakeOverlaysForExport(clone) {
                 },
 
@@ -4343,7 +4463,7 @@
                     }
 
                     let targetWidth, targetHeight;
-                    const originalAspectRatio = sourceHeight / sourceWidth; // 必须使用实际渲染的宽高比来保证内容不变形
+                    const originalAspectRatio = sourceHeight / sourceWidth;
 
                     if (isMobileExport) {
                         targetWidth = 1200;
@@ -4359,7 +4479,6 @@
                         targetHeight = Math.round(targetWidth * originalAspectRatio);
                     }
 
-                    // scale 是基于我们强制的渲染宽度来计算的
                     const scale = targetWidth / effectiveRenderWidth;
 
                     const exportRounded = panel.querySelector('#export-rounded-corners-toggle').checked;
@@ -4490,7 +4609,6 @@
                     }
                 },
 
-                // NEW: Update attribution link visibility and content
                 updateAttributionLink() {
                     const wrapper = this.elements.inspectorPanel.querySelector('#attribution-link-wrapper');
                     if (!wrapper) return;
@@ -4503,8 +4621,6 @@
                     }
                 },
 
-                // ... 辅助函数和工具函数 ...
-                // MODIFIED: Renamed from updateExportSizePreview to updatePreviewAspectRatio and added more logic
                 updatePreviewAspectRatio() {
                     const s = this.state.exportSettings;
                     const el = this.elements.previewWrapper;
@@ -4596,7 +4712,6 @@
                     });
                 },
 
-                // ... 弹窗和提示相关函数 ...
                 showDownloadModal(url, filename, title) {
                     this.elements.downloadModalTitle.textContent = title;
                     const content = this.elements.downloadModalContent;
@@ -4691,10 +4806,18 @@
                     }, 5000);
                 },
 
-                // ... CSS 变量和样式更新函数 ...
+                updateGlobalThemeVars() {
+                    const t = this.state.globalTheme;
+                    const r = document.documentElement.style;
+                    r.setProperty('--g-theme-primary', t.primary);
+                    r.setProperty('--g-theme-accent', t.accent);
+                    r.setProperty('--g-theme-background', t.background);
+                    r.setProperty('--g-theme-text', t.text);
+                },
+
                 updateGlobalCardStyleVars() {
                     const g = this.state.globalCardStyles;
-                    const gBtn = this.state.globalButtonStyles; // NEW
+                    const gBtn = this.state.globalButtonStyles;
                     const r = document.documentElement.style;
 
                     r.setProperty('--g-card-bg-color', g.bgColor);
@@ -4707,18 +4830,29 @@
                     r.setProperty('--g-card-title-font-size', g.titleFontSize);
                     r.setProperty('--g-card-content-font-size', g.contentFontSize);
                     r.setProperty('--g-card-text-stroke', g.textStrokeWidth > 0 ? `${g.textStrokeWidth}px ${g.textStrokeColor}` : '0px transparent');
-                    r.setProperty('--active-card-border', g.borderWidth > 0 && g.borderStyle !== 'none' ? `${g.borderWidth}px ${g.borderStyle} ${g.borderColor}` : 'none');
+                    r.setProperty('--g-card-padding', `${g.padding}px`);
                     
-
-
-                    // NEW: Set global button styles
                     r.setProperty('--g-button-bg-color', gBtn.bgColor);
                     r.setProperty('--g-button-text-color', gBtn.textColor);
                     r.setProperty('--g-button-border-radius', `${gBtn.radius}px`);
                     r.setProperty('--g-button-text-align', gBtn.textAlign);
                 },
+                
+                updateGlobalBorderVars() {
+                    const b = this.state.globalBorderSettings;
+                    const r = document.documentElement.style;
+                    r.setProperty('--g-border-width', `${b.width}px`);
+                    r.setProperty('--g-border-style', b.style === 'none' ? 'none' : b.style);
+                    r.setProperty('--g-border-color', b.color);
+                    r.setProperty('--g-border-shadow-offset', `${b.shadowOffset}px`);
+                    r.setProperty('--g-border-shadow-color', b.shadowColor);
+                    
+                    document.querySelectorAll('.preview-block-wrapper, .preview-header, .preview-card, .preview-button, figure').forEach(el => {
+                        el.dataset.borderStyle = b.style;
+                        if (b.style === 'double-offset') el.style.zIndex = '1';
+                    });
+                },
 
-                // ... SortableJS 拖拽排序初始化函数 ...
                 initAllSortables() {
                     this.initLayerSortables();
                     this.initSortablePreviewBlocks();
@@ -4832,7 +4966,6 @@
                     const container = this.elements.inspectorPanel.querySelector(`.editor-block[data-block-id="${blockId}"] .image-card-editors-list`);
                     if (container) { if (this.imageCardSortables[blockId]) this.imageCardSortables[blockId].destroy(); this.imageCardSortables[blockId] = new Sortable(container, { handle: '.card-drag-handle', animation: 150, ghostClass: 'sortable-ghost', onEnd: e => { const block = this.findBlock(blockId); if (block) { this.pushHistory('排序图片'); const [moved] = block.cards.splice(e.oldIndex, 1); block.cards.splice(e.newIndex, 0, moved); this.debouncedSaveToLocal(); this.renderPreviewBlockById(blockId); this.renderLayerPanel(); } } }); }
                 },
-                // NEW: Init sortable button cards
                 initSortableButtonCards(blockId) {
                     const container = this.elements.inspectorPanel.querySelector(`.editor-block[data-block-id="${blockId}"] .button-card-editors-list`);
                     if (container) {
@@ -4855,9 +4988,29 @@
                         });
                     }
                 },
+                initSortableTimelineEvents(blockId) {
+                    const container = this.elements.inspectorPanel.querySelector(`.editor-block[data-block-id="${blockId}"] .timeline-editors-list`);
+                    if (container) {
+                        const sortableKey = `timeline_${blockId}`;
+                        if (this.cardSortables[sortableKey]) this.cardSortables[sortableKey].destroy();
+                        this.cardSortables[sortableKey] = new Sortable(container, {
+                            handle: '.card-drag-handle', animation: 150, ghostClass: 'sortable-ghost',
+                            onEnd: e => {
+                                const block = this.findBlock(blockId);
+                                if (block) {
+                                    this.pushHistory('排序时间轴事件');
+                                    const [moved] = block.cards.splice(e.oldIndex, 1);
+                                    block.cards.splice(e.newIndex, 0, moved);
+                                    this.debouncedSaveToLocal();
+                                    this.renderPreviewBlockById(blockId);
+                                    this.renderLayerPanel();
+                                }
+                            }
+                        });
+                    }
+                },
 
 
-                // ... Masonry 瀑布流布局相关函数 ...
                 async initMasonryForBlock(blockId) {
                     this.destroyMasonryForBlock(blockId);
                     const block = this.findBlock(blockId);
@@ -4871,22 +5024,17 @@
                                 this.showToast("瀑布流组件加载失败，请检查网络。", "error");
                                 return;
                             }
-                            // 修复瀑布流重叠的核心逻辑
                             const images = Array.from(previewEl.querySelectorAll('img'));
-                            // 创建一个 Promise 数组，每个 Promise 对应一张图片的加载
                             const imageLoadPromises = images.map(img => {
-                                // 如果图片已经加载完成（例如从缓存加载），并且有有效尺寸，则立即 resolve
                                 if (img.complete && img.naturalHeight !== 0) {
                                     return Promise.resolve();
                                 }
-                                // 否则，返回一个新的 Promise，它会在图片加载成功或失败时 resolve
                                 return new Promise(resolve => {
                                     img.addEventListener('load', resolve, { once: true });
-                                    img.addEventListener('error', resolve, { once: true }); // 加载失败也 resolve，避免阻塞整个布局
+                                    img.addEventListener('error', resolve, { once: true });
                                 });
                             });
 
-                            // 等待所有图片的 Promise 都完成后，再执行瀑布流初始化
                             await Promise.all(imageLoadPromises);
 
                             previewEl.classList.add('masonry-active');
@@ -4907,7 +5055,6 @@
                         const previewEl = this.elements.previewBlocksContainer.querySelector(`[data-block-id="${blockId}"] .preview-cards-container`);
                         if (previewEl) {
                             previewEl.classList.remove('masonry-active');
-                            // Clean up masonry styles
                             Array.from(previewEl.children).forEach(child => {
                                 child.style.position = '';
                                 child.style.left = '';
@@ -4918,7 +5065,6 @@
                     }
                 },
 
-                // ... 移动端与UI布局相关函数 ...
                 togglePanelDrawer(panelId) {
                     if (panelId === false) {
                         this.elements.layerPanel.classList.remove('is-open');
@@ -4969,7 +5115,6 @@
                     Object.values(this.imageCardSortables).forEach(s => { if (s) s.option('disabled', shouldDisable); });
                 },
 
-                // ... 标签管理器相关函数 ...
                 renderTagManager() {
                     const container = this.elements.inspectorPanel.querySelector('#tag-manager-list');
                     if (!container) return;
@@ -5014,7 +5159,6 @@
                     if (tagIndex > -1) this.updateState(`personalInfo.tags.${tagIndex}.${key}`, value, pushHistory, historyDescription);
                 },
 
-                // ... 图标/纹理选择器相关函数 ...
                 initIconPicker() {
                     if (this.iconPickerInitialized) return;
                     this.loadIcons();
@@ -5028,7 +5172,6 @@
                     this.elements.texturePickerModal.classList.add('visible');
                 },
                 async loadIcons() {
-                    // No need to actually load anything with Iconify's on-demand nature
                     this.showToast('图标库已准备就绪', 'info');
                 },
                 async renderIconGrid(searchTerm = '') {
@@ -5145,9 +5288,13 @@
                     this.elements.texturePickerModal.classList.remove('visible');
                 },
 
-                // ... 选中状态管理函数 ...
                 setSelection(newSelection) {
                     this.selection = newSelection;
+                    
+                    if(newSelection.type !== 'global'){
+                         this.updateState('ui.activeInspectorTab', 'selected', false);
+                    }
+                    
                     this.updateHighlights();
                     this.renderInspector();
                 },
@@ -5164,12 +5311,11 @@
                         document.querySelector(`.preview-block-wrapper[data-block-id="${id}"]`)?.classList.add('selected');
                         if (cardId) {
                             document.querySelector(`.card-layer-item[data-card-id="${cardId}"]`)?.classList.add('selected');
-                            document.querySelector(`.editor-card[data-card-id="${cardId}"]`)?.classList.add('is-active');
+                            document.querySelector(`[data-card-id="${cardId}"]`)?.classList.add('is-active');
                         }
                     }
                 },
 
-                // ... ColorThief 智能取色相关函数 ...
                 analyzeColorsFromImage(dataUrl) {
                     const img = new Image();
                     img.crossOrigin = "Anonymous";
@@ -5261,7 +5407,6 @@
                     this.elements.colorContextMenu.style.display = 'none';
                 },
 
-                // ... 颜色快捷应用与Tab切换辅助函数 ...
                 switchTab(sectionSelector, desiredTabId) {
                     const section = this.elements.inspectorPanel.querySelector(sectionSelector);
                     if (!section) return;
@@ -5277,6 +5422,33 @@
                     if (tabContent) {
                         tabContent.classList.add('active');
                     }
+                },
+                
+                async applyRandomPalette() {
+                     try {
+                        await this.loadScript('https://cdn.bootcdn.net/ajax/libs/chroma-js/2.4.2/chroma.min.js');
+                    } catch (e) {
+                        this.showErrorModal('加载失败', '颜色库 chroma.js 加载失败，请检查网络。');
+                        return;
+                    }
+                    
+                    this.pushHistory('应用随机配色');
+                    
+                    const baseColor = chroma.random();
+                    const palette = chroma.scale([baseColor, baseColor.set('hsl.h', '+150')]).mode('lch').colors(5);
+
+                    this.updateState('pageStyles.pageBgSolidColor', chroma.mix(palette[0], 'white', 0.9).hex(), false);
+                    this.updateState('pageStyles.headerBgColor', '#ffffff', false);
+                    this.updateState('pageStyles.headerTextColor', palette[4], false);
+                    
+                    this.updateState('globalCardStyles.bgColor', '#ffffff', false);
+                    this.updateState('globalCardStyles.textColor', palette[4], false);
+                    this.updateState('globalButtonStyles.bgColor', palette[2], false);
+                    this.updateState('globalButtonStyles.textColor', '#ffffff', false);
+
+                    this.renderAll(); 
+                    this.syncAllControls();
+                    this.showToast('随机配色已应用！', 'success');
                 },
 
                 applyQuickColor(action, color) {
@@ -5325,7 +5497,6 @@
                     }
                 },
 
-                // ... 颜色和字符串工具函数 ...
                 hexToRgba(hex, alpha = 1) {
                     if (!hex || parseFloat(alpha) === 0) return 'transparent';
                     if (hex.startsWith('rgba')) {
@@ -5344,32 +5515,42 @@
                 generateId(p) { return `${p}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}` },
                 postRenderAsyncUpdates(container) {
                     const imageLoadPromises = [];
-                    container.querySelectorAll('figure[data-card-id] img').forEach(img => {
-                        const cardId = img.closest('figure').dataset.cardId;
-                        const blockId = img.closest('.preview-block-wrapper').dataset.blockId;
-                        const card = this.findBlock(blockId)?.cards.find(c => c.id === cardId);
-
-                        if (card && card.url) {
+                    container.querySelectorAll('figure[data-card-id] img, .music-cover').forEach(img => {
+                        const blockEl = img.closest('.preview-block-wrapper');
+                        if (!blockEl) return;
+                        
+                        const blockId = blockEl.dataset.blockId;
+                        const block = this.findBlock(blockId);
+                        if (!block) return;
+                        
+                        let dataObject, urlKey;
+                        
+                        if (img.matches('.music-cover')) {
+                            dataObject = block.settings;
+                            urlKey = 'coverArt';
+                        } else {
+                            const cardId = img.closest('figure').dataset.cardId;
+                            dataObject = block.cards.find(c => c.id === cardId);
+                            urlKey = 'url';
+                        }
+                        
+                        if (dataObject && dataObject[urlKey]) {
                             const promise = new Promise(async (resolve) => {
                                 img.addEventListener('load', resolve, { once: true });
-                                img.addEventListener('error', resolve, { once: true }); // 失败也 resolve
+                                img.addEventListener('error', resolve, { once: true });
 
-                                let srcToSet = card.url;
-                                if (card.url.startsWith('idb://')) {
+                                let srcToSet = dataObject[urlKey];
+                                if (srcToSet.startsWith('idb://')) {
                                     try {
-                                        const record = await this.getImageFromDB(card.url.substring(6));
+                                        const record = await this.getImageFromDB(srcToSet.substring(6));
                                         srcToSet = (record && record.blob) ? URL.createObjectURL(record.blob) : '';
                                     } catch {
                                         srcToSet = '';
                                     }
                                 }
 
-                                if (img.src === srcToSet && img.complete) {
-                                    return resolve(); // 如果图片已加载，立即完成
-                                }
-                                if (!srcToSet) {
-                                    return resolve(); // 如果没有有效的 src，也立即完成
-                                }
+                                if (img.src === srcToSet && img.complete) return resolve();
+                                if (!srcToSet) return resolve();
                                 img.src = srcToSet;
                             });
                             imageLoadPromises.push(promise);
@@ -5397,7 +5578,6 @@
                 escapeHTML(str) { return (str || '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[m]) },
                 sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)) },
 
-                //  Script Loader for Performance
                 loadScript(url) {
                     return new Promise((resolve, reject) => {
                         if (document.querySelector(`script[src="${url}"]`)) {
@@ -5411,8 +5591,6 @@
                     });
                 },
 
-
-                // ... 区块操作函数 ...
                 async addBlock(type, sourceBlock = null) {
                     this.pushHistory(sourceBlock ? '复制区块' : '添加新区块');
                     let newBlock;
@@ -5422,16 +5600,22 @@
                         newBlock.title = `${sourceBlock.title} (副本)`;
                         if (newBlock.cards) {
                             newBlock.cards.forEach(card => {
-                                card.title = "";
-                                card.content = "";
-                                card.description = "";
-                                card.text = ""; // NEW for buttons
+                                card.title = ""; card.content = ""; card.description = ""; card.text = "";
                             });
                         }
                     } else {
+                        // 强制从默认状态获取完整模板，确保settings字段完整
                         const defaultState = this.getDefaultState();
                         const blockTemplate = defaultState.blocks.find(b => b.type === type);
-                        newBlock = this.deepClone(blockTemplate);
+                        
+                        if (!blockTemplate) {
+                            // 紧急后备：如果默认状态里也没找到（极少见），手动构建基础结构
+                            newBlock = { type: type, title: '新区块', isVisible: true, isExpanded: true, settings: {}, cards: [] };
+                            if (type === 'music') newBlock.settings = { songTitle: '歌名', artist: '歌手', progress: 50 };
+                            if (type === 'progress') newBlock.settings = { label: '进度', percentage: 50, color: '#007AFF' };
+                        } else {
+                            newBlock = this.deepClone(blockTemplate);
+                        }
                     }
 
                     newBlock.id = this.generateId('b');
@@ -5457,12 +5641,14 @@
                     if (await this.showConfirm('删除区块', `确定要删除区块 "${block.title}" 吗？`)) {
                         this.pushHistory(`删除区块 "${block.title}"`);
 
-                        // 删除区块前，清理其包含的所有图片
                         if (block.cards) {
                             for (const card of block.cards) {
                                 await this.deleteImageByUrl(card.url);
                                 await this.deleteImageByUrl(card.bgImageDataUrl);
                             }
+                        }
+                        if (block.type === 'music' && block.settings.coverArt) {
+                             await this.deleteImageByUrl(block.settings.coverArt);
                         }
 
                         this.destroyMasonryForBlock(blockId);
@@ -5506,7 +5692,6 @@
                     }
                 },
 
-                // ... 调试模式相关函数 ...
                 async activateDebugMode() {
                     if (await this.showConfirm('激活调试模式', '此操作将随机化当前所有设置并替换内容，此过程不可撤销。是否继续？')) {
                         this.showLoading('正在生成随机数据...');
@@ -5549,37 +5734,20 @@
                     randomState.globalCardStyles.textColor = randColor();
 
                     randomState.blocks = [];
-                    const blockTypes = ['text', 'image', 'button', 'separator', 'spacer'];
+                    const blockTypes = ['text', 'image', 'button', 'separator', 'spacer', 'music', 'progress', 'timeline'];
                     for (let i = 0; i < rand(5, 8); i++) {
                         const type = randChoice(blockTypes);
-                        let newBlock;
-                        switch (type) {
-                            case 'text':
-                                newBlock = { id: this.generateId('b'), isVisible: true, isExpanded: randBool(), type: 'text', title: `随机文本区块 ${i + 1}`, settings: { layout: randChoice(['single', 'dual', 'triple']), masonryEnabled: randBool() }, cards: Array.from({ length: rand(2, 5) }, (_, j) => ({ id: this.generateId('c'), icon: '', title: `随机卡片 ${j + 1}`, content: `随机内容 - ${Math.random().toString(36).substring(2)}`, opacity: 1.0, followGlobalOpacity: true })) };
-                                break;
-                            case 'image':
-                                newBlock = { id: this.generateId('b'), isVisible: true, isExpanded: randBool(), type: 'image', title: `随机图片区块 ${i + 1}`, settings: { layout: randChoice(['single', 'dual', 'triple']), masonryEnabled: randBool(), textColor: randColor() }, cards: [] };
-                                break;
-                            case 'button':
-                                newBlock = { id: this.generateId('b'), isVisible: true, isExpanded: randBool(), type: 'button', title: `随机按钮区块 ${i + 1}`, settings: { gap: rand(10, 25) }, cards: Array.from({ length: rand(1, 3) }, (_, j) => ({ id: this.generateId('c'), icon: '', text: `随机按钮 ${j + 1}` })) };
-                                break;
-                            case 'separator':
-                                newBlock = { id: this.generateId('b'), isVisible: true, isExpanded: false, type: 'separator', title: `随机分割线 ${i + 1}`, settings: { style: randChoice(['solid', 'dashed', 'dotted']), color: randColor(), thickness: rand(1, 5), margin: rand(10, 40), text: 'Random Text', icon: null, textColor: randColor() } };
-                                break;
-                            case 'spacer':
-                                newBlock = { id: this.generateId('b'), isVisible: true, isExpanded: false, type: 'spacer', title: `随机留白 ${i + 1}`, settings: { height: rand(20, 100) } };
-                                break;
+                        let newBlock = this.deepClone(this.getDefaultState().blocks.find(b => b.type === type));
+                        newBlock.id = this.generateId('b');
+                        newBlock.title = `随机区块 ${i+1}`;
+                        if (newBlock.cards) {
+                            newBlock.cards.forEach(c => c.id = this.generateId('c'));
                         }
                         randomState.blocks.push(newBlock);
                     }
                     return randomState;
                 },
 
-                // --- IndexedDB 数据库操作 --- //
-
-                /**
-                 * @description 初始化 IndexedDB 数据库。
-                 */
                 initDB() {
                     return new Promise((resolve, reject) => {
                         const request = indexedDB.open('BlokkoDB', 2);
@@ -5605,17 +5773,10 @@
                     const arr = dataurl.split(',');
                     const header = arr[0];
                     const data = arr[1];
-
                     const isBase64 = header.includes(';base64');
-
                     const mimeMatch = header.match(/:(.*?)(;base64)?$/);
-
-                    if (!mimeMatch) {
-                        throw new Error('Invalid Data URL header');
-                    }
-
-                    const mime = mimeMatch[1]; // e.g., 'image/svg+xml' 或 'image/png'
-
+                    if (!mimeMatch) throw new Error('Invalid Data URL header');
+                    const mime = mimeMatch[1];
                     if (isBase64) {
                         const bstr = atob(data);
                         let n = bstr.length;
@@ -5779,10 +5940,6 @@
                     }
                 },
 
-                /**
-                 * @description 根据图片URL从数据库中删除图片。
-                 * @param {string|null} url - 图片的URL, 格式为 'idb://<id>'。
-                 */
                 async deleteImageByUrl(url) {
                     if (url && url.startsWith('idb://')) {
                         const imageId = url.substring(6);
@@ -5794,10 +5951,6 @@
                     }
                 },
 
-                /**
-                 * @description 从数据库中删除图片。
-                 * @param {string} id - 图片的ID。
-                 */
                 deleteImageFromDB(id) {
                     if (!id || !this.db) return Promise.resolve();
                     return new Promise((resolve, reject) => {
