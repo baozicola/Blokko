@@ -4,7 +4,7 @@
   <meta charset="utf-8"/>
   <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
   <title>
-   Blokko-个人简介生成器！ (v1.8.0)-时之歌十周年快乐！！
+   Blokko-个人简介生成器！ (v1.8.1)-时之歌十周年快乐！！
   </title>
   <!-- 性能优化: 预连接到关键域名，减少后续请求的连接建立时间 -->
   <link crossorigin="" href="https://fontsapi.zeoseven.com" rel="preconnect"/>
@@ -45,7 +45,7 @@
     内容
    </button>
    <div class="app-header-title">
-    Blokko (v1.8.0)
+    Blokko (v1.8.1)
    </div>
    <div class="header-actions-wrapper">
     <button class="btn btn-default" id="lock-mode-toggle" style="width: auto; padding: 6px 12px;" title="切换编辑/预览模式">
@@ -660,7 +660,41 @@
          </strong>
         </a>
         - (MIT License) 提供了在浏览器端创建、读取和编辑
-                            .zip 文件的功能，是“强化导出”功能的核心。
+                            .zip 文件的功能。
+       </li>
+       <li>
+        <a href="https://github.com/davidshimjs/qrcodejs" rel="noopener noreferrer" target="_blank">
+         <strong>
+          QRCode.js
+         </strong>
+        </a>
+        - (MIT License) 用于生成分享二维码。
+       </li>
+       <li>
+        <a href="https://github.com/pieroxy/lz-string" rel="noopener noreferrer" target="_blank">
+         <strong>
+          LZ-String
+         </strong>
+        </a>
+        - (MIT License) 用于高压缩比处理样式数据。
+       </li>
+       <li>
+        <a href="https://github.com/cure53/DOMPurify" rel="noopener noreferrer" target="_blank">
+         <strong>
+          DOMPurify
+         </strong>
+        </a>
+        - (Apache-2.0) 强大的 XSS
+                            净化库，确保分享数据的安全性。
+       </li>
+       <li>
+        <a href="https://github.com/zxing-js/library" rel="noopener noreferrer" target="_blank">
+         <strong>
+          ZXing
+         </strong>
+        </a>
+        - (Apache-2.0)
+                            工业级图像处理库，提供了极其强悍的二维码识别能力。
        </li>
       </ul>
       <details>
@@ -1161,109 +1195,70 @@ Monitor of this License or out of the use or inability to use the
     </div>
     <div class="tab-content" id="help-changelog">
      <h4>
-      v1.8.0 更新日志 (2025-11-19)
+      v1.8.1 更新日志 (2025-11-19)
      </h4>
      <ul>
       <li>
        <strong>
         【重构】
        </strong>
-       右侧检查器面板重构为“全局”、“选中”、“系统”三大固定标签页，交互更清晰。并保留了原有交互逻辑，依旧可以上下文交互。
+       二维码分享！现在你可以在系统-二维码分享里，通过二维码来快速的分享自己的配色方案给朋友了！比起传统的JSON，很显然截张图的办法会比json导入更快嘛~，为了安全考虑，如果在外部扫描二维码，只会显示乱码，而进入Blokko扫描，就会自动识别数据并导入，并且屏蔽了其他链接的功能，别的二维码在Blokko是无法扫描的！
       </li>
       <li>
        <strong>
         【新增】
        </strong>
-       **风格化边框系统**：新增像素风、新丑风、双层偏移三种边框，并可通过复选框精确应用到不同元素。
+       预览区右键！现在在预览区右键，可以快速复制/删除/隐藏区块或卡片了！
       </li>
       <li>
        <strong>
         【新增】
        </strong>
-       **头像状态挂件**：可在头像右上角添加在线、勿扰、自定义Emoji等状态。
+       竖排文字！现在在PC端右键文本区块，可以切换为竖排了！但因为竖排目前不稳定，所以是实验性功能，也没做手机端交互，在确认能用以后会开放。
       </li>
       <li>
        <strong>
         【新增】
        </strong>
-       **新区块：音乐**，可展示封面、歌名、歌手、歌词和自动计算的进度条。
+       操作历史回溯！现在在操作历史里可以通过PC端右键，手机端长按操作历史栏可以快速回溯！不用狂点撤回啦！
       </li>
       <li>
        <strong>
         【新增】
        </strong>
-       **新区块：进度条**，可展示带标签的百分比进度。
-      </li>
-      <li>
-       <strong>
-        【新增】
-       </strong>
-       **新区块：时间轴**，可创建垂直时间轴列表。
-      </li>
-      <li>
-       <strong>
-        【新增】
-       </strong>
-       **智能随机配色**：在系统面板中可一键生成和谐的配色方案。
-      </li>
-      <li>
-       <strong>
-        【新增】
-       </strong>
-       **历史记录可视化**：系统面板中增加操作历史列表，下个版本开始点击即可回滚操作（制作中）。
+       独立装饰！其实是上个版本但是我忘写日志里了在这里补上，现在在文本区块的高级设置里有了“图钉”和“胶带”的样式，稍微让页面看起来不那么死板一点点。
       </li>
       <li>
        <strong>
         【优化】
        </strong>
-       随着功能增多左侧“添加区块”按钮改为更紧凑的网格布局。
-      </li>
-      <li>
-       <strong>
-        【优化】
-       </strong>
-       全局卡片样式新增“内边距”控制。
-      </li>
-     </ul>
-     <h4>
-      v1.7.1 更新日志 (2025-11-18)
-     </h4>
-     <ul>
-      <li>
-       <strong>
-        【新增】
-       </strong>
-       新增了Github的介绍页面。
-      </li>
-      <li>
-       <strong>
-        【优化】
-       </strong>
-       优化了部分叙述性文本。
+       微调了歌曲卡片的样式。
       </li>
       <li>
        <strong>
         【修复】
        </strong>
-       修复了勾选手机模式，瀑布流不会重排，以及图片异常显示遮罩的BUG。
+       修复了文字卡片启用圆角，样式边框不会跟随圆角变动的BUG（其中后三种样式不会跟随圆角，因为测试后发现这三种样式只适合直角）。
       </li>
       <li>
        <strong>
         【修复】
        </strong>
-       修复了在线图库无法使用的BUG。
+       修复了时间轴进度条区块的不透明度不会独立计算而是乘算的BUG。
       </li>
       <li>
        <strong>
         【修复】
        </strong>
-       修复了手机端启用“锁定比例”无法正确导出的BUG。
+       修复了长图导出偶发的异常图片区块重叠BUG（我终于修好了，被懒加载坑了一刀啊）。
       </li>
       <li>
        <strong>
         【修复】
        </strong>
-       修复了手机端异常出现手机端导出预览。
+       增加了本次为了二维码所引入的库的详细致谢
+
+                        。
       </li>
      </ul>
     </div>
@@ -1363,6 +1358,59 @@ Monitor of this License or out of the use or inability to use the
   </div>
   <div class="toast-notification-container" id="toast-container">
   </div>
+  <div class="modal-overlay" id="share-style-modal">
+   <div class="modal-container" style="max-width: 500px; text-align: center;">
+    <h3>
+     样式分享与导入
+    </h3>
+    <div class="tabs" style="margin-bottom: 15px; justify-content: center;">
+     <button class="tab-btn active" data-qr-tab="export">
+      📤 生成二维码
+     </button>
+     <button class="tab-btn" data-qr-tab="import">
+      📥 导入二维码
+     </button>
+    </div>
+    <!-- 导出视图 -->
+    <div id="qr-export-view">
+     <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 10px;">
+      生成的二维码仅能在 Blokko 内部识别。
+      <br/>
+      <span style="font-size: 0.8rem; opacity: 0.7;">
+       (微信/QQ扫描将显示乱码，属于正常现象，旨在防止诈骗链接。)
+      </span>
+     </p>
+     <div id="qrcode-container" style="padding: 15px; border: 1px dashed var(--border-color); border-radius: 8px; display: inline-block; margin-bottom: 10px;">
+     </div>
+     <p style="font-size: 0.8rem; color: var(--text-secondary);">
+      请长按或右键保存上方的二维码图片分享
+     </p>
+    </div>
+    <!-- 导入视图 -->
+    <div id="qr-import-view" style="display: none; padding: 20px 0;">
+     <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 20px;">
+      请上传别人分享的 Blokko 样式二维码图片。
+     </p>
+     <button class="btn btn-primary" id="upload-qr-btn" style="max-width: 200px; margin: 0 auto;">
+      <span class="iconify" data-icon="mdi:qrcode-scan">
+      </span>
+      上传二维码图片
+     </button>
+     <input accept="image/*" id="qr-file-input" style="display: none;" type="file"/>
+     <div id="qr-scan-status" style="margin-top: 15px; font-size: 0.9rem; min-height: 20px;">
+     </div>
+    </div>
+    <div class="modal-actions" style="justify-content: center; margin-top: 20px;">
+     <button class="btn btn-default" id="share-style-close-btn">
+      关闭
+     </button>
+    </div>
+   </div>
+  </div>
+  <div id="preview-context-menu">
+  </div>
+  <div id="preview-context-menu">
+  </div>
   <div id="color-context-menu">
    <ul>
     <li data-action="apply-page-bg-solid">
@@ -1413,6 +1461,14 @@ Monitor of this License or out of the use or inability to use the
   <script src="https://code.iconify.design/3/3.1.1/iconify.min.js">
   </script>
   <script src="https://cdn.bootcdn.net/ajax/libs/quill/2.0.2/quill.min.js">
+  </script>
+  <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js">
+  </script>
+  <script src="https://cdn.bootcdn.net/ajax/libs/lz-string/1.5.0/lz-string.min.js">
+  </script>
+  <script src="https://cdn.bootcdn.net/ajax/libs/dompurify/3.0.6/purify.min.js">
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js">
   </script>
   <!-- 其他库将按需加载 -->
   <script src="script.js">

@@ -211,7 +211,7 @@
                  * @description 应用初始化入口函数。
                  */
                 init() {
-                    console.log("Blokko 初始化 v1.8.0 ...");
+                    console.log("Blokko 初始化 v1.8.1 ...");
 
                     this.elements = this.queryElements();
                     this.presets = this.getPresets();
@@ -243,7 +243,7 @@
                             this.initAllSortables();
                         }, 0);
 
-                        const currentVersion = '1.8.0';
+                        const currentVersion = '1.8.1';
                         const lastVisitedVersion = localStorage.getItem('blokkoLastVersion');
                         const hasSeenTutorial = localStorage.getItem('blokkoHasSeenTutorial');
 
@@ -277,7 +277,7 @@
                     const lightTheme = this.getPresets().light;
                     return {
                         ui: { // 用户界面相关的状态
-                           activeInspectorTab: 'global'
+                            activeInspectorTab: 'global'
                         },
                         systemSettings: { // 系统级设置
                             exportFilePrefix: 'Blokko'
@@ -352,21 +352,27 @@
                                     { id: this.generateId('c'), icon: 'mdi:github', text: "访问我的主页" }
                                 ]
                             },
-                            { id: this.generateId('b'), type: 'music', title: '音乐区块', isVisible: true, isExpanded: false, settings: {
-                                coverArt: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23cccccc'%3E%3Cpath d='M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z'/%3E%3C/svg%3E",
-                                songTitle: '歌曲名称',
-                                artist: '歌手',
-                                lyrics: '上一句歌词\n当前播放的高亮歌词\n下一句歌词',
-                                currentTime: '01:30', totalTime: '03:45',
-                                accentColor: lightTheme.accent, bgColor: '#ffffff', opacity: 1, radius: 12
-                            }},
-                            { id: this.generateId('b'), type: 'progress', title: '进度条区块', isVisible: true, isExpanded: false, settings: {
-                                label: '技能点', percentage: 75, color: '#007AFF', trackColor: '#eeeeee', thickness: 8
-                            }},
-                             { id: this.generateId('b'), type: 'timeline', title: '时间轴区块', isVisible: true, isExpanded: false, settings: {}, cards: [
-                                 {id: this.generateId('c'), time: '2015-11-21', content: '《时之歌Project》预告发布'},
-                                 {id: this.generateId('c'), time: '2025-11-21', content: '《时之歌Project》十周年快乐！'}
-                             ]},
+                            {
+                                id: this.generateId('b'), type: 'music', title: '音乐区块', isVisible: true, isExpanded: false, settings: {
+                                    coverArt: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23cccccc'%3E%3Cpath d='M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z'/%3E%3C/svg%3E",
+                                    songTitle: '歌曲名称',
+                                    artist: '歌手',
+                                    lyrics: '上一句歌词\n当前播放的高亮歌词\n下一句歌词',
+                                    currentTime: '01:30', totalTime: '03:45',
+                                    accentColor: lightTheme.accent, bgColor: '#ffffff', opacity: 1, radius: 12
+                                }
+                            },
+                            {
+                                id: this.generateId('b'), type: 'progress', title: '进度条区块', isVisible: true, isExpanded: false, settings: {
+                                    label: '技能点', percentage: 75, color: '#007AFF', trackColor: '#eeeeee', thickness: 8
+                                }
+                            },
+                            {
+                                id: this.generateId('b'), type: 'timeline', title: '时间轴区块', isVisible: true, isExpanded: false, settings: {}, cards: [
+                                    { id: this.generateId('c'), time: '2015-11-21', content: '《时之歌Project》预告发布' },
+                                    { id: this.generateId('c'), time: '2025-11-21', content: '《时之歌Project》十周年快乐！' }
+                                ]
+                            },
                             { id: this.generateId('b'), type: 'separator', title: "分割线", isVisible: true, isExpanded: false, settings: { style: 'solid', color: '#dddddd', thickness: 1, margin: 20, text: '', icon: null, textColor: '#555555' } },
                             { id: this.generateId('b'), type: 'image', title: "图片区块", isVisible: true, isExpanded: false, settings: { layout: 'dual', masonryEnabled: false, textColor: '' }, cards: [] },
                             { id: this.generateId('b'), type: 'spacer', title: "留白块", isVisible: true, isExpanded: false, settings: { height: 20 } },
@@ -525,7 +531,7 @@
                         if (!target) return;
                         if (target.id === 'upload-from-device-btn') {
                             const input = document.getElementById('physical-image-upload-input');
-                            if(input) input.click();
+                            if (input) input.click();
                         } else if (target.id === 'search-online-btn') {
                             this.showPixabaySearch();
                         }
@@ -736,9 +742,22 @@
                         this.hideColorContextMenu();
                     });
                     document.addEventListener('click', (e) => {
-                        if (!e.target.closest('#color-context-menu')) {
-                            this.hideColorContextMenu();
-                        }
+                        if (!e.target.closest('#color-context-menu')) this.hideColorContextMenu();
+                        if (!e.target.closest('#preview-context-menu')) document.getElementById('preview-context-menu').style.display = 'none';
+                    });
+
+                    // 绑定右键菜单
+                    this.bindPreviewContextMenu();
+
+                    // 初始化分享系统的事件绑定
+                    this.initShareSystem();
+
+                    // 绑定分享按钮
+                    this.elements.inspectorPanel.addEventListener('click', e => {
+                        if (e.target.id === 'share-style-btn') this.openShareModal();
+                    });
+                    document.getElementById('share-style-close-btn').addEventListener('click', () => {
+                        document.getElementById('share-style-modal').classList.remove('visible');
                     });
 
                     const titleEl = document.querySelector('.app-header-title');
@@ -785,13 +804,13 @@
                  */
                 bindEditorEvents() {
                     const panel = this.elements.inspectorPanel;
-                    
+
                     // Inspector Tab 切换
                     panel.querySelector('.inspector-tabs').addEventListener('click', (e) => {
                         const tabBtn = e.target.closest('.inspector-tab-btn');
                         if (tabBtn && !tabBtn.classList.contains('active')) {
                             this.updateState('ui.activeInspectorTab', tabBtn.dataset.tab, false);
-                            this.renderInspector(); 
+                            this.renderInspector();
                         }
                     });
 
@@ -888,8 +907,18 @@
                         if (target.matches('.advanced-toggle')) {
                             const section = target.closest('.editor-section, .editor-card-content, .editor-block-content');
                             const isOpen = section.classList.toggle('show-advanced');
+
                             if (section.id) {
                                 localStorage.setItem(`blokko-advanced-${section.id}`, isOpen);
+                            } else {
+                                const cardEl = target.closest('.editor-card, .timeline-event-editor');
+                                const blockEl = target.closest('.editor-block');
+
+                                if (cardEl && blockEl) {
+                                    this.updateCard(blockEl.dataset.blockId, cardEl.dataset.cardId, 'isAdvancedOpen', isOpen, false);
+                                } else if (blockEl) {
+                                    this.updateBlockSettings(blockEl.dataset.blockId, 'isAdvancedOpen', isOpen, false);
+                                }
                             }
                             return;
                         }
@@ -934,15 +963,15 @@
                             }
                         }
                         if (target.matches('#music-cover-upload')) {
-                           const blockEl = target.closest('.editor-block');
-                           if(blockEl) this.handleMusicCoverUpload(e, blockEl.dataset.blockId);
+                            const blockEl = target.closest('.editor-block');
+                            if (blockEl) this.handleMusicCoverUpload(e, blockEl.dataset.blockId);
                         }
 
                         if (target.matches('#lock-aspect-ratio-toggle, #custom-width-input, #custom-height-input')) {
                             this.updatePreviewAspectRatio();
                         }
 
-                        if (target.matches('#hd-export-toggle, #custom-width-toggle, #export-rounded-corners-toggle, #export-corner-radius-input, #mobile-export-toggle, #lock-aspect-ratio-toggle')) { 
+                        if (target.matches('#hd-export-toggle, #custom-width-toggle, #export-rounded-corners-toggle, #export-corner-radius-input, #mobile-export-toggle, #lock-aspect-ratio-toggle')) {
                             const mobileExportToggle = panel.querySelector('#mobile-export-toggle');
                             const customWidthToggle = panel.querySelector('#custom-width-toggle');
                             const customWidthInput = panel.querySelector('#custom-width-input');
@@ -1090,7 +1119,7 @@
                                 this.updateState('personalInfo.avatarOffsetY', 0, false);
                                 this.showToast('头像位置与大小已重置', 'info');
                             },
-                             '#random-palette-btn': () => this.applyRandomPalette(),
+                            '#random-palette-btn': () => this.applyRandomPalette(),
                         };
                         for (const selector in actions) {
                             if (actionButton.matches(selector)) {
@@ -1116,7 +1145,7 @@
                             if (target.closest('.tag-icon-btn')) { this.initIconPicker(); this.showIconPicker('tag', tagItem.dataset.tagId); }
                             if (target.closest('.tag-delete-btn')) this.deleteTag(tagItem.dataset.tagId);
                         }
-                        
+
                         const historyItem = target.closest('.history-item');
                         if (historyItem) {
                             e.preventDefault();
@@ -1371,7 +1400,7 @@
 
                             let selection = null;
                             let controlToHighlight = null;
-                            
+
                             const cardTarget = e.target.closest('.preview-card, figure, .preview-button');
                             const blockWrapperTarget = e.target.closest('.preview-block-wrapper');
                             const headerTarget = e.target.closest('.preview-header');
@@ -1531,11 +1560,11 @@
                 async renderPersonalInfo() {
                     const info = this.state.personalInfo;
                     const header = this.elements.previewHeader;
-                    
+
                     const borderSettings = this.state.globalBorderSettings;
                     header.classList.toggle('apply-global-border', borderSettings.applyTo.personalInfo);
                     header.dataset.borderStyle = borderSettings.style;
-                    
+
                     let innerHTML;
                     if (info.layout === 'card') {
                         innerHTML = `
@@ -1748,7 +1777,7 @@
                         const cardsListHTML = isExpandable ? `<ul class="card-layer-list" data-block-id="${b.id}">
                             ${b.cards.map(c => {
                             let cardName;
-                            switch(b.type) {
+                            switch (b.type) {
                                 case 'button': cardName = c.text || '无文字按钮'; break;
                                 case 'timeline': cardName = c.time || '无时间事件'; break;
                                 default: cardName = c.title || '无标题卡片';
@@ -1785,7 +1814,7 @@
                     this.renderInspectorTabs();
                     this.renderInspectorContent();
                 },
-                
+
                 /**
                  * @description 渲染检查器顶部的 Tab 栏，并切换内容区域的显隐。
                  */
@@ -1796,12 +1825,12 @@
                     panel.querySelectorAll('.inspector-tab-btn').forEach(btn => {
                         btn.classList.toggle('active', btn.dataset.tab === activeTab);
                     });
-                    
+
                     panel.querySelectorAll('.inspector-tab-content').forEach(content => {
                         content.classList.toggle('active', content.id === `inspector-tab-content-${activeTab}`);
                     });
                 },
-                
+
                 /**
                  * @description 根据当前激活的 Tab 和 selection 渲染检查器的主体内容。
                  */
@@ -1838,7 +1867,7 @@
                     }
 
                     container.innerHTML = html;
-                    
+
                     // 恢复"高级设置"的展开状态
                     container.querySelectorAll('.editor-section').forEach(section => {
                         if (section.id) {
@@ -1863,38 +1892,38 @@
                     } else if (activeTab === 'selected') {
                         // 异步加载图片缩略图
                         container.querySelectorAll('.thumbnail-wrapper img, .music-cover-thumb img').forEach(img => {
-                             let cardId, blockId;
-                             const cardEl = img.closest('.editor-card, .timeline-event-editor');
-                             if(cardEl) cardId = cardEl.dataset.cardId;
-                             
-                             const blockEl = img.closest('.editor-block');
-                             if(blockEl) blockId = blockEl.dataset.blockId;
+                            let cardId, blockId;
+                            const cardEl = img.closest('.editor-card, .timeline-event-editor');
+                            if (cardEl) cardId = cardEl.dataset.cardId;
 
-                             if (blockId) {
-                                 const block = this.findBlock(blockId);
-                                 if (!block) return;
-                                 
-                                 let dataObject = block.settings; // 默认为区块设置 (用于音乐封面)
-                                 let urlKey = 'coverArt';
-                                 
-                                 if(cardId) { // 如果是卡片内图片
-                                     dataObject = block.cards?.find(c => c.id === cardId);
-                                     urlKey = 'url';
-                                 }
+                            const blockEl = img.closest('.editor-block');
+                            if (blockEl) blockId = blockEl.dataset.blockId;
 
-                                 if (dataObject && dataObject[urlKey]) {
-                                     const setSrc = async (url) => {
-                                         if (url && url.startsWith('idb://')) {
-                                             const imageId = url.substring(6);
-                                             const record = await this.getImageFromDB(imageId);
-                                             if (record && record.blob) img.src = URL.createObjectURL(record.blob);
-                                         } else {
-                                             img.src = url;
-                                         }
-                                     };
-                                     setSrc(dataObject[urlKey]);
-                                 }
-                             }
+                            if (blockId) {
+                                const block = this.findBlock(blockId);
+                                if (!block) return;
+
+                                let dataObject = block.settings; // 默认为区块设置 (用于音乐封面)
+                                let urlKey = 'coverArt';
+
+                                if (cardId) { // 如果是卡片内图片
+                                    dataObject = block.cards?.find(c => c.id === cardId);
+                                    urlKey = 'url';
+                                }
+
+                                if (dataObject && dataObject[urlKey]) {
+                                    const setSrc = async (url) => {
+                                        if (url && url.startsWith('idb://')) {
+                                            const imageId = url.substring(6);
+                                            const record = await this.getImageFromDB(imageId);
+                                            if (record && record.blob) img.src = URL.createObjectURL(record.blob);
+                                        } else {
+                                            img.src = url;
+                                        }
+                                    };
+                                    setSrc(dataObject[urlKey]);
+                                }
+                            }
                         });
 
                         // 初始化拖拽排序
@@ -1912,7 +1941,7 @@
                             this.initSortableTags();
                         }
                     }
-                    
+
                     this.syncAllControls();
                     this.updateUndoRedoButtons();
                 },
@@ -2031,11 +2060,14 @@
                 },
 
                 createSystemInspectorHTML() {
-                     return `
+                    return `
                          <fieldset class="editor-section" id="actions-section">
                              <legend>⚙️ 核心操作</legend>
                              <div class="section-content">
-                                 <div class="form-group"><button id="random-palette-btn" class="btn btn-secondary">✨ 随机生成配色</button></div>
+                                 <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                     <button id="random-palette-btn" class="btn btn-secondary">✨ 随机配色</button>
+                                     <button id="share-style-btn" class="btn btn-secondary">📱 二维码分享</button>
+                                 </div>
                                  <hr class="separator">
                                  <div class="form-group">
                                      <label>操作历史:</label>
@@ -2093,7 +2125,7 @@
                              </div>
                          </fieldset>
                      `;
-                 },
+                },
 
                 createPersonalInfoInspectorHTML() {
                     return `
@@ -2156,7 +2188,7 @@
                         const applyToKey = `${b.type}Blocks`;
                         const shouldApplyBorder = borderSettings.applyTo[applyToKey];
                         const borderClass = shouldApplyBorder ? 'apply-global-border' : '';
-                        
+
                         return `<div class="preview-block-wrapper ${b.isVisible === false ? 'is-hidden' : ''} ${borderClass}" data-block-id="${b.id}" data-border-style="${borderSettings.style}">
                                   ${this.createPreviewBlockHTML(b)}
                                 </div>`;
@@ -2213,14 +2245,14 @@
                             <hr class="separator"><div style="text-align: right; margin-bottom: 10px;"><label class="checkbox-group advanced-toggle-label"><input type="checkbox" class="advanced-toggle"> 🎨 独立外观设置</label></div>
                             <div class="advanced-setting">
                                  <div class="color-control-row">
-                                    <div class="color-control-group"><label>背景色:</label><div class="input-group"><input type="color" data-setting-key="bgColor" value="${s.bgColor||''}"><input type="text" class="color-hex-input" data-setting-key="bgColor" value="${s.bgColor||''}" placeholder="默认透明"><button class="btn btn-default btn-small" data-reset-block-key="bgColor">重置</button></div></div>
-                                    <div class="color-control-group"><label>文字色:</label><div class="input-group"><input type="color" data-setting-key="textColor" value="${s.textColor||''}"><input type="text" class="color-hex-input" data-setting-key="textColor" value="${s.textColor||''}" placeholder="全局"><button class="btn btn-default btn-small" data-reset-block-key="textColor">重置</button></div></div>
+                                    <div class="color-control-group"><label>背景色:</label><div class="input-group"><input type="color" data-setting-key="bgColor" value="${s.bgColor || ''}"><input type="text" class="color-hex-input" data-setting-key="bgColor" value="${s.bgColor || ''}" placeholder="默认透明"><button class="btn btn-default btn-small" data-reset-block-key="bgColor">重置</button></div></div>
+                                    <div class="color-control-group"><label>文字色:</label><div class="input-group"><input type="color" data-setting-key="textColor" value="${s.textColor || ''}"><input type="text" class="color-hex-input" data-setting-key="textColor" value="${s.textColor || ''}" placeholder="全局"><button class="btn btn-default btn-small" data-reset-block-key="textColor">重置</button></div></div>
                                 </div>
                                 <div class="color-control-row" style="margin-top:10px;">
-                                    <div class="color-control-group"><label>不透明度:</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-setting-key="opacity" min="0" max="1" step="0.1" value="${s.opacity!==undefined&&s.opacity!==''?s.opacity:1}"><button class="btn btn-default btn-stepper plus">+</button></div><button class="btn btn-default btn-small" data-reset-block-key="opacity" style="margin-top:5px; width:100%;">重置</button></div>
-                                    <div class="color-control-group"><label>圆角(px):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-setting-key="radius" min="0" max="40" step="1" value="${s.radius!==undefined&&s.radius!==''?s.radius:12}"><button class="btn btn-default btn-stepper plus">+</button></div><button class="btn btn-default btn-small" data-reset-block-key="radius" style="margin-top:5px; width:100%;">重置</button></div>
+                                    <div class="color-control-group"><label>不透明度:</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-setting-key="opacity" min="0" max="1" step="0.1" value="${s.opacity !== undefined && s.opacity !== '' ? s.opacity : 1}"><button class="btn btn-default btn-stepper plus">+</button></div><button class="btn btn-default btn-small" data-reset-block-key="opacity" style="margin-top:5px; width:100%;">重置</button></div>
+                                    <div class="color-control-group"><label>圆角(px):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-setting-key="radius" min="0" max="40" step="1" value="${s.radius !== undefined && s.radius !== '' ? s.radius : 12}"><button class="btn btn-default btn-stepper plus">+</button></div><button class="btn btn-default btn-small" data-reset-block-key="radius" style="margin-top:5px; width:100%;">重置</button></div>
                                 </div>
-                                <div class="form-group" style="margin-top: 10px;"><label>内边距(px):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-setting-key="padding" min="0" max="40" step="1" value="${s.padding!==undefined&&s.padding!==''?s.padding:0}"><button class="btn btn-default btn-stepper plus">+</button></div><button class="btn btn-default btn-small" data-reset-block-key="padding" style="margin-top:5px; width:100%;">重置</button></div>
+                                <div class="form-group" style="margin-top: 10px;"><label>内边距(px):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-setting-key="padding" min="0" max="40" step="1" value="${s.padding !== undefined && s.padding !== '' ? s.padding : 0}"><button class="btn btn-default btn-stepper plus">+</button></div><button class="btn btn-default btn-small" data-reset-block-key="padding" style="margin-top:5px; width:100%;">重置</button></div>
                             </div>
                         `;
                     } else if (block.type === 'timeline') {
@@ -2229,18 +2261,18 @@
                         const g = this.state.globalCardStyles;
                         content = `
                             <div class="color-control-row">
-                                <div class="color-control-group"><label>时间点颜色:</label><div class="input-group"><input type="color" data-setting-key="timeColor" value="${s.timeColor||''}"><input type="text" class="color-hex-input" data-setting-key="timeColor" value="${s.timeColor||''}" placeholder="默认灰色"></div></div>
-                                <div class="color-control-group"><label>节点/线颜色:</label><div class="input-group"><input type="color" data-setting-key="accentColor" value="${s.accentColor||''}"><input type="text" class="color-hex-input" data-setting-key="accentColor" value="${s.accentColor||''}" placeholder="默认主色"></div></div>
+                                <div class="color-control-group"><label>时间点颜色:</label><div class="input-group"><input type="color" data-setting-key="timeColor" value="${s.timeColor || ''}"><input type="text" class="color-hex-input" data-setting-key="timeColor" value="${s.timeColor || ''}" placeholder="默认灰色"></div></div>
+                                <div class="color-control-group"><label>节点/线颜色:</label><div class="input-group"><input type="color" data-setting-key="accentColor" value="${s.accentColor || ''}"><input type="text" class="color-hex-input" data-setting-key="accentColor" value="${s.accentColor || ''}" placeholder="默认主色"></div></div>
                             </div>
                             <hr class="separator"><div style="text-align: right; margin-bottom: 10px;"><label class="checkbox-group advanced-toggle-label"><input type="checkbox" class="advanced-toggle"> 🎨 独立外观设置</label></div>
                             <div class="advanced-setting">
                                 <div class="color-control-row">
-                                    <div class="color-control-group"><label>背景色:</label><div class="input-group"><input type="color" data-setting-key="bgColor" value="${s.bgColor||''}"><input type="text" class="color-hex-input" data-setting-key="bgColor" value="${s.bgColor||''}" placeholder="${g.bgColor} (全局)"><button class="btn btn-default btn-small" data-reset-block-key="bgColor">重置</button></div></div>
-                                    <div class="color-control-group"><label>内容颜色:</label><div class="input-group"><input type="color" data-setting-key="textColor" value="${s.textColor||''}"><input type="text" class="color-hex-input" data-setting-key="textColor" value="${s.textColor||''}" placeholder="${g.textColor} (全局)"><button class="btn btn-default btn-small" data-reset-block-key="textColor">重置</button></div></div>
+                                    <div class="color-control-group"><label>背景色:</label><div class="input-group"><input type="color" data-setting-key="bgColor" value="${s.bgColor || ''}"><input type="text" class="color-hex-input" data-setting-key="bgColor" value="${s.bgColor || ''}" placeholder="${g.bgColor} (全局)"><button class="btn btn-default btn-small" data-reset-block-key="bgColor">重置</button></div></div>
+                                    <div class="color-control-group"><label>内容颜色:</label><div class="input-group"><input type="color" data-setting-key="textColor" value="${s.textColor || ''}"><input type="text" class="color-hex-input" data-setting-key="textColor" value="${s.textColor || ''}" placeholder="${g.textColor} (全局)"><button class="btn btn-default btn-small" data-reset-block-key="textColor">重置</button></div></div>
                                 </div>
                                 <div class="color-control-row" style="margin-top:10px;">
-                                    <div class="color-control-group"><label>不透明度:</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-setting-key="opacity" min="0" max="1" step="0.1" value="${s.opacity!==undefined&&s.opacity!==''?s.opacity:g.opacity}"><button class="btn btn-default btn-stepper plus">+</button></div><button class="btn btn-default btn-small" data-reset-block-key="opacity" style="margin-top:5px; width:100%;">重置 (跟随全局)</button></div>
-                                    <div class="color-control-group"><label>圆角(px):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-setting-key="radius" min="0" max="40" step="1" value="${s.radius!==undefined&&s.radius!==''?s.radius:g.radius}"><button class="btn btn-default btn-stepper plus">+</button></div><button class="btn btn-default btn-small" data-reset-block-key="radius" style="margin-top:5px; width:100%;">重置 (跟随全局)</button></div>
+                                    <div class="color-control-group"><label>不透明度:</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-setting-key="opacity" min="0" max="1" step="0.1" value="${s.opacity !== undefined && s.opacity !== '' ? s.opacity : g.opacity}"><button class="btn btn-default btn-stepper plus">+</button></div><button class="btn btn-default btn-small" data-reset-block-key="opacity" style="margin-top:5px; width:100%;">重置 (跟随全局)</button></div>
+                                    <div class="color-control-group"><label>圆角(px):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-setting-key="radius" min="0" max="40" step="1" value="${s.radius !== undefined && s.radius !== '' ? s.radius : g.radius}"><button class="btn btn-default btn-stepper plus">+</button></div><button class="btn btn-default btn-small" data-reset-block-key="radius" style="margin-top:5px; width:100%;">重置 (跟随全局)</button></div>
                                 </div>
                             </div>
                             <hr class="separator"><div class="timeline-editors-list">${eventsHTML}</div><button class="btn btn-default add-timeline-event-btn" style="margin-top: 15px;">➕ 添加事件</button>`;
@@ -2298,7 +2330,7 @@
                     const applyToKey = `cardsIn${blockType.charAt(0).toUpperCase() + blockType.slice(1)}Blocks`;
                     const shouldApplyBorder = borderSettings.applyTo[applyToKey];
                     const borderClass = shouldApplyBorder ? 'apply-global-border' : '';
-                    
+
                     const stickerHTML = card.sticker && card.sticker !== 'none' ? `<div class="preview-card-sticker ${card.sticker}"></div>` : '';
 
                     const cardEl = document.createElement('div');
@@ -2326,7 +2358,7 @@
                     const borderSettings = this.state.globalBorderSettings;
                     const shouldApplyBorder = borderSettings.applyTo.imagesInImageBlocks;
                     const borderClass = shouldApplyBorder ? 'apply-global-border' : '';
-                    
+
                     const textColorStyle = blockSettings.textColor ? `style="color: ${blockSettings.textColor};"` : '';
                     const figcaptionContent = (card.title || card.description) ?
                         `<figcaption ${textColorStyle}>
@@ -2347,7 +2379,7 @@
                     const borderSettings = this.state.globalBorderSettings;
                     const shouldApplyBorder = borderSettings.applyTo.buttonsInButtonBlocks;
                     const borderClass = shouldApplyBorder ? 'apply-global-border' : '';
-                    
+
                     const g = this.state.globalButtonStyles;
                     const iconHTML = card.icon ? `<span class="iconify" data-icon="${card.icon}"></span>` : '';
                     const alignSelf = { 'left': 'flex-start', 'center': 'center', 'right': 'flex-end' }[card.textAlign] || 'center';
@@ -2360,12 +2392,12 @@
                     if (card.width) styles.push(`--button-width: ${card.width}`);
                     styles.push(`--button-align-self: ${alignSelf}`);
                     const styleString = styles.join(';');
-                    
+
                     return `<div class="preview-button ${borderClass}" data-card-id="${card.id}" style="${styleString}" data-border-style="${borderSettings.style}">
                         ${iconHTML}<span data-card-key="text">${this.escapeHTML(card.text || '')}</span>
                     </div>`;
                 },
-                
+
                 createPreviewMusicBlockHTML(block) {
                     const s = block.settings;
                     return `
@@ -2387,59 +2419,63 @@
                     const s = block.settings;
                     const h = s.thickness || 8;
                     const g = this.state.globalCardStyles;
-                    
+
                     const rawBg = s.bgColor || 'transparent';
-                    const opacity = (s.opacity !== undefined && s.opacity !== '') ? s.opacity : (s.bgColor ? g.opacity : 1);
-                    const bgStyle = s.bgColor ? `background-color: ${this.hexToRgba(rawBg, opacity)};` : '';
-                    
+                    let finalBgColor = 'transparent';
+
+                    if (s.bgColor) {
+                        const finalOpacity = (s.opacity !== undefined && s.opacity !== '') ? s.opacity : g.opacity;
+                        finalBgColor = this.hexToRgba(rawBg, finalOpacity);
+                    }
+
                     const textColor = s.textColor || g.textColor;
                     const radius = (s.radius !== undefined && s.radius !== '') ? s.radius : (s.bgColor ? g.radius : 0);
                     const padding = (s.padding !== undefined && s.padding !== '') ? s.padding : 0;
-                    
+
+                    const bgStyle = `background-color: ${finalBgColor}; padding: ${padding}px; border-radius: ${radius}px;`;
+
                     return `
-                        <div class="progress-bar-preview" style="${bgStyle} padding: ${padding}px; border-radius: ${radius}px;">
-                            <div class="progress-bar-header" style="color: ${textColor};">
-                                <span class="progress-bar-label" data-setting-key="label">${this.escapeHTML(s.label)}</span>
-                                <span class="progress-bar-value">${s.percentage}%</span>
-                            </div>
-                            <div class="progress-bar-track" style="background-color: ${s.trackColor || '#eee'}; height: ${h}px; border-radius: ${h/2}px;">
-                                <div class="progress-bar-fill" style="width: ${s.percentage}%; background-color: ${s.color};"></div>
-                            </div>
-                        </div>
-                    `;
+        <div class="progress-bar-preview" style="${bgStyle}">
+            <div class="progress-bar-header" style="color: ${textColor};">
+                <span class="progress-bar-label" data-setting-key="label">${this.escapeHTML(s.label)}</span>
+                <span class="progress-bar-value">${s.percentage}%</span>
+            </div>
+            <div class="progress-bar-track" style="background-color: ${s.trackColor || '#eee'}; height: ${h}px; border-radius: ${h / 2}px;">
+                <div class="progress-bar-fill" style="width: ${s.percentage}%; background-color: ${s.color};"></div>
+            </div>
+        </div>
+    `;
                 },
-                
+
                 createPreviewTimelineBlockHTML(block) {
                     const s = block.settings;
                     const g = this.state.globalCardStyles;
-                    
+
                     const rawBg = s.bgColor || g.bgColor;
-                    const opacity = (s.opacity !== undefined && s.opacity !== '') ? s.opacity : g.opacity;
-                    const bgColor = this.hexToRgba(rawBg, opacity);
-                    
+                    const finalOpacity = (s.opacity !== undefined && s.opacity !== '') ? s.opacity : g.opacity;
+                    const finalBgColor = this.hexToRgba(rawBg, finalOpacity);
+
                     const textColor = s.textColor || g.textColor;
                     const radius = (s.radius !== undefined && s.radius !== '') ? s.radius : g.radius;
-                    
+
                     const styleVars = `
-                        --tl-bg-color: ${bgColor};
-                        --tl-text-color: ${textColor};
-                        --tl-time-color: ${s.timeColor || 'var(--text-secondary)'};
-                        --tl-accent-color: ${s.accentColor || 'var(--g-theme-primary)'};
-                        --tl-radius: ${radius}px;
-                    `;
-                    
+        --tl-text-color: ${textColor};
+        --tl-time-color: ${s.timeColor || 'var(--text-secondary)'};
+        --tl-accent-color: ${s.accentColor || 'var(--g-theme-primary)'};
+    `;
+
                     const eventsHTML = (block.cards || []).map(event => `
-                        <div class="timeline-event" data-card-id="${event.id}">
-                             <div class="timeline-dot" style="border-color: var(--tl-accent-color); background-color: var(--bg-preview-page);"></div>
-                             <div class="timeline-time" data-card-key="time" style="color: var(--tl-time-color);">${this.escapeHTML(event.time)}</div>
-                             <div class="timeline-content" data-card-key="content" style="color: var(--tl-text-color);">${this.escapeHTML(event.content)}</div>
-                        </div>
-                    `).join('');
-                    
-                    return `<div class="timeline-preview" style="${styleVars} background-color: var(--tl-bg-color); border-radius: var(--tl-radius);">
-                                <div class="timeline-line" style="background-color: var(--border-color);"></div>
-                                ${eventsHTML}
-                            </div>`;
+        <div class="timeline-event" data-card-id="${event.id}">
+             <div class="timeline-dot" style="border-color: var(--tl-accent-color); background-color: var(--bg-preview-page);"></div>
+             <div class="timeline-time" data-card-key="time" style="color: var(--tl-time-color);">${this.escapeHTML(event.time)}</div>
+             <div class="timeline-content" data-card-key="content" style="color: var(--tl-text-color);">${this.escapeHTML(event.content)}</div>
+        </div>
+    `).join('');
+
+                    return `<div class="timeline-preview" style="${styleVars} background-color: ${finalBgColor}; border-radius: ${radius}px;">
+                <div class="timeline-line" style="background-color: var(--border-color);"></div>
+                ${eventsHTML}
+            </div>`;
                 },
 
                 createEditorCardHTML(card) {
@@ -2447,8 +2483,11 @@
                     const g = this.state.globalCardStyles;
                     const contentPreview = card.content || '<span style="color: var(--text-placeholder);">点击编辑内容...</span>';
 
+                    // 读取状态
+                    const advClass = card.isAdvancedOpen ? 'show-advanced' : '';
+
                     return `<span class="card-drag-handle">☰</span><div class="editor-card-header"><button class="btn btn-danger btn-small card-delete-btn">删</button></div>
-                        <div class="editor-card-content">
+                        <div class="editor-card-content ${advClass}">
                             <h4>基础设置</h4>
                             <div class="form-group"><label>标题:</label><div class="input-group"><input type="text" data-card-key="title" value="${this.escapeHTML(card.title || '')}" style="border-right: none;"><button class="btn btn-default select-icon-btn" style="width: auto; flex-shrink: 0; border-radius: 0 6px 6px 0; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${iconHTML}</button></div></div>
                             <div class="form-group">
@@ -2467,12 +2506,12 @@
                                 <label><input type="radio" name="card-${card.id}-align" value="right" data-card-key="textAlign" ${card.textAlign === 'right' ? 'checked' : ''}>右</label>
                             </div></div>
                              <div style="text-align: right; margin-bottom: 10px;">
-                                <label class="checkbox-group advanced-toggle-label"><input type="checkbox" class="advanced-toggle"> 高级独立样式</label>
+                                <label class="checkbox-group advanced-toggle-label"><input type="checkbox" class="advanced-toggle" ${card.isAdvancedOpen ? 'checked' : ''}> 高级独立样式</label>
                             </div>
                             <div class="advanced-setting">
                                 <hr class="separator">
                                 <h4>独立样式</h4>
-                                <div class="form-group"><label>装饰贴纸:</label><div class="radio-group"><label><input type="radio" name="card-${card.id}-sticker" value="none" data-card-key="sticker" ${card.sticker === 'none' || !card.sticker ? 'checked': ''}>无</label><label><input type="radio" name="card-${card.id}-sticker" value="tape" data-card-key="sticker" ${card.sticker === 'tape' ? 'checked' : ''}>胶带</label><label><input type="radio" name="card-${card.id}-sticker" value="pushpin" data-card-key="sticker" ${card.sticker === 'pushpin' ? 'checked' : ''}>图钉</label></div></div>
+                                <div class="form-group"><label>装饰贴纸:</label><div class="radio-group"><label><input type="radio" name="card-${card.id}-sticker" value="none" data-card-key="sticker" ${card.sticker === 'none' || !card.sticker ? 'checked' : ''}>无</label><label><input type="radio" name="card-${card.id}-sticker" value="tape" data-card-key="sticker" ${card.sticker === 'tape' ? 'checked' : ''}>胶带</label><label><input type="radio" name="card-${card.id}-sticker" value="pushpin" data-card-key="sticker" ${card.sticker === 'pushpin' ? 'checked' : ''}>图钉</label></div></div>
                                 <div class="color-control-row">
                                     <div class="color-control-group"><label>背景色:</label><div class="input-group"><input type="color" data-card-key="bgColor" value="${card.bgColor || ''}"><input class="color-hex-input" type="text" data-card-key="bgColor" value="${card.bgColor || ''}" placeholder="${g.bgColor} (全局)"><button class="btn btn-default btn-small" data-reset-card-key="bgColor">重置</button></div></div>
                                     <div class="color-control-group"><label>正文颜色:</label><div class="input-group"><input type="color" data-card-key="textColor" value="${card.textColor || ''}"><input class="color-hex-input" type="text" data-card-key="textColor" value="${card.textColor || ''}" placeholder="${g.textColor} (全局)"><button class="btn btn-default btn-small" data-reset-card-key="textColor">重置</button></div></div>
@@ -2493,10 +2532,15 @@
 
                 createEditorButtonCardHTML(card) {
                     const iconHTML = card.icon ? `<span class="iconify" data-icon="${card.icon}"></span>` : '图标';
+                    const advClass = card.isAdvancedOpen ? 'show-advanced' : ''; // 读取状态
+
                     return `
                         <span class="card-drag-handle">☰</span>
                         <div class="editor-card-header"><button class="btn btn-danger btn-small card-delete-btn">删</button></div>
-                        <div class="editor-card-content">
+                        <div class="editor-card-content ${advClass}">
+                            <div style="text-align: right; margin-bottom: 10px;">
+                                <label class="checkbox-group advanced-toggle-label"><input type="checkbox" class="advanced-toggle" ${card.isAdvancedOpen ? 'checked' : ''}> 高级独立样式</label>
+                            </div>
                             <div class="form-group">
                                 <label>按钮内容:</label>
                                 <div class="input-group">
@@ -2561,7 +2605,7 @@
                             </div>
                         </div>`;
                 },
-                
+
                 createEditorMusicBlockHTML(block) {
                     const s = block.settings;
                     const g = this.state.globalCardStyles;
@@ -2571,26 +2615,26 @@
                              <div class="image-card-editor-content">
                                 <div class="music-cover-thumb" style="width: 80px; flex-shrink: 0;"><div class="thumbnail-wrapper"><img src="" loading="lazy"></div></div>
                                 <div class="image-card-editor-fields"><input type="file" id="music-cover-upload" accept="image/*">
-                                <div class="form-group" style="margin-top:5px; margin-bottom:0;"><label style="font-size:0.8rem">高亮色:</label><div class="input-group simple"><input type="color" data-setting-key="accentColor" value="${s.accentColor||''}"><input type="text" class="color-hex-input" data-setting-key="accentColor" value="${s.accentColor||''}" placeholder="${gTheme.accent}"><button class="btn btn-default btn-small" data-reset-block-key="accentColor">重置</button></div></div></div>
+                                <div class="form-group" style="margin-top:5px; margin-bottom:0;"><label style="font-size:0.8rem">高亮色:</label><div class="input-group simple"><input type="color" data-setting-key="accentColor" value="${s.accentColor || ''}"><input type="text" class="color-hex-input" data-setting-key="accentColor" value="${s.accentColor || ''}" placeholder="${gTheme.accent}"><button class="btn btn-default btn-small" data-reset-block-key="accentColor">重置</button></div></div></div>
                             </div>
                         </div>
                         <div class="form-group"><label>歌曲名称:</label><input type="text" data-setting-key="songTitle" value="${this.escapeHTML(s.songTitle || '')}"></div>
                         <div class="form-group"><label>歌手:</label><input type="text" data-setting-key="artist" value="${this.escapeHTML(s.artist || '')}"></div>
-                        <div class="form-group"><label>播放进度 (输入时间自动计算):</label><div class="input-group simple"><input type="text" data-setting-key="currentTime" value="${s.currentTime||'00:00'}" placeholder="01:20" style="text-align:center;"><span style="padding:0 5px;">/</span><input type="text" data-setting-key="totalTime" value="${s.totalTime||'03:00'}" placeholder="03:00" style="text-align:center;"></div></div>
+                        <div class="form-group"><label>播放进度 (输入时间自动计算):</label><div class="input-group simple"><input type="text" data-setting-key="currentTime" value="${s.currentTime || '00:00'}" placeholder="01:20" style="text-align:center;"><span style="padding:0 5px;">/</span><input type="text" data-setting-key="totalTime" value="${s.totalTime || '03:00'}" placeholder="03:00" style="text-align:center;"></div></div>
                         <div class="form-group"><label>歌词 (居中显示):</label><textarea data-setting-key="lyrics" rows="3" placeholder="上一句&#10;当前句(高亮)&#10;下一句">${this.escapeHTML(s.lyrics || '')}</textarea></div>
                         <hr class="separator"><div style="text-align: right; margin-bottom: 10px;"><label class="checkbox-group advanced-toggle-label"><input type="checkbox" class="advanced-toggle"> 🎨 独立外观设置</label></div>
                         <div class="advanced-setting">
                             <div class="color-control-row">
-                                <div class="color-control-group"><label>背景色:</label><div class="input-group"><input type="color" data-setting-key="bgColor" value="${s.bgColor||''}"><input type="text" class="color-hex-input" data-setting-key="bgColor" value="${s.bgColor||''}" placeholder="${g.bgColor} (全局)"><button class="btn btn-default btn-small" data-reset-block-key="bgColor">重置</button></div></div>
-                                <div class="color-control-group"><label>文字色:</label><div class="input-group"><input type="color" data-setting-key="textColor" value="${s.textColor||''}"><input type="text" class="color-hex-input" data-setting-key="textColor" value="${s.textColor||''}" placeholder="${g.textColor} (全局)"><button class="btn btn-default btn-small" data-reset-block-key="textColor">重置</button></div></div>
+                                <div class="color-control-group"><label>背景色:</label><div class="input-group"><input type="color" data-setting-key="bgColor" value="${s.bgColor || ''}"><input type="text" class="color-hex-input" data-setting-key="bgColor" value="${s.bgColor || ''}" placeholder="${g.bgColor} (全局)"><button class="btn btn-default btn-small" data-reset-block-key="bgColor">重置</button></div></div>
+                                <div class="color-control-group"><label>文字色:</label><div class="input-group"><input type="color" data-setting-key="textColor" value="${s.textColor || ''}"><input type="text" class="color-hex-input" data-setting-key="textColor" value="${s.textColor || ''}" placeholder="${g.textColor} (全局)"><button class="btn btn-default btn-small" data-reset-block-key="textColor">重置</button></div></div>
                             </div>
                             <div class="color-control-row" style="margin-top:10px;">
-                                <div class="color-control-group"><label>不透明度:</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-setting-key="opacity" min="0" max="1" step="0.05" value="${s.opacity!==undefined && s.opacity!=='' ? s.opacity : g.opacity}"><button class="btn btn-default btn-stepper plus">+</button></div><button class="btn btn-default btn-small" data-reset-block-key="opacity" style="margin-top:5px; width:100%;">重置 (跟随全局)</button></div>
-                                <div class="color-control-group"><label>圆角(px):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-setting-key="radius" min="0" max="40" step="1" value="${s.radius!==undefined && s.radius!=='' ? s.radius : g.radius}"><button class="btn btn-default btn-stepper plus">+</button></div><button class="btn btn-default btn-small" data-reset-block-key="radius" style="margin-top:5px; width:100%;">重置 (跟随全局)</button></div>
+                                <div class="color-control-group"><label>不透明度:</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-setting-key="opacity" min="0" max="1" step="0.05" value="${s.opacity !== undefined && s.opacity !== '' ? s.opacity : g.opacity}"><button class="btn btn-default btn-stepper plus">+</button></div><button class="btn btn-default btn-small" data-reset-block-key="opacity" style="margin-top:5px; width:100%;">重置 (跟随全局)</button></div>
+                                <div class="color-control-group"><label>圆角(px):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-setting-key="radius" min="0" max="40" step="1" value="${s.radius !== undefined && s.radius !== '' ? s.radius : g.radius}"><button class="btn btn-default btn-stepper plus">+</button></div><button class="btn btn-default btn-small" data-reset-block-key="radius" style="margin-top:5px; width:100%;">重置 (跟随全局)</button></div>
                             </div>
                         </div>`;
                 },
-                
+
                 parseTimeToSeconds(timeStr) {
                     if (!timeStr) return 0;
                     const parts = timeStr.split(':');
@@ -2604,12 +2648,12 @@
                     const totalSec = this.parseTimeToSeconds(s.totalTime);
                     const percent = totalSec > 0 ? (currentSec / totalSec) * 100 : 0;
                     const lines = (s.lyrics || '').split('\n');
-                    
+
                     const g = this.state.globalCardStyles;
                     const rawBg = s.bgColor || g.bgColor;
                     const opacity = (s.opacity !== undefined && s.opacity !== '') ? s.opacity : g.opacity;
                     const bgVar = this.hexToRgba(rawBg, opacity);
-                    
+
                     const textVar = s.textColor || g.textColor;
                     const accentVar = s.accentColor || this.state.globalTheme.accent;
                     const radiusVar = (s.radius !== undefined && s.radius !== '') ? `${s.radius}px` : `${g.radius}px`;
@@ -2634,7 +2678,7 @@
                                 <div class="music-bottom-area">
                                     <div class="music-progress-area">
                                         <div class="music-progress-bar"><div class="music-progress-fill" style="width: ${percent}%;"></div></div>
-                                        <div class="music-time-labels"><span>${s.currentTime||'00:00'}</span><span>${s.totalTime||'00:00'}</span></div>
+                                        <div class="music-time-labels"><span>${s.currentTime || '00:00'}</span><span>${s.totalTime || '00:00'}</span></div>
                                     </div>
                                     <div class="music-controls">
                                         <span class="iconify" data-icon="mdi:skip-previous"></span>
@@ -2645,7 +2689,7 @@
                             </div>
                         </div>`;
                 },
-                
+
                 createEditorTimelineEventHTML(card) {
                     return `
                         <div class="timeline-event-editor" data-card-id="${card.id}">
@@ -2669,6 +2713,13 @@
 
                     const followGlobalOpacity = cardData.followGlobalOpacity !== false;
                     const finalOpacity = followGlobalOpacity ? g.opacity : (cardData.opacity ?? 1.0);
+
+                    // 竖排文字支持
+                    if (cardData.writingMode === 'vertical-rl') {
+                        cardEl.classList.add('vertical-rl');
+                    } else {
+                        cardEl.classList.remove('vertical-rl');
+                    }
 
                     const innerEl = cardEl.querySelector('.preview-card-inner');
                     if (!innerEl) return;
@@ -2762,9 +2813,9 @@
 
                     this.debouncedSaveToLocal();
                     this.triggerRender(keyPath);
-                    
+
                     if (!document.activeElement.matches('input[type="text"].color-hex-input')) {
-                         this.syncControl(keyPath);
+                        this.syncControl(keyPath);
                     }
                 },
 
@@ -2787,7 +2838,7 @@
                         'globalTheme.accent': () => r.setProperty('--g-theme-accent', gTheme.accent),
                         'globalTheme.background': () => r.setProperty('--g-theme-background', gTheme.background),
                         'globalTheme.text': () => r.setProperty('--g-theme-text', gTheme.text),
-                        
+
                         // 头部样式
                         'pageStyles.headerBgColor': () => { if (styles.headerBgMode === 'solid') this.elements.previewHeader.style.background = this.hexToRgba(styles.headerBgColor, styles.headerOpacity); },
                         'pageStyles.headerBgGradientStart': () => { if (styles.headerBgMode === 'gradient') this.elements.previewHeader.style.background = `linear-gradient(${styles.headerBgGradientAngle}deg, ${this.hexToRgba(styles.headerBgGradientStart, styles.headerOpacity)}, ${this.hexToRgba(styles.headerBgGradientEnd, styles.headerOpacity)})` },
@@ -2795,7 +2846,7 @@
                         'pageStyles.headerBgGradientAngle': () => { if (styles.headerBgMode === 'gradient') this.elements.previewHeader.style.background = `linear-gradient(${styles.headerBgGradientAngle}deg, ${this.hexToRgba(styles.headerBgGradientStart, styles.headerOpacity)}, ${this.hexToRgba(styles.headerBgGradientEnd, styles.headerOpacity)})` },
                         'pageStyles.headerOpacity': () => this.renderPageStyles(),
                         'pageStyles.headerBorderRadius': () => { this.elements.previewHeader.style.borderRadius = `${styles.headerBorderRadius}px`; },
-                        
+
                         // 页面背景
                         'pageStyles.pageBgSolidColor': () => { if (styles.pageBgMode === 'solid') this.elements.previewWrapper.style.backgroundColor = styles.pageBgSolidColor; },
                         'pageStyles.pageBgGradientStart': () => { if (styles.pageBgMode === 'gradient') this.renderPageStyles(); },
@@ -2803,7 +2854,7 @@
                         'pageStyles.pageBgGradientAngle': () => { if (styles.pageBgMode === 'gradient') this.renderPageStyles(); },
                         'pageStyles.pageOverlayOpacity': () => this.renderPageStyles(),
                         'pageStyles.pageOverlayColor': () => this.renderPageStyles(),
-                        
+
                         // 全局按钮
                         'globalButtonStyles.bgColor': () => r.setProperty('--g-button-bg-color', gButton.bgColor),
                         'globalButtonStyles.textColor': () => r.setProperty('--g-button-text-color', gButton.textColor),
@@ -2824,7 +2875,7 @@
                         'globalCardStyles.titleFontSize': () => { r.setProperty('--g-card-title-font-size', gCard.titleFontSize); },
                         'globalCardStyles.contentFontSize': () => { r.setProperty('--g-card-content-font-size', gCard.contentFontSize); },
                         'globalCardStyles.padding': () => { r.setProperty('--g-card-padding', `${gCard.padding}px`); },
-                        
+
                         // 全局边框
                         'globalBorderSettings.style': () => { this.updateGlobalBorderVars(); this.renderPreviewBlocks(); },
                         'globalBorderSettings.width': () => this.updateGlobalBorderVars(),
@@ -2948,7 +2999,7 @@
                             const cardProp = keyParts[4];
                             const card = block.cards[cardIndex];
                             if (!card) return;
-                            
+
                             if (['title', 'content', 'icon', 'text', 'time'].includes(cardProp)) {
                                 this.renderPreviewCardById(block.id, card.id);
                                 if (['title', 'text', 'time'].includes(cardProp)) {
@@ -2971,9 +3022,9 @@
                 addCard(blockType, blockId, isQuickAdd = false) {
                     const block = this.findBlock(blockId);
                     if (!block) return;
-                    
+
                     let newCard;
-                    switch(blockType) {
+                    switch (blockType) {
                         case 'text':
                             newCard = { id: this.generateId('c'), icon: '', title: `新卡片`, content: '点击编辑内容', sticker: 'none' };
                             break;
@@ -2981,8 +3032,8 @@
                             newCard = { id: this.generateId('c'), icon: '', text: '新按钮' };
                             break;
                         case 'timeline':
-                             newCard = { id: this.generateId('c'), time: '新时间点', content: '新事件内容' };
-                             break;
+                            newCard = { id: this.generateId('c'), time: '新时间点', content: '新事件内容' };
+                            break;
                         default:
                             return;
                     }
@@ -2995,12 +3046,12 @@
                     if (isQuickAdd) {
                         const cardListEl = this.elements.layerList.querySelector(`.layer-item-container[data-block-id="${blockId}"] .card-layer-list`);
                         if (cardListEl) {
-                             const newCardLayerItem = document.createElement('li');
-                             newCardLayerItem.className = 'card-layer-item';
-                             newCardLayerItem.dataset.cardId = newCard.id;
-                             newCardLayerItem.textContent = newCard.title || newCard.text || newCard.time;
-                             cardListEl.appendChild(newCardLayerItem);
-                             this.toggleLayerExpansion(blockId, true);
+                            const newCardLayerItem = document.createElement('li');
+                            newCardLayerItem.className = 'card-layer-item';
+                            newCardLayerItem.dataset.cardId = newCard.id;
+                            newCardLayerItem.textContent = newCard.title || newCard.text || newCard.time;
+                            cardListEl.appendChild(newCardLayerItem);
+                            this.toggleLayerExpansion(blockId, true);
                         }
                     } else {
                         this.renderLayerPanel();
@@ -3014,7 +3065,7 @@
                         newCardEditorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     }
                 },
-                
+
                 handleMusicCoverUpload(event, blockId) {
                     const block = this.findBlock(blockId);
                     if (!block) return;
@@ -3122,7 +3173,7 @@
                                     this.history = savedHistory;
                                     this.historyIndex = this.history.length - 1;
                                 }
-                            } catch (e) {}
+                            } catch (e) { }
                         }
                     } catch (e) {
                         localStorage.removeItem('blokkoState');
@@ -3249,9 +3300,9 @@
                             gCardSection.querySelectorAll('.tab-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === gCardActiveTab));
                             gCardSection.querySelectorAll(':scope > .section-content > .tab-content').forEach(c => c.classList.toggle('active', c.id === gCardActiveTab));
                         }
-                        
+
                         const customDimControls = this.elements.inspectorPanel.querySelector('#custom-dimensions-controls');
-                        if(customDimControls) {
+                        if (customDimControls) {
                             const customWidthToggle = this.elements.inspectorPanel.querySelector('#custom-width-toggle');
                             customDimControls.style.display = customWidthToggle.checked ? 'block' : 'none';
                         }
@@ -3277,12 +3328,12 @@
                             const currentTextureName = pageTextureControls.querySelector('#current-texture-name');
                             if (currentTextureName) currentTextureName.textContent = this.state.pageStyles.pageBgPattern || '无';
                         }
-                        
+
                         const emojiInputContainer = this.elements.inspectorPanel.querySelector('#emoji-input-container');
-                        if(emojiInputContainer) {
+                        if (emojiInputContainer) {
                             emojiInputContainer.style.display = this.state.personalInfo.statusBadge === 'emoji' ? 'block' : 'none';
                         }
-                        
+
                         this.elements.inspectorPanel.querySelectorAll('[data-style-specific]').forEach(el => {
                             el.style.display = this.state.globalBorderSettings.style === el.dataset.styleSpecific ? '' : 'none';
                         });
@@ -3321,12 +3372,12 @@
                     }
                     this.renderMobileEditPencils();
                 },
-                
+
                 renderPreviewCardById(blockId, cardId) {
                     const block = this.findBlock(blockId);
                     const cardData = block?.cards.find(c => c.id === cardId);
                     if (!cardData) return;
-                    
+
                     const cardEl = this.elements.previewBlocksContainer.querySelector(`[data-card-id="${cardId}"]`);
                     if (!cardEl) {
                         this.renderPreviewBlockById(blockId);
@@ -3336,7 +3387,7 @@
                     if (cardEl.matches('.preview-card')) {
                         const titleEl = cardEl.querySelector('.preview-card-title');
                         const contentEl = cardEl.querySelector('.preview-card-content');
-                        
+
                         if (titleEl) {
                             const iconHTML = cardData.icon ? `<span class="iconify" data-icon="${cardData.icon}"></span>` : '';
                             titleEl.innerHTML = iconHTML + this.escapeHTML(cardData.title || '');
@@ -3348,10 +3399,10 @@
                     } else if (cardEl.matches('.preview-button')) {
                         const textSpan = cardEl.querySelector('span[data-card-key="text"]');
                         const iconSpan = cardEl.querySelector('.iconify');
-                        if(textSpan) textSpan.textContent = cardData.text || '';
-                        
-                        if(cardData.icon) {
-                            if(iconSpan) {
+                        if (textSpan) textSpan.textContent = cardData.text || '';
+
+                        if (cardData.icon) {
+                            if (iconSpan) {
                                 iconSpan.dataset.icon = cardData.icon;
                             } else {
                                 const newIcon = document.createElement('span');
@@ -3373,8 +3424,8 @@
                     } else if (cardEl.matches('.timeline-event')) {
                         const timeEl = cardEl.querySelector('.timeline-time');
                         const contentEl = cardEl.querySelector('.timeline-content');
-                        if(timeEl) timeEl.textContent = cardData.time || '';
-                        if(contentEl) contentEl.textContent = cardData.content || '';
+                        if (timeEl) timeEl.textContent = cardData.time || '';
+                        if (contentEl) contentEl.textContent = cardData.content || '';
                     }
                 },
 
@@ -3406,20 +3457,20 @@
                     this.jumpToHistory(this.historyIndex + 1, `已重做: ${actionDescription}`);
                 },
                 jumpToHistory(index, toastMessage = null) {
-                    if(index < 0 || index >= this.history.length) return;
-                    
+                    if (index < 0 || index >= this.history.length) return;
+
                     this.isRestoringState = true;
                     const currentInspectorTab = this.state.ui.activeInspectorTab;
                     this.historyIndex = index;
                     this.state = this.deepClone(this.history[this.historyIndex].state);
                     this.state.ui.activeInspectorTab = currentInspectorTab;
-                    
+
                     this.renderAll();
                     this.syncAllControls();
                     this.updateUndoRedoButtons();
                     this.isRestoringState = false;
-                    
-                    if(toastMessage) this.showToast(toastMessage, 'info');
+
+                    if (toastMessage) this.showToast(toastMessage, 'info');
                     if (currentInspectorTab === 'system') {
                         const historyContainer = this.elements.inspectorPanel.querySelector('#history-list');
                         if (historyContainer) {
@@ -3435,12 +3486,15 @@
                         container.innerHTML = `<div class="empty-history-list">暂无操作历史</div>`;
                         return;
                     }
-                    
+
                     container.innerHTML = [...this.history].reverse().map((item, i) => {
                         const index = this.history.length - 1 - i;
                         const desc = (typeof item.description === 'string') ? item.description : '未知操作';
                         return `<div class="history-item ${index === this.historyIndex ? 'active' : ''}" data-index="${index}">${this.escapeHTML(desc)}</div>`;
                     }).join('');
+
+                    // 绑定历史记录的长按/右键事件
+                    this.bindHistoryContextEvents();
                 },
                 updateUndoRedoButtons() {
                     const undoBtn = this.elements.inspectorPanel.querySelector('#undo-btn');
@@ -3885,6 +3939,11 @@
                     this.updateCard(blockId, cardId, 'content', newContent, true, '编辑卡片内容');
                     this.hideRichTextEditor();
                     this.showToast('内容已保存', 'success');
+
+                    const block = this.findBlock(blockId);
+                    if (block && block.settings.masonryEnabled) {
+                        this.initMasonryForBlock(blockId);
+                    }
                 },
 
                 async loadLocalFonts() {
@@ -4167,15 +4226,15 @@
 
                         stateToSave.blocks.forEach(block => {
                             if (['text', 'image', 'button', 'music', 'progress', 'timeline'].includes(block.type)) {
-                                 block.title = this.getDefaultState().blocks.find(b => b.type === block.type)?.title || block.title;
-                                 if (block.type === 'image') {
-                                     block.cards = [];
-                                 } else if (block.cards) {
-                                     block.cards = this.getDefaultState().blocks.find(b => b.type === block.type)?.cards || [];
-                                 }
-                                 if (block.type === 'music' || block.type === 'progress') {
-                                     block.settings = this.getDefaultState().blocks.find(b => b.type === block.type)?.settings || {};
-                                 }
+                                block.title = this.getDefaultState().blocks.find(b => b.type === block.type)?.title || block.title;
+                                if (block.type === 'image') {
+                                    block.cards = [];
+                                } else if (block.cards) {
+                                    block.cards = this.getDefaultState().blocks.find(b => b.type === block.type)?.cards || [];
+                                }
+                                if (block.type === 'music' || block.type === 'progress') {
+                                    block.settings = this.getDefaultState().blocks.find(b => b.type === block.type)?.settings || {};
+                                }
                             }
                         });
                         this.showToast('模板已导出', 'success');
@@ -4229,7 +4288,7 @@
                         await processObject(stateClone);
 
                         zip.file("config.json", JSON.stringify(stateClone, null, 2));
-                        zip.file("readme.txt", `Blokko 强化导出备份\n版本: 1.8.0\n导出时间: ${new Date().toLocaleString()}\n\n此 .zip 文件包含了您的配置文件 (config.json) 和所有图片资源 (images/ 文件夹)。`);
+                        zip.file("readme.txt", `Blokko 强化导出备份\n版本: 1.8.1\n导出时间: ${new Date().toLocaleString()}\n\n此 .zip 文件包含了您的配置文件 (config.json) 和所有图片资源 (images/ 文件夹)。`);
 
                         const blob = await zip.generateAsync({ type: "blob" });
                         const filename = this.generateFilename('Enhanced-Backup') + '.zip';
@@ -4429,162 +4488,185 @@
                 },
 
                 async exportPNG() {
+                    const safeBakeOverlays = async (cloneEl) => {
+                        if (typeof this.bakeOverlaysForExport === 'function') {
+                            try { await this.bakeOverlaysForExport(cloneEl); } catch (e) { console.warn('Bake overlays failed', e); }
+                        }
+                    };
+
                     try {
                         this.showLoading('加载导出组件...');
                         await this.loadScript('https://cdn.bootcdn.net/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
                     } catch (error) {
                         this.hideLoading();
-                        this.showErrorModal('加载失败', '导出功能所需组件加载失败，请检查你的网络连接。');
+                        this.showErrorModal('加载失败', '导出组件加载失败。');
                         return;
                     }
+
+                    this.showLoading('等待字体加载...');
+                    try { await document.fonts.ready; } catch (e) { }
+
                     this.showLoading('正在准备导出...');
 
                     const s = this.state.exportSettings;
                     const panel = this.elements.inspectorPanel;
-
-                    const mobileExportToggle = panel.querySelector('#mobile-export-toggle');
-                    const customWidthToggle = panel.querySelector('#custom-width-toggle');
-                    const hdExportToggle = panel.querySelector('#hd-export-toggle');
-
-                    const isMobileExport = mobileExportToggle.checked;
-                    const isCustomWidth = customWidthToggle.checked;
-                    const isHD = hdExportToggle.checked;
-
                     const sourceElement = this.elements.previewWrapper;
-                    
-                    const DESKTOP_RENDER_WIDTH = 600; 
-                    
-                    let effectiveRenderWidth = sourceElement.offsetWidth;
-                    const sourceWidth = sourceElement.offsetWidth;
-                    const sourceHeight = sourceElement.offsetHeight;
-                    
-                    if (isCustomWidth && s.lockAspectRatio) {
-                        effectiveRenderWidth = DESKTOP_RENDER_WIDTH;
-                    }
 
-                    let targetWidth, targetHeight;
-                    const originalAspectRatio = sourceHeight / sourceWidth;
+                    const isMobileExport = panel.querySelector('#mobile-export-toggle').checked;
+                    const isCustomWidth = panel.querySelector('#custom-width-toggle').checked;
+                    const isHD = panel.querySelector('#hd-export-toggle').checked;
 
-                    if (isMobileExport) {
-                        targetWidth = 1200;
-                        targetHeight = Math.round(targetWidth * originalAspectRatio);
-                    } else if (isCustomWidth) {
-                        targetWidth = s.customWidth;
-                        targetHeight = s.lockAspectRatio ? Math.round(targetWidth * originalAspectRatio) : s.customHeight;
-                    } else if (isHD) {
-                        targetWidth = 1800;
-                        targetHeight = Math.round(targetWidth * originalAspectRatio);
-                    } else {
-                        targetWidth = 1200;
-                        targetHeight = Math.round(targetWidth * originalAspectRatio);
-                    }
+                    const originalWidth = sourceElement.offsetWidth;
+                    const originalHeight = sourceElement.offsetHeight;
+                    const aspectRatio = originalHeight / originalWidth;
 
-                    const scale = targetWidth / effectiveRenderWidth;
+                    let targetWidth = 1200;
+                    if (isMobileExport) targetWidth = 1200;
+                    else if (isHD) targetWidth = 1800;
+                    else if (isCustomWidth) targetWidth = s.customWidth;
 
-                    const exportRounded = panel.querySelector('#export-rounded-corners-toggle').checked;
-                    const cornerRadius = parseInt(panel.querySelector('#export-corner-radius-input').value, 10) || 20;
+                    let targetHeight = Math.round(targetWidth * aspectRatio);
+                    if (isCustomWidth && !s.lockAspectRatio) targetHeight = s.customHeight;
 
+                    const scale = targetWidth / originalWidth;
                     let clone = null;
 
                     const wasLayerOpen = this.elements.layerPanel.classList.contains('is-open');
                     const wasInspectorOpen = this.elements.inspectorPanel.classList.contains('is-open');
-                    if (wasLayerOpen || wasInspectorOpen) {
-                        this.togglePanelDrawer(false);
-                        await this.sleep(100);
-                    }
-
-                    document.body.classList.add('export-mode');
 
                     try {
+                        document.body.classList.add('export-mode');
+
+                        if (wasLayerOpen || wasInspectorOpen) {
+                            this.togglePanelDrawer(false);
+                            await this.sleep(200);
+                        }
+
                         clone = sourceElement.cloneNode(true);
-                        clone.id = `export-clone-${Date.now()}`;
+                        clone.id = "export-clone-container";
 
-                        const showAttribution = panel.querySelector('#export-attribution-toggle').checked;
-                        if (showAttribution) {
+                        Object.assign(clone.style, {
+                            position: 'fixed',
+                            top: '0',
+                            left: '0',
+                            zIndex: '-9999',
+                            width: `${originalWidth}px`,
+                            height: 'auto',
+                            margin: '0',
+                            transform: 'none',
+                            borderRadius: '0',
+                            overflow: 'visible',
+                            transition: 'none',
+                            viewTransitionName: 'none'
+                        });
+
+                        const styleReset = document.createElement('style');
+                        styleReset.innerHTML = `
+                            #export-clone-container, #export-clone-container * {
+                                transition: none !important;
+                                animation: none !important;
+                                view-transition-name: none !important;
+                            }
+                        `;
+                        clone.appendChild(styleReset);
+
+                        clone.querySelectorAll('img').forEach(img => {
+                            img.loading = 'eager';
+                            img.removeAttribute('loading');
+                            img.style.opacity = '1';
+                        });
+
+                        clone.querySelectorAll('.preview-cards-container, .preview-card, figure, .preview-button').forEach(el => {
+                            el.style.removeProperty('position');
+                            el.style.removeProperty('top');
+                            el.style.removeProperty('left');
+                            el.style.removeProperty('transform');
+                            el.classList.remove('masonry-active');
+                        });
+
+                        if (panel.querySelector('#export-attribution-toggle').checked) {
                             const attr = this.state.pageStyles.pageBgImageAttribution;
-                            let attrHTML = attr && attr.user ? `Photo by ${this.escapeHTML(attr.user)} on Pixabay / ` : '';
+                            let attrHTML = attr && attr.user ? `Photo by ${this.escapeHTML(attr.user)} / ` : '';
                             attrHTML += `Made with Blokko`;
-
                             const attrDiv = document.createElement('div');
-                            attrDiv.style.cssText = `
-                                position: absolute; bottom: 10px; right: 15px; font-size: 10px;
-                                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-                                color: rgba(255, 255, 255, 0.7); background-color: rgba(0, 0, 0, 0.3);
-                                padding: 3px 6px; border-radius: 4px; z-index: 100;
-                                text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-                            `;
+                            attrDiv.style.cssText = `position: absolute; bottom: 10px; right: 15px; font-size: 10px; font-family: sans-serif; color: rgba(255,255,255,0.7); background: rgba(0,0,0,0.3); padding: 3px 6px; border-radius: 4px; z-index: 100;`;
                             attrDiv.textContent = attrHTML;
                             clone.appendChild(attrDiv);
                         }
 
-                        const style = document.createElement('style');
-                        style.innerHTML = `#${clone.id}, #${clone.id} * { transition: none !important; animation: none !important; } #${clone.id} .preview-card:hover .preview-card-inner { transform: none !important; box-shadow: var(--active-card-shadow, none) !important; }`;
-                        clone.appendChild(style);
+                        document.body.appendChild(clone);
 
-                        clone.style.position = 'absolute';
-                        clone.style.left = '-9999px';
-                        clone.style.top = '0px';
-                        clone.style.borderRadius = '0';
-                        clone.style.width = `${effectiveRenderWidth}px`;
-                        clone.style.maxWidth = 'none';
-                        if (isCustomWidth && !s.lockAspectRatio) {
-                            const cloneHeight = targetHeight / scale;
-                            clone.style.height = `${cloneHeight}px`;
-                            clone.style.overflow = 'hidden'; 
+
+                        this.showLoading('等待资源渲染...');
+
+                        const images = Array.from(clone.querySelectorAll('img'));
+                        if (images.length > 0) {
+                            await Promise.all(images.map(img => {
+                                if (img.complete && img.naturalHeight > 0) return Promise.resolve();
+                                return new Promise(resolve => {
+                                    img.onload = () => resolve();
+                                    img.onerror = () => resolve();
+                                    const s = img.src; img.src = s;
+                                    setTimeout(resolve, 2500);
+                                });
+                            }));
                         }
 
-                        document.body.appendChild(clone);
+                        void clone.offsetWidth;
                         await this.sleep(100);
 
-                        this.showLoading('正在计算瀑布流布局...');
-                        const masonryBlocks = this.state.blocks.filter(b => b.settings.masonryEnabled);
+                        const masonryBlocks = this.state.blocks.filter(b => b.settings.masonryEnabled && ['dual', 'triple'].includes(b.settings.layout));
                         if (masonryBlocks.length > 0) {
+                            this.showLoading('计算布局...');
                             await this.loadScript('https://cdn.bootcdn.net/ajax/libs/masonry/4.2.2/masonry.pkgd.min.js');
                             for (const block of masonryBlocks) {
-                                const containerInClone = clone.querySelector(`.preview-block-wrapper[data-block-id="${block.id}"] .preview-cards-container`);
-                                if (containerInClone) {
-                                    containerInClone.classList.add('masonry-active');
-                                    const itemSelector = block.type === 'text' ? '.preview-card' : 'figure';
-                                    const msnry = new Masonry(containerInClone, { itemSelector: itemSelector, gutter: 15 });
-                                    msnry.layout();
+                                const wrapper = clone.querySelector(`.preview-block-wrapper[data-block-id="${block.id}"]`);
+                                const container = wrapper ? wrapper.querySelector('.preview-cards-container') : null;
+                                if (container) {
+                                    container.classList.add('masonry-active');
+                                    new Masonry(container, {
+                                        itemSelector: block.type === 'text' ? '.preview-card' : 'figure',
+                                        gutter: 15,
+                                        percentPosition: true,
+                                        initLayout: true
+                                    }).layout();
                                 }
                             }
-                            await this.sleep(200);
+                            await this.sleep(400);
                         }
 
-                        this.showLoading('正在处理样式 (烘焙)...');
-                        await this.bakeOverlaysForExport(clone);
-                        await this.sleep(100);
-
-                        this.showLoading('正在渲染图片...');
+                        this.showLoading('生成像素...');
+                        await safeBakeOverlays(clone);
 
                         const canvas = await html2canvas(clone, {
                             scale: scale,
                             useCORS: true,
                             backgroundColor: null,
                             logging: false,
+                            windowWidth: document.documentElement.offsetWidth,
+                            windowHeight: document.documentElement.offsetHeight
                         });
-                        
+
                         let finalCanvas = canvas;
+                        const exportRounded = panel.querySelector('#export-rounded-corners-toggle').checked;
+                        const cornerRadius = parseInt(panel.querySelector('#export-corner-radius-input').value, 10) || 20;
 
                         if (exportRounded && cornerRadius > 0) {
-                            this.showLoading('正在应用圆角...');
                             const roundedCanvas = document.createElement('canvas');
                             roundedCanvas.width = finalCanvas.width;
                             roundedCanvas.height = finalCanvas.height;
                             const ctx = roundedCanvas.getContext('2d');
-                            const scaledRadius = cornerRadius * scale;
-
+                            const r = cornerRadius * scale;
                             ctx.beginPath();
-                            ctx.moveTo(scaledRadius, 0);
-                            ctx.lineTo(roundedCanvas.width - scaledRadius, 0);
-                            ctx.arcTo(roundedCanvas.width, 0, roundedCanvas.width, scaledRadius, scaledRadius);
-                            ctx.lineTo(roundedCanvas.width, roundedCanvas.height - scaledRadius);
-                            ctx.arcTo(roundedCanvas.width, roundedCanvas.height, roundedCanvas.width - scaledRadius, roundedCanvas.height, scaledRadius);
-                            ctx.lineTo(scaledRadius, roundedCanvas.height);
-                            ctx.arcTo(0, roundedCanvas.height, 0, roundedCanvas.height - scaledRadius, scaledRadius);
-                            ctx.lineTo(0, scaledRadius);
-                            ctx.arcTo(0, 0, scaledRadius, 0, scaledRadius);
+                            ctx.moveTo(r, 0);
+                            ctx.lineTo(roundedCanvas.width - r, 0);
+                            ctx.arcTo(roundedCanvas.width, 0, roundedCanvas.width, r, r);
+                            ctx.lineTo(roundedCanvas.width, roundedCanvas.height - r);
+                            ctx.arcTo(roundedCanvas.width, roundedCanvas.height, roundedCanvas.width - r, roundedCanvas.height, r);
+                            ctx.lineTo(r, roundedCanvas.height);
+                            ctx.arcTo(0, roundedCanvas.height, 0, roundedCanvas.height - r, r);
+                            ctx.lineTo(0, r);
+                            ctx.arcTo(0, 0, r, 0, r);
                             ctx.closePath();
                             ctx.clip();
                             ctx.drawImage(finalCanvas, 0, 0);
@@ -4593,19 +4675,25 @@
 
                         const dataUrl = finalCanvas.toDataURL('image/png');
                         const filename = this.generateFilename('Image') + '.png';
+
+                        this.hideLoading();
+
                         this.showDownloadModal(dataUrl, filename, '图片已生成');
 
                     } catch (err) {
-                        console.error("PNG 导出失败:", err);
-                        this.showErrorModal('导出失败', `生成图片时发生错误: ${err.message}.`);
-                    } finally {
-                        if (clone && clone.parentNode) {
-                            clone.parentNode.removeChild(clone);
-                        }
-                        if (wasLayerOpen) this.togglePanelDrawer('layer-panel');
-                        if (wasInspectorOpen) this.togglePanelDrawer('inspector-panel');
-                        document.body.classList.remove('export-mode');
+                        console.error(err);
                         this.hideLoading();
+                        this.showErrorModal('导出失败', err.message);
+                    } finally {
+                        try {
+                            if (clone && clone.parentNode) clone.parentNode.removeChild(clone);
+                            document.body.classList.remove('export-mode');
+                            if (wasLayerOpen) this.togglePanelDrawer('layer-panel');
+                            if (wasInspectorOpen) this.togglePanelDrawer('inspector-panel');
+                        } catch (cleanupErr) {
+                            console.warn('Cleanup warning:', cleanupErr);
+                        }
+
                     }
                 },
 
@@ -4617,7 +4705,7 @@
                     if (attr && attr.user) {
                         wrapper.innerHTML = `<a href="${attr.pageURL}" target="_blank" style="margin-left: 5px; font-weight: normal;">(查看作者: ${this.escapeHTML(attr.user)})</a>`;
                     } else {
-                         wrapper.innerHTML = '';
+                        wrapper.innerHTML = '';
                     }
                 },
 
@@ -4626,9 +4714,9 @@
                     const el = this.elements.previewWrapper;
                     const panel = this.elements.inspectorPanel;
                     if (!el || !panel) return;
-                    
+
                     const customWidthToggle = panel.querySelector('#custom-width-toggle');
-                    
+
                     if (customWidthToggle && customWidthToggle.checked && !s.lockAspectRatio) {
                         const aspectRatio = s.customWidth / s.customHeight;
                         el.style.aspectRatio = `${aspectRatio}`;
@@ -4649,7 +4737,7 @@
                     const customWidthToggle = document.getElementById('custom-width-toggle');
                     const hdExportToggle = document.getElementById('hd-export-toggle');
                     if (!customWidthToggle || !hdExportToggle || !mobileExportToggle) return;
-                    
+
                     const s = this.state.exportSettings;
                     const isMobileExport = mobileExportToggle.checked;
                     const isCustomWidth = customWidthToggle.checked;
@@ -4805,6 +4893,314 @@
                         toast.remove();
                     }, 5000);
                 },
+                // --- 新功能：预览区右键菜单 ---
+                bindPreviewContextMenu() {
+                    const menu = document.getElementById('preview-context-menu');
+                    this.elements.previewPanel.addEventListener('contextmenu', (e) => {
+                        // 移动端不触发
+                        if ('ontouchstart' in window || navigator.maxTouchPoints > 0) return;
+
+                        const cardEl = e.target.closest('.preview-card');
+                        const blockEl = e.target.closest('.preview-block-wrapper');
+
+                        if (blockEl) {
+                            e.preventDefault(); // 关键：拦截浏览器默认菜单
+                        } else {
+                            menu.style.display = 'none';
+                            return; // 点击空白处显示系统菜单
+                        }
+
+                        const blockId = blockEl.dataset.blockId;
+                        const cardId = cardEl ? cardEl.dataset.cardId : null;
+                        const block = this.findBlock(blockId);
+                        if (!block) return;
+
+                        const isHidden = block.isVisible === false;
+
+                        let menuHTML = `<ul style="list-style:none; margin:0; padding:0;">`;
+
+                        // 1. 卡片操作
+                        if (cardId && block.type === 'text') {
+                            const card = block.cards.find(c => c.id === cardId);
+                            const isVertical = card.writingMode === 'vertical-rl';
+                            menuHTML += `<li data-action="toggle-vertical" style="border-bottom:1px solid var(--border-color)">${isVertical ? '<span class="iconify" data-icon="mdi:format-text-variant"></span> 横排文字' : '<span class="iconify" data-icon="mdi:format-text-direction-vertical"></span> 竖排文字（实验性功能）'}</li>`;
+                            menuHTML += `<li data-action="delete-card" style="color:var(--color-danger); border-bottom:1px solid var(--border-color)"><span class="iconify" data-icon="mdi:delete-outline"></span> 删除此卡片</li>`;
+                        }
+
+                        // 2. 区块操作
+                        menuHTML += `<li data-action="copy-block"><span class="iconify" data-icon="mdi:content-copy"></span> 复制区块</li>`;
+                        menuHTML += `<li data-action="toggle-block">${isHidden ? '<span class="iconify" data-icon="mdi:eye"></span> 显示区块' : '<span class="iconify" data-icon="mdi:eye-off"></span> 隐藏区块'}</li>`;
+                        menuHTML += `<li data-action="delete-block" style="color:var(--color-danger); border-top:1px solid var(--border-color)"><span class="iconify" data-icon="mdi:trash-can-outline"></span> 删除整个区块</li>`;
+                        menuHTML += `</ul>`;
+
+                        menu.innerHTML = menuHTML;
+                        menu.style.display = 'block';
+
+                        // 定位逻辑
+                        const rect = menu.getBoundingClientRect();
+                        let x = e.clientX;
+                        let y = e.clientY;
+                        if (x + rect.width > window.innerWidth) x -= rect.width;
+                        if (y + rect.height > window.innerHeight) y -= rect.height;
+                        menu.style.left = x + 'px';
+                        menu.style.top = y + 'px';
+
+                        // 绑定点击
+                        menu.onclick = (ev) => {
+                            const li = ev.target.closest('li');
+                            if (!li) return;
+                            const action = li.dataset.action;
+
+                            if (action === 'toggle-block') this.toggleBlockVisibility(blockId);
+                            if (action === 'copy-block') this.duplicateBlock(blockId);
+                            if (action === 'delete-block') this.deleteBlock(blockId);
+                            if (action === 'delete-card') this.deleteCard(blockId, cardId);
+                            if (action === 'toggle-vertical') {
+                                const card = block.cards.find(c => c.id === cardId);
+                                const newMode = card.writingMode === 'vertical-rl' ? 'horizontal-tb' : 'vertical-rl';
+                                this.updateCard(blockId, cardId, 'writingMode', newMode, true, '切换文字排列方向');
+                                // 强制重绘预览卡片
+                                this.renderPreviewCardById(blockId, cardId);
+                                // 如果是瀑布流，需要重排
+                                if (block.settings.masonryEnabled) this.initMasonryForBlock(blockId);
+                            }
+                            menu.style.display = 'none';
+                        };
+                    });
+                },
+
+                // --- 新功能：历史记录快捷回滚 (PC右键/手机长按) ---
+                bindHistoryContextEvents() {
+                    const list = this.elements.inspectorPanel.querySelector('#history-list');
+                    if (!list) return;
+
+                    const handleAction = async (index) => {
+                        const confirmed = await this.showConfirm(
+                            '确认回滚',
+                            `确定要回滚到步骤 "${this.history[index].description}" 吗？\n注意：此步骤之后的所有操作记录将被丢弃。`
+                        );
+                        if (confirmed) {
+                            this.jumpToHistory(index, '已回滚状态');
+                        }
+                    };
+
+                    // PC 右键
+                    list.oncontextmenu = (e) => {
+                        const item = e.target.closest('.history-item');
+                        if (item) {
+                            e.preventDefault();
+                            handleAction(parseInt(item.dataset.index));
+                        }
+                    };
+
+                    // 手机长按
+                    let pressTimer;
+                    list.ontouchstart = (e) => {
+                        const item = e.target.closest('.history-item');
+                        if (item) {
+                            pressTimer = setTimeout(() => {
+                                handleAction(parseInt(item.dataset.index));
+                            }, 800);
+                        }
+                    };
+                    const clear = () => clearTimeout(pressTimer);
+                    list.ontouchend = clear;
+                    list.ontouchmove = clear;
+                },
+
+
+                // --- 重写：QR码样式分享与导入系统 (安全围栏版) ---
+                initShareSystem() {
+                    const modal = document.getElementById('share-style-modal');
+                    const exportView = document.getElementById('qr-export-view');
+                    const importView = document.getElementById('qr-import-view');
+                    const container = document.getElementById('qrcode-container');
+                    const fileInput = document.getElementById('qr-file-input');
+                    const statusText = document.getElementById('qr-scan-status');
+
+                    // 1. Tab 切换逻辑
+                    modal.querySelectorAll('.tab-btn').forEach(btn => {
+                        btn.onclick = async () => {
+                            modal.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                            btn.classList.add('active');
+                            const isExport = btn.dataset.qrTab === 'export';
+                            exportView.style.display = isExport ? 'block' : 'none';
+                            importView.style.display = isExport ? 'none' : 'block';
+                            statusText.textContent = '';
+                            if (isExport) {
+                                // 异步调用，增加 loading 提示
+                                container.innerHTML = '<div class="spinner" style="margin: 20px auto;"></div>';
+                                await this.generateQRCode(container);
+                            }
+                        };
+                    });
+
+                    // 2. 绑定上传按钮
+                    document.getElementById('upload-qr-btn').onclick = () => fileInput.click();
+
+                    // 3. 绑定文件读取与解析 
+                    fileInput.onchange = async (e) => {
+                        const file = e.target.files[0];
+                        if (!file) return;
+
+                        statusText.innerHTML = '<div class="spinner" style="width:20px;height:20px;border-width:2px;display:inline-block;vertical-align:middle;margin-right:5px;"></div>正在深度解析...';
+                        statusText.style.color = 'var(--text-primary)';
+
+                        try {
+                            // 异步加载 ZXing
+                            await this.loadScript('https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js');
+                            
+                            const imageUrl = URL.createObjectURL(file);
+                            const codeReader = new ZXing.BrowserQRCodeReader();
+
+                            const result = await codeReader.decodeFromImageUrl(imageUrl);
+
+                            URL.revokeObjectURL(imageUrl); // 释放内存
+
+                            if (result && result.text) {
+                                await this.applySharedStyle(result.text);
+                            } else {
+                                throw new Error("No QR found");
+                            }
+                        } catch (err) {
+                            console.warn("ZXing Scan Error:", err);
+                            let msg = '❌ 图片中未找到有效的 Blokko 样式二维码。';
+
+                            // 额外的容错提示
+                            if (file.size > 2 * 1024 * 1024) {
+                                msg += ' (图片可能过大，请尝试裁剪二维码区域后上传)';
+                            }
+
+                            statusText.textContent = msg;
+                            statusText.style.color = 'var(--color-danger)';
+                        } finally {
+                            fileInput.value = '';
+                        }
+                    };
+                },
+
+
+                async generateQRCode(container) {
+                    try {
+                        // 并行加载所需的库
+                        await Promise.all([
+                            this.loadScript('https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js'),
+                            this.loadScript('https://cdn.bootcdn.net/ajax/libs/lz-string/1.5.0/lz-string.min.js')
+                        ]);
+
+                        const styleData = {
+                            gt: this.state.globalTheme,
+                            ps: this.deepClone(this.state.pageStyles),
+                            gcs: this.state.globalCardStyles,
+                            gbs: this.state.globalButtonStyles,
+                            gbr: this.state.globalBorderSettings
+                        };
+                        styleData.ps.pageBgImageDataUrl = null;
+                        styleData.ps.pageBgImageAttribution = null;
+
+                        const jsonString = JSON.stringify(styleData);
+                        const compressed = LZString.compressToEncodedURIComponent(jsonString);
+                        const payload = `BLOKKO_STYLE_V1:${compressed}`;
+
+                        container.innerHTML = '';
+                        new QRCode(container, {
+                            text: payload,
+                            width: 360,
+                            height: 360,
+                            colorDark: "#000000",
+                            colorLight: "#ffffff",
+                            correctLevel: QRCode.CorrectLevel.L
+                        });
+                    } catch (e) {
+                        console.error("QR Generation failed:", e);
+                        container.innerHTML = '<p style="color:red">组件加载失败，请检查网络。</p>';
+                    }
+                },
+
+                // 应用分享的样式 (含安全校验)
+                async applySharedStyle(rawData) {
+                    const statusText = document.getElementById('qr-scan-status');
+
+                    // 1. 安全围栏第一道：检查 Magic Header
+                    if (!rawData.startsWith('BLOKKO_STYLE_V1:')) {
+                        statusText.textContent = '⚠️ 这是一个未知的二维码，为了安全已被拦截。';
+                        statusText.style.color = 'var(--color-danger)';
+                        return;
+                    }
+
+                    try {
+                        // 异步加载解析和净化组件
+                        await Promise.all([
+                            this.loadScript('https://cdn.bootcdn.net/ajax/libs/lz-string/1.5.0/lz-string.min.js'),
+                            this.loadScript('https://cdn.bootcdn.net/ajax/libs/dompurify/3.0.6/purify.min.js')
+                        ]);
+
+                        // 2. 解压数据
+                        const compressed = rawData.split('BLOKKO_STYLE_V1:')[1];
+                        const jsonStr = LZString.decompressFromEncodedURIComponent(compressed);
+                        if (!jsonStr) throw new Error("数据损坏");
+
+                        const styleData = JSON.parse(jsonStr);
+
+                        // 3. XSS 清洗
+                        const sanitizeObj = (obj) => {
+                            for (let key in obj) {
+                                if (typeof obj[key] === 'string') {
+                                    obj[key] = DOMPurify.sanitize(obj[key]);
+                                } else if (typeof obj[key] === 'object' && obj[key] !== null) {
+                                    sanitizeObj(obj[key]);
+                                }
+                            }
+                        };
+                        sanitizeObj(styleData);
+
+                        statusText.textContent = '✅ 校验通过！请在弹窗中确认。';
+                        statusText.style.color = 'green';
+
+                        // 4. 最终确认
+                        const confirmed = await this.showConfirm(
+                            '导入样式',
+                            '二维码解析成功！是否应用此样式模板？\n\n(注意：这将覆盖当前的【颜色、圆角、边框】设置。)'
+                        );
+
+                        if (confirmed) {
+                            this.pushHistory('应用分享样式');
+                            if (styleData.gt) this.state.globalTheme = styleData.gt;
+                            if (styleData.ps) this.state.pageStyles = styleData.ps;
+                            if (styleData.gcs) this.state.globalCardStyles = styleData.gcs;
+                            if (styleData.gbs) this.state.globalButtonStyles = styleData.gbs;
+                            if (styleData.gbr) this.state.globalBorderSettings = styleData.gbr;
+
+                            this.debouncedSaveToLocal();
+                            this.renderAll();
+                            this.syncAllControls();
+                            this.showToast('样式模板已应用！', 'success');
+                            document.getElementById('share-style-modal').classList.remove('visible');
+                        } else {
+                            statusText.textContent = '已取消导入。';
+                            statusText.style.color = 'var(--text-secondary)';
+                        }
+
+                    } catch (e) {
+                        console.error(e);
+                        statusText.textContent = '❌ 数据解析失败，文件可能已损坏。';
+                        statusText.style.color = 'var(--color-danger)';
+                    }
+                },
+
+                openShareModal() {
+                    const modal = document.getElementById('share-style-modal');
+                    modal.classList.add('visible');
+                    
+                    // 确保事件已绑定
+                    const exportBtn = modal.querySelector('.tab-btn[data-qr-tab="export"]');
+                    if (!exportBtn.onclick) { 
+                        this.initShareSystem();
+                    }
+                    
+                    // 触发点击以生成二维码
+                    if (exportBtn) exportBtn.click();
+                },
 
                 updateGlobalThemeVars() {
                     const t = this.state.globalTheme;
@@ -4831,13 +5227,13 @@
                     r.setProperty('--g-card-content-font-size', g.contentFontSize);
                     r.setProperty('--g-card-text-stroke', g.textStrokeWidth > 0 ? `${g.textStrokeWidth}px ${g.textStrokeColor}` : '0px transparent');
                     r.setProperty('--g-card-padding', `${g.padding}px`);
-                    
+
                     r.setProperty('--g-button-bg-color', gBtn.bgColor);
                     r.setProperty('--g-button-text-color', gBtn.textColor);
                     r.setProperty('--g-button-border-radius', `${gBtn.radius}px`);
                     r.setProperty('--g-button-text-align', gBtn.textAlign);
                 },
-                
+
                 updateGlobalBorderVars() {
                     const b = this.state.globalBorderSettings;
                     const r = document.documentElement.style;
@@ -4846,7 +5242,7 @@
                     r.setProperty('--g-border-color', b.color);
                     r.setProperty('--g-border-shadow-offset', `${b.shadowOffset}px`);
                     r.setProperty('--g-border-shadow-color', b.shadowColor);
-                    
+
                     document.querySelectorAll('.preview-block-wrapper, .preview-header, .preview-card, .preview-button, figure').forEach(el => {
                         el.dataset.borderStyle = b.style;
                         if (b.style === 'double-offset') el.style.zIndex = '1';
@@ -5290,11 +5686,11 @@
 
                 setSelection(newSelection) {
                     this.selection = newSelection;
-                    
-                    if(newSelection.type !== 'global'){
-                         this.updateState('ui.activeInspectorTab', 'selected', false);
+
+                    if (newSelection.type !== 'global') {
+                        this.updateState('ui.activeInspectorTab', 'selected', false);
                     }
-                    
+
                     this.updateHighlights();
                     this.renderInspector();
                 },
@@ -5423,30 +5819,30 @@
                         tabContent.classList.add('active');
                     }
                 },
-                
+
                 async applyRandomPalette() {
-                     try {
+                    try {
                         await this.loadScript('https://cdn.bootcdn.net/ajax/libs/chroma-js/2.4.2/chroma.min.js');
                     } catch (e) {
                         this.showErrorModal('加载失败', '颜色库 chroma.js 加载失败，请检查网络。');
                         return;
                     }
-                    
+
                     this.pushHistory('应用随机配色');
-                    
+
                     const baseColor = chroma.random();
                     const palette = chroma.scale([baseColor, baseColor.set('hsl.h', '+150')]).mode('lch').colors(5);
 
                     this.updateState('pageStyles.pageBgSolidColor', chroma.mix(palette[0], 'white', 0.9).hex(), false);
                     this.updateState('pageStyles.headerBgColor', '#ffffff', false);
                     this.updateState('pageStyles.headerTextColor', palette[4], false);
-                    
+
                     this.updateState('globalCardStyles.bgColor', '#ffffff', false);
                     this.updateState('globalCardStyles.textColor', palette[4], false);
                     this.updateState('globalButtonStyles.bgColor', palette[2], false);
                     this.updateState('globalButtonStyles.textColor', '#ffffff', false);
 
-                    this.renderAll(); 
+                    this.renderAll();
                     this.syncAllControls();
                     this.showToast('随机配色已应用！', 'success');
                 },
@@ -5518,13 +5914,13 @@
                     container.querySelectorAll('figure[data-card-id] img, .music-cover').forEach(img => {
                         const blockEl = img.closest('.preview-block-wrapper');
                         if (!blockEl) return;
-                        
+
                         const blockId = blockEl.dataset.blockId;
                         const block = this.findBlock(blockId);
                         if (!block) return;
-                        
+
                         let dataObject, urlKey;
-                        
+
                         if (img.matches('.music-cover')) {
                             dataObject = block.settings;
                             urlKey = 'coverArt';
@@ -5533,7 +5929,7 @@
                             dataObject = block.cards.find(c => c.id === cardId);
                             urlKey = 'url';
                         }
-                        
+
                         if (dataObject && dataObject[urlKey]) {
                             const promise = new Promise(async (resolve) => {
                                 img.addEventListener('load', resolve, { once: true });
@@ -5607,7 +6003,7 @@
                         // 强制从默认状态获取完整模板，确保settings字段完整
                         const defaultState = this.getDefaultState();
                         const blockTemplate = defaultState.blocks.find(b => b.type === type);
-                        
+
                         if (!blockTemplate) {
                             // 紧急后备：如果默认状态里也没找到（极少见），手动构建基础结构
                             newBlock = { type: type, title: '新区块', isVisible: true, isExpanded: true, settings: {}, cards: [] };
@@ -5648,7 +6044,7 @@
                             }
                         }
                         if (block.type === 'music' && block.settings.coverArt) {
-                             await this.deleteImageByUrl(block.settings.coverArt);
+                            await this.deleteImageByUrl(block.settings.coverArt);
                         }
 
                         this.destroyMasonryForBlock(blockId);
@@ -5739,7 +6135,7 @@
                         const type = randChoice(blockTypes);
                         let newBlock = this.deepClone(this.getDefaultState().blocks.find(b => b.type === type));
                         newBlock.id = this.generateId('b');
-                        newBlock.title = `随机区块 ${i+1}`;
+                        newBlock.title = `随机区块 ${i + 1}`;
                         if (newBlock.cards) {
                             newBlock.cards.forEach(c => c.id = this.generateId('c'));
                         }
