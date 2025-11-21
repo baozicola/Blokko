@@ -1,5 +1,5 @@
 
-        // Anti-FOUC (Flash of Unstyled Content) 脚本，防止加载时样式闪烁
+        // Anti-FOUC (Flash of Unstyled Content) 脚本
         try {
             if (localStorage.getItem('blokkoTheme') === 'dark') {
                 document.documentElement.classList.add('dark-mode');
@@ -165,15 +165,16 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             /**
-             * @description Blokko 主应用对象，封装了所有状态管理和UI逻辑。
+             * @description Blokko 2.0 主应用对象，封装了所有状态管理和UI逻辑。
              * @type {object}
              */
             const App = {
+                version: '2.0.0',
                 pixabayApiKey: '53274475-6295c67fa26c85aa8b2331ee7',
                 db: null, // 数据库实例
                 isStorageFull: false, // 标记浏览器存储空间是否已满
                 state: {}, // 应用的核心状态对象，包含所有用户数据和设置
-                selection: { type: 'global', cardId: null }, // 当前选中的编辑目标
+                selection: { type: 'global', itemId: null }, // 当前选中的编辑目标
                 history: [], // 操作历史记录，用于实现撤销/重做
                 historyIndex: -1, // 当前历史记录的指针
                 isRestoringState: false, // 标记是否正在从历史记录中恢复状态，防止触发不必要的回调
@@ -188,11 +189,6 @@
                 sortablePreview: null,
                 sortableTags: null,
                 sortablePreviewTags: null,
-                cardLayerSortables: {},
-                cardSortables: {},
-                imageCardSortables: {},
-                buttonCardSortables: {},
-                masonryInstances: {}, // Masonry 瀑布流布局实例
                 debouncedSaveToLocal: null, // 防抖处理后的本地保存函数
                 localFonts: [], // 从用户本地系统加载的字体列表
                 uploadedFonts: [], // 用户上传的字体元信息列表
@@ -206,17 +202,20 @@
                 easterEggCounter: 0, // 彩蛋点击计数器
                 easterEggTimer: null, // 彩蛋计时器
                 tooltipTimeout: null, // 提示框 (Tooltip) 的显示计时器
+                stashedBorderRadius: null, // 用于暂存被禁用的圆角值
 
                 /**
                  * @description 应用初始化入口函数。
                  */
                 init() {
-                    console.log("Blokko 初始化 v1.8.1 ...");
+                    console.log(`Blokko 初始化 v${this.version} ...`);
 
                     this.elements = this.queryElements();
                     this.presets = this.getPresets();
                     this.state = this.getDefaultState();
                     this.debouncedSaveToLocal = this.debounce(this.saveToLocal, 500);
+                    
+                    this.debouncedApplySmartPalette = this.debounce(this.applySmartPalette, 200);
 
                     this.initDB().then(async () => {
                         this.bindCoreEvents();
@@ -243,7 +242,6 @@
                             this.initAllSortables();
                         }, 0);
 
-                        const currentVersion = '1.8.1';
                         const lastVisitedVersion = localStorage.getItem('blokkoLastVersion');
                         const hasSeenTutorial = localStorage.getItem('blokkoHasSeenTutorial');
 
@@ -253,15 +251,15 @@
                                 const helpContainer = this.elements.helpModal.querySelector('.modal-container');
                                 helpContainer.querySelector('.tab-btn[data-tab="help-tutorial"]').click();
                                 localStorage.setItem('blokkoHasSeenTutorial', 'true');
-                                localStorage.setItem('blokkoLastVersion', currentVersion);
+                                localStorage.setItem('blokkoLastVersion', this.version);
                             }, 1000);
-                        } else if (currentVersion !== lastVisitedVersion) {
+                        } else if (this.version !== lastVisitedVersion) {
                             setTimeout(() => {
-                                this.showToast(`已更新到 v${currentVersion}！点击“帮助”查看更新日志。`, 'success');
+                                this.showToast(`已更新到 v${this.version}！点击“帮助”查看更新日志。`, 'success');
                                 this.elements.helpModal.classList.add('visible');
                                 this.elements.helpModal.querySelector('.tab-btn[data-tab="help-changelog"]').click();
                             }, 1500);
-                            localStorage.setItem('blokkoLastVersion', currentVersion);
+                            localStorage.setItem('blokkoLastVersion', this.version);
                         }
 
                     }).catch(err => {
@@ -276,11 +274,14 @@
                 getDefaultState() {
                     const lightTheme = this.getPresets().light;
                     return {
+                        version: this.version,
                         ui: { // 用户界面相关的状态
                             activeInspectorTab: 'global'
                         },
-                        systemSettings: { // 系统级设置
-                            exportFilePrefix: 'Blokko'
+                        systemSettings: {
+                            exportFilePrefix: 'Blokko',
+                            masonryEnabled: false,
+                            previewGap: 20
                         },
                         globalTheme: { // 全局色板
                             primary: '#007AFF',
@@ -330,54 +331,33 @@
                             shadowColor: '#000000',
                             applyTo: {
                                 personalInfo: true,
-                                textBlocks: false,
-                                imageBlocks: false,
-                                buttonBlocks: false,
-                                musicBlocks: false,
-                                progressBlocks: false,
-                                timelineBlocks: false,
-                                cardsInTextBlocks: true,
-                                imagesInImageBlocks: true,
-                                buttonsInButtonBlocks: false
+                                card: true,
+                                image: true,
+                                button: false,
+                                music: false,
+                                progress: false,
+                                timeline: false,
+                            },
+                            
+                            globalShadowSettings: {
+                                color: "#000000", opacity: 0, // 默认关闭
+                                offsetX: 0, offsetY: 4, blur: 10,
+                                applyTo: {
+                                    personalInfo: true, card: true, image: true,
+                                    button: false, music: true, progress: false, timeline: false
+                                }
                             }
                         },
-                        blocks: [
-                            {
-                                id: this.generateId('b'), type: 'text', title: "单排卡片区块", isVisible: true, isExpanded: false, settings: { layout: 'single', masonryEnabled: false }, cards: [
-                                    { id: this.generateId('c'), icon: '', title: "这是单排卡片", content: "双击这里或手机端点击铅笔进行编辑，现在支持<b>富文本</b>了哦！", sticker: 'none', imageFillMode: 'cover' }
-                                ]
-                            },
-                            {
-                                id: this.generateId('b'), type: 'button', title: "按钮区块", isVisible: true, isExpanded: false, settings: { gap: 15 }, cards: [
-                                    { id: this.generateId('c'), icon: 'mdi:github', text: "访问我的主页" }
-                                ]
-                            },
-                            {
-                                id: this.generateId('b'), type: 'music', title: '音乐区块', isVisible: true, isExpanded: false, settings: {
-                                    coverArt: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23cccccc'%3E%3Cpath d='M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z'/%3E%3C/svg%3E",
-                                    songTitle: '歌曲名称',
-                                    artist: '歌手',
-                                    lyrics: '上一句歌词\n当前播放的高亮歌词\n下一句歌词',
-                                    currentTime: '01:30', totalTime: '03:45',
-                                    accentColor: lightTheme.accent, bgColor: '#ffffff', opacity: 1, radius: 12
-                                }
-                            },
-                            {
-                                id: this.generateId('b'), type: 'progress', title: '进度条区块', isVisible: true, isExpanded: false, settings: {
-                                    label: '技能点', percentage: 75, color: '#007AFF', trackColor: '#eeeeee', thickness: 8
-                                }
-                            },
-                            {
-                                id: this.generateId('b'), type: 'timeline', title: '时间轴区块', isVisible: true, isExpanded: false, settings: {}, cards: [
-                                    { id: this.generateId('c'), time: '2015-11-21', content: '《时之歌Project》预告发布' },
-                                    { id: this.generateId('c'), time: '2025-11-21', content: '《时之歌Project》十周年快乐！' }
-                                ]
-                            },
-                            { id: this.generateId('b'), type: 'separator', title: "分割线", isVisible: true, isExpanded: false, settings: { style: 'solid', color: '#dddddd', thickness: 1, margin: 20, text: '', icon: null, textColor: '#555555' } },
-                            { id: this.generateId('b'), type: 'image', title: "图片区块", isVisible: true, isExpanded: false, settings: { layout: 'dual', masonryEnabled: false, textColor: '' }, cards: [] },
-                            { id: this.generateId('b'), type: 'spacer', title: "留白块", isVisible: true, isExpanded: false, settings: { height: 20 } },
+                        items: [ 
+                            { id: this.generateId('c'), type: 'card', isVisible: true, title: "这是卡片模块", content: "双击这里或手机端点击铅笔进行编辑，现在支持<b>富文本</b>了哦！", sticker: 'none', imageFillMode: 'cover', layout: { width: 100 } },
+                            { id: this.generateId('c'), type: 'button', isVisible: true, title: "按钮模块", icon: 'mdi:github', text: "访问我的主页", layout: { width: 100 } },
+                            { id: this.generateId('c'), type: 'music', isVisible: true, title: "音乐模块", style: 'default', coverArt: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23cccccc'%3E%3Cpath d='M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z'/%3E%3C/svg%3E", songTitle: '歌曲名称', artist: '歌手', lyrics: '上一句歌词\n当前播放的高亮歌词\n下一句歌词', currentTime: '01:30', totalTime: '03:45', accentColor: lightTheme.accent, bgColor: '#ffffff', opacity: 1, radius: 12, layout: { width: 100 } },
+                            { id: this.generateId('c'), type: 'progress', isVisible: true, title: "进度条模块", label: '技能点', percentage: 75, color: '#007AFF', trackColor: '#eeeeee', thickness: 8, layout: { width: 100 } },
+                            { id: this.generateId('c'), type: 'timeline', isVisible: true, title: "时间轴模块", timeColor: '#888888', accentColor: lightTheme.accent, cards: [{ id: this.generateId('c'), time: '2025-11-21', content: '《时之歌Project》十周年快乐！' }], layout: { width: 100 } },
+                            { id: this.generateId('c'), type: 'separator', isVisible: true, title: "分隔线", style: 'solid', color: '#dddddd', thickness: 1, margin: 20, text: '', icon: null, textColor: '#555555', layout: { width: 100 } },
+                            { id: this.generateId('c'), type: 'spacer', isVisible: true, title: "留白占位", height: 20, layout: { width: 100 } },
                         ],
-                        globalCardStyles: {
+                        globalComponentStyles: { 
                             bgMode: 'solid',
                             bgColor: lightTheme.gCardBgColor, textColor: lightTheme.gCardTextColor, opacity: 1.0,
                             bgGradientStart: lightTheme.gCardBgGradientStart, bgGradientEnd: lightTheme.gCardBgGradientEnd,
@@ -387,13 +367,10 @@
                             titleColor: null,
                             titleFontSize: "1.1em",
                             contentFontSize: "0.95em",
-                            textStrokeWidth: 0, textStrokeColor: "#000000"
-                        },
-                        globalButtonStyles: {
-                            bgColor: '#007AFF',
-                            textColor: '#FFFFFF',
-                            radius: 8,
-                            textAlign: 'center'
+                            textStrokeWidth: 0, textStrokeColor: "#000000",
+                            
+                            shadowOffsetX: 0, shadowOffsetY: 4, shadowBlur: 10,
+                            shadowColor: "#000000", shadowOpacity: 0,
                         },
                         exportSettings: {
                             lockAspectRatio: true,
@@ -417,6 +394,7 @@
                             gCardBgGradientStart: "#ffffff", gCardBgGradientEnd: "#f5f5f5",
                             pNicknameColor: "#1a1a1a", pSubtitleColor: "#555555", pBioColor: "#555555",
                             pTagBgColor: "#eef1f5", pTagTextColor: "#3c3c43",
+                            accent: '#007AFF',
                         },
                         dark: {
                             pageBgSolidColor: "#121417", pageBgGradientStart: "#121417", pageBgGradientEnd: "#1a1d21",
@@ -426,6 +404,7 @@
                             gCardBgGradientStart: "#2c303a", gCardBgGradientEnd: "#343946",
                             pNicknameColor: "#f0f2f5", pSubtitleColor: "#a0aec0", pBioColor: "#a0aec0",
                             pTagBgColor: "#3e4451", pTagTextColor: "#e2e8f0",
+                            accent: '#3498db',
                         },
                         mint: {
                             pageBgSolidColor: "#ccfbf1", pageBgGradientStart: "#ccfbf1", pageBgGradientEnd: "#a7f3d0",
@@ -435,6 +414,7 @@
                             gCardBgGradientStart: "#ffffff", gCardBgGradientEnd: "#fafffd",
                             pNicknameColor: "#064e3b", pSubtitleColor: "#115e59", pBioColor: "#134e4a",
                             pTagBgColor: "#a7f3d0", pTagTextColor: "#065f46",
+                            accent: '#10b981',
                         },
                         coffee: {
                             pageBgSolidColor: "#f3e8e2", pageBgGradientStart: "#f3e8e2", pageBgGradientEnd: "#e9d8cf",
@@ -444,13 +424,13 @@
                             gCardBgGradientStart: "#ffffff", gCardBgGradientEnd: "#fffbf8",
                             pNicknameColor: "#432818", pSubtitleColor: "#6f4e37", pBioColor: "#5e4534",
                             pTagBgColor: "#e3d5ca", pTagTextColor: "#432818",
+                            accent: '#967259',
                         }
                     };
                 },
 
                 /**
                  * @description 查询并缓存所有需要操作的DOM元素。
-                 * @returns {object} - 包含所有DOM元素引用的对象。
                  */
                 queryElements() {
                     const q = (selector) => document.querySelector(selector);
@@ -463,14 +443,16 @@
                         resizer: q('#resizer'),
                         themeToggleBtn: q('#theme-toggle-btn'),
                         previewWrapper: q('#preview-wrapper'), previewOverlay: q('#preview-overlay'),
-                        previewBlocksContainer: q('#preview-blocks-container'),
+                        previewItemsContainer: q('#preview-items-container'),
                         previewHeader: q('#preview-header'),
-                        addTextBlockBtn: q('#add-text-block-btn'), addImageBlockBtn: q('#add-image-block-btn'),
-                        addSeparatorBlockBtn: q('#add-separator-block-btn'), addSpacerBlockBtn: q('#add-spacer-block-btn'),
-                        addButtonBlockBtn: q('#add-button-block-btn'),
-                        addMusicBlockBtn: q('#add-music-block-btn'),
-                        addProgressBlockBtn: q('#add-progress-block-btn'),
-                        addTimelineBlockBtn: q('#add-timeline-block-btn'),
+                        addCardItemBtn: q('#add-card-item-btn'),
+                        addImageItemBtn: q('#add-image-item-btn'),
+                        addButtonItemBtn: q('#add-button-item-btn'),
+                        addMusicItemBtn: q('#add-music-item-btn'),
+                        addProgressItemBtn: q('#add-progress-item-btn'),
+                        addTimelineItemBtn: q('#add-timeline-item-btn'),
+                        addSeparatorItemBtn: q('#add-separator-item-btn'),
+                        addSpacerItemBtn: q('#add-spacer-item-btn'),
                         cropperModal: q('#cropper-modal'), cropperImage: q('#cropper-image'),
                         cropperCancelBtn: q('#cropper-cancel-btn'), cropperSaveBtn: q('#cropper-save-btn'),
                         downloadModal: q('#download-modal'), downloadModalTitle: q('#download-modal-title'),
@@ -513,14 +495,15 @@
                  */
                 bindCoreEvents() {
                     this.elements.themeToggleBtn.addEventListener('click', () => this.toggleTheme());
-                    this.elements.addTextBlockBtn.addEventListener('click', () => this.addBlock('text'));
-                    this.elements.addImageBlockBtn.addEventListener('click', () => this.addBlock('image'));
-                    this.elements.addButtonBlockBtn.addEventListener('click', () => this.addBlock('button'));
-                    this.elements.addMusicBlockBtn.addEventListener('click', () => this.addBlock('music'));
-                    this.elements.addProgressBlockBtn.addEventListener('click', () => this.addBlock('progress'));
-                    this.elements.addTimelineBlockBtn.addEventListener('click', () => this.addBlock('timeline'));
-                    this.elements.addSeparatorBlockBtn.addEventListener('click', () => this.addBlock('separator'));
-                    this.elements.addSpacerBlockBtn.addEventListener('click', () => this.addBlock('spacer'));
+                    this.elements.addCardItemBtn.addEventListener('click', () => this.addItem('card'));
+                    this.elements.addImageItemBtn.addEventListener('click', () => document.getElementById('add-image-file-input').click());
+                    this.elements.addButtonItemBtn.addEventListener('click', () => this.addItem('button'));
+                    this.elements.addMusicItemBtn.addEventListener('click', () => this.addItem('music'));
+                    this.elements.addProgressItemBtn.addEventListener('click', () => this.addItem('progress'));
+                    this.elements.addTimelineItemBtn.addEventListener('click', () => this.addItem('timeline'));
+                    this.elements.addSeparatorItemBtn.addEventListener('click', () => this.addItem('separator'));
+                    this.elements.addSpacerItemBtn.addEventListener('click', () => this.addItem('spacer'));
+
                     this.elements.downloadModalCloseBtn.addEventListener('click', () => this.hideDownloadModal());
                     this.elements.cropperCancelBtn.addEventListener('click', () => this.hideCropper());
                     this.elements.cropperSaveBtn.addEventListener('click', () => this.saveCrop());
@@ -533,9 +516,12 @@
                             const input = document.getElementById('physical-image-upload-input');
                             if (input) input.click();
                         } else if (target.id === 'search-online-btn') {
-                            this.showPixabaySearch();
+                            this.showPixabaySearch(); // 这个函数将在下一步添加
                         }
-                        this.elements.imageSourceModal.classList.remove('visible');
+                        // 点击取消按钮时才关闭
+                        if (target.id !== 'search-online-btn' && target.id !== 'upload-from-device-btn') {
+                            this.elements.imageSourceModal.classList.remove('visible');
+                        }
                     });
 
                     this.elements.pixabaySearchModal.addEventListener('keydown', e => {
@@ -627,6 +613,10 @@
                     this.elements.iconUploadInput.addEventListener('change', e => this.handleIconUpload(e));
 
                     this.elements.lockModeToggle.addEventListener('click', () => this.toggleLockMode());
+                    document.getElementById('add-image-file-input').addEventListener('change', e => {
+                        this.handleImageGalleryUpload(e.target.files);
+                        e.target.value = '';
+                    });
 
                     this.elements.richTextSaveBtn.addEventListener('click', () => this.saveRichText());
                     this.elements.richTextCancelBtn.addEventListener('click', () => this.hideRichTextEditor());
@@ -650,48 +640,22 @@
                     });
 
                     this.elements.layerList.addEventListener('click', e => {
-                        const layerItemContainer = e.target.closest('.layer-item-container');
-                        if (!layerItemContainer) return;
+                        const layerItem = e.target.closest('.layer-item');
+                        if (!layerItem) return;
 
-                        const layerItem = layerItemContainer.querySelector('.layer-item');
-                        const cardItem = e.target.closest('.card-layer-item');
-
-                        const actionBtn = e.target.closest('.layer-actions button, .layer-toggle');
+                        const actionBtn = e.target.closest('.layer-actions button');
                         if (actionBtn) {
-                            const id = layerItem.dataset.id;
-                            const type = layerItem.dataset.type;
+                            const { type, id } = layerItem.dataset;
+                            if (type === 'personalInfo') return;
 
-                            if (type === 'personalInfo') {
-                                return;
-                            }
+                            if (actionBtn.matches('.toggle-visibility-btn')) this.toggleItemVisibility(id);
+                            else if (actionBtn.matches('.duplicate-item-btn')) this.duplicateItem(id);
 
-                            if (actionBtn.matches('.toggle-visibility-btn')) {
-                                this.toggleBlockVisibility(id);
-                            } else if (actionBtn.matches('.duplicate-block-btn')) {
-                                this.duplicateBlock(id);
-                            } else if (actionBtn.matches('.add-card-to-block-btn')) {
-                                const block = this.findBlock(id);
-                                if (['text', 'button', 'timeline'].includes(block.type)) this.addCard(block.type, id, true);
-                                else if (block.type === 'image') this.addImageCard(id);
-                            } else if (actionBtn.matches('.layer-toggle')) {
-                                this.toggleLayerExpansion(id);
-                            }
                             return;
                         }
 
-                        if (cardItem) {
-                            const blockId = cardItem.closest('.layer-item-container').dataset.blockId;
-                            const cardId = cardItem.dataset.cardId;
-                            this.setSelection({ type: 'block', id: blockId, cardId: cardId });
-                            const cardEditorEl = this.elements.inspectorPanel.querySelector(`.editor-card[data-card-id="${cardId}"]`);
-                            if (cardEditorEl) {
-                                cardEditorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                            }
-                        }
-                        else {
-                            const { type, id } = layerItem.dataset;
-                            this.setSelection({ type, id });
-                        }
+                        const { type, id } = layerItem.dataset;
+                        this.setSelection({ type, id });
                     });
 
                     this.elements.texturePickerCloseBtn.addEventListener('click', () => this.elements.texturePickerModal.classList.remove('visible'));
@@ -717,9 +681,9 @@
                             layerNameEl.removeEventListener('blur', handleEditEnd);
                             layerNameEl.removeEventListener('keydown', handleKeydown);
 
-                            const blockId = layerItem.dataset.id;
-                            this.updateBlockTitle(blockId, layerNameEl.innerText, true, `重命名区块为 "${layerNameEl.innerText}"`);
-                            const inspectorTitleInput = this.elements.inspectorPanel.querySelector(`.editor-block[data-block-id="${blockId}"] .editor-block-title-input`);
+                            const itemId = layerItem.dataset.id;
+                            this.updateItem(itemId, 'title', layerNameEl.innerText, true, `重命名模块为 "${layerNameEl.innerText}"`);
+                            const inspectorTitleInput = this.elements.inspectorPanel.querySelector(`.editor-item[data-item-id="${itemId}"] .editor-item-title-input`);
                             if (inspectorTitleInput) inspectorTitleInput.value = layerNameEl.innerText;
                         };
                         const handleKeydown = (ev) => {
@@ -727,7 +691,7 @@
                                 ev.preventDefault();
                                 layerNameEl.blur();
                             } else if (ev.key === 'Escape') {
-                                layerNameEl.innerText = this.findBlock(layerItem.dataset.id).title;
+                                layerNameEl.innerText = this.findItem(layerItem.dataset.id).title;
                                 layerNameEl.blur();
                             }
                         };
@@ -805,6 +769,20 @@
                 bindEditorEvents() {
                     const panel = this.elements.inspectorPanel;
 
+                    // 移动端滑块拖动优化
+                    const handleSliderStart = (e) => {
+                        if (e.target.matches('input[type="range"]')) {
+                            panel.classList.add('is-dragging-slider');
+                            document.addEventListener('touchend', handleSliderEnd, { once: true });
+                            document.addEventListener('mouseup', handleSliderEnd, { once: true });
+                        }
+                    };
+                    const handleSliderEnd = () => {
+                        panel.classList.remove('is-dragging-slider');
+                    };
+                    panel.addEventListener('touchstart', handleSliderStart, { passive: true });
+                    panel.addEventListener('mousedown', handleSliderStart);
+
                     // Inspector Tab 切换
                     panel.querySelector('.inspector-tabs').addEventListener('click', (e) => {
                         const tabBtn = e.target.closest('.inspector-tab-btn');
@@ -818,6 +796,12 @@
                         if (this.isRestoringState) return;
                         const target = e.target;
 
+                        if (target.id === 'smart-palette-input') {
+                            // [修改] 调用防抖后的函数，防止拖动时卡顿
+                            this.debouncedApplySmartPalette(target.value);
+                            return;
+                        }
+
                         if (target.matches('.tag-manager-item .tag-text-input')) {
                             const tagItem = target.closest('.tag-manager-item');
                             if (tagItem) this.updateTag(tagItem.dataset.tagId, 'text', target.value, false);
@@ -828,7 +812,7 @@
                             return;
                         }
 
-                        const updateSource = target.closest('[data-state-key], [data-setting-key], [data-card-key], [data-color-sync-key], [data-block-id-for-title]');
+                        const updateSource = target.closest('[data-state-key], [data-item-key], [data-color-sync-key], [data-item-id-for-title]');
                         if (!updateSource) return;
 
                         let value = target.type === 'checkbox' ? target.checked : (target.type === 'number' || target.type === 'range') ? parseFloat(target.value) : target.value;
@@ -857,20 +841,26 @@
                         const keySource = colorInput || target;
 
                         const stateKey = keySource.dataset.stateKey;
-                        const blockEl = keySource.closest('.editor-block');
-                        const settingKey = keySource.dataset.settingKey;
-                        const cardKey = keySource.dataset.cardKey;
-                        const blockIdForTitle = updateSource.dataset.blockIdForTitle;
+                        const itemEl = keySource.closest('.editor-item');
+                        const itemKey = keySource.dataset.itemKey;
+                        const itemIdForTitle = updateSource.dataset.itemIdForTitle;
 
                         if (stateKey) {
                             this.updateState(stateKey, value, false);
-                        } else if (blockIdForTitle) {
-                            this.updateBlockTitle(blockIdForTitle, value, false);
-                        } else if (blockEl && settingKey) {
-                            this.updateBlockSettings(blockEl.dataset.blockId, settingKey, value, false);
-                        } else if (blockEl && cardKey) {
-                            const cardEl = keySource.closest('.editor-card, .timeline-event-editor');
-                            if (cardEl) this.updateCard(blockEl.dataset.blockId, cardEl.dataset.cardId, cardKey, value, false);
+                            if (stateKey === 'globalBorderSettings.style') {
+                                this.updateBorderRadiusControls();
+                            }
+                        } else if (itemIdForTitle) {
+                            this.updateItem(itemIdForTitle, 'title', value, false);
+                        } else if (itemEl && itemKey) {
+                            this.updateItem(itemEl.dataset.itemId, itemKey, value, false);
+                        }
+
+                        else if (itemEl && keySource.dataset.timelineCardKey) {
+                            const cardEl = keySource.closest('.timeline-event-editor');
+                            if (cardEl) {
+                                this.updateTimelineCard(itemEl.dataset.itemId, cardEl.dataset.cardId, keySource.dataset.timelineCardKey, value, false);
+                            }
                         }
 
                         if (target.type === 'range') {
@@ -905,28 +895,24 @@
                         const target = e.target;
 
                         if (target.matches('.advanced-toggle')) {
-                            const section = target.closest('.editor-section, .editor-card-content, .editor-block-content');
+                            const section = target.closest('.editor-section, .editor-item-content');
                             const isOpen = section.classList.toggle('show-advanced');
 
                             if (section.id) {
                                 localStorage.setItem(`blokko-advanced-${section.id}`, isOpen);
                             } else {
-                                const cardEl = target.closest('.editor-card, .timeline-event-editor');
-                                const blockEl = target.closest('.editor-block');
-
-                                if (cardEl && blockEl) {
-                                    this.updateCard(blockEl.dataset.blockId, cardEl.dataset.cardId, 'isAdvancedOpen', isOpen, false);
-                                } else if (blockEl) {
-                                    this.updateBlockSettings(blockEl.dataset.blockId, 'isAdvancedOpen', isOpen, false);
+                                const itemEl = target.closest('.editor-item');
+                                if (itemEl) {
+                                    this.updateItem(itemEl.dataset.itemId, 'isAdvancedOpen', isOpen, false);
                                 }
                             }
                             return;
                         }
 
-                        if (target.dataset.stateKey || target.closest('.editor-block') || target.dataset.colorSyncKey || target.matches('.tag-manager-item .tag-text-input')) {
+                        if (target.dataset.stateKey || target.closest('.editor-item') || target.dataset.colorSyncKey || target.matches('.tag-manager-item .tag-text-input')) {
                             let description = '修改样式';
                             if (target.dataset.stateKey) description = `修改 ${target.dataset.stateKey.split('.').pop()}`;
-                            if (target.closest('.editor-block')) description = `修改区块设置`;
+                            if (target.closest('.editor-item')) description = `修改模块设置`;
                             if (target.matches('.tag-text-input')) description = '修改标签';
                             this.pushHistory(description);
                         }
@@ -936,7 +922,7 @@
                                 const emojiContainer = panel.querySelector('#emoji-input-container');
                                 if (emojiContainer) emojiContainer.style.display = target.value === 'emoji' ? 'block' : 'none';
                             }
-                            if (target.closest('.editor-card')) {
+                            if (target.closest('.editor-item')) {
                                 this.renderInspectorContent();
                             }
                         }
@@ -952,19 +938,18 @@
                         if (target.matches('#font-upload-input')) this.handleFontUpload(e);
                         if (target.matches('#config-file-input')) this.handleConfigFile(e);
                         if (target.matches('.card-bg-upload')) {
-                            const cardEl = target.closest('.editor-card');
-                            const blockEl = target.closest('.editor-block');
-                            if (cardEl && blockEl) this.handleCardBgUpload(e, blockEl.dataset.blockId, cardEl.dataset.cardId);
+                            const itemEl = target.closest('.editor-item');
+                            if (itemEl) this.handleItemBgUpload(e, itemEl.dataset.itemId);
                         }
                         if (target.matches('.image-upload-input')) {
-                            const blockEl = target.closest('.editor-block');
-                            if (blockEl) {
-                                this.handleImageGalleryUpload(blockEl.dataset.blockId, e.target.files);
+                            const itemEl = target.closest('.editor-item');
+                            if (itemEl) {
+                                this.handleImageGalleryUpload(itemEl.dataset.itemId, e.target.files);
                             }
                         }
                         if (target.matches('#music-cover-upload')) {
-                            const blockEl = target.closest('.editor-block');
-                            if (blockEl) this.handleMusicCoverUpload(e, blockEl.dataset.blockId);
+                            const itemEl = target.closest('.editor-item');
+                            if (itemEl) this.handleMusicCoverUpload(e, itemEl.dataset.itemId);
                         }
 
                         if (target.matches('#lock-aspect-ratio-toggle, #custom-width-input, #custom-height-input')) {
@@ -982,6 +967,7 @@
                             if (target.id === 'mobile-export-toggle') {
                                 this.elements.body.classList.toggle('mobile-export-preview-mode', target.checked);
                                 if (target.checked) {
+                                    this.elements.body.classList.remove('mobile-wide-export-preview');
                                     hdExportToggle.checked = false;
                                     customWidthToggle.checked = false;
                                     customWidthInput.disabled = true;
@@ -1028,20 +1014,6 @@
 
                             this.updateExportSizePreview();
                         }
-
-                        if (target.matches('[name^="block-layout"]')) {
-                            const blockEl = target.closest('.editor-block');
-                            if (blockEl) {
-                                const masonryToggle = blockEl.querySelector('.masonry-toggle-container');
-                                if (masonryToggle) masonryToggle.style.display = ['dual', 'triple'].includes(target.value) ? 'block' : 'none';
-                            }
-                            this.renderInspectorContent();
-                        }
-
-                        if (target.matches('[data-card-key="followGlobalOpacity"]')) {
-                            const opacitySliderGroup = target.closest('.editor-card-content').querySelector('.advanced-setting.opacity-control');
-                            if (opacitySliderGroup) opacitySliderGroup.style.display = target.checked ? 'none' : 'block';
-                        }
                     });
 
                     panel.addEventListener('click', e => {
@@ -1049,13 +1021,12 @@
 
                         const richTextTrigger = target.closest('.rich-text-editor-trigger, .edit-content-btn');
                         if (richTextTrigger) {
-                            const cardEl = richTextTrigger.closest('.editor-card');
-                            const blockEl = richTextTrigger.closest('.editor-block');
-                            if (cardEl && blockEl) {
-                                const cardId = cardEl.dataset.cardId;
-                                const previewCardContent = this.elements.previewBlocksContainer
-                                    .querySelector(`.preview-card[data-card-id="${cardId}"] .preview-card-content`);
-                                if (previewCardContent) this.showRichTextEditor(previewCardContent);
+                            const itemEl = richTextTrigger.closest('.editor-item');
+                            if (itemEl) {
+                                const itemId = itemEl.dataset.itemId;
+                                const previewItemContent = this.elements.previewItemsContainer
+                                    .querySelector(`.preview-item-wrapper[data-item-id="${itemId}"] .preview-card-content`);
+                                if (previewItemContent) this.showRichTextEditor(previewItemContent);
                             }
                             return;
                         }
@@ -1084,6 +1055,32 @@
                         if (legend) {
                             legend.parentElement.classList.toggle('collapsed');
                             return;
+                        }
+
+                        const tabBtn = target.closest('.tabs .tab-btn');
+                        if (tabBtn) {
+                            const parent = tabBtn.closest('.tab-group-wrapper, .editor-section > .section-content');
+                            if (parent) {
+                                parent.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+                                tabBtn.classList.add('active');
+                                parent.querySelectorAll(':scope > .tab-content').forEach(content => content.classList.remove('active'));
+                                const targetTab = parent.querySelector(`#${tabBtn.dataset.tab}`);
+                                if (targetTab) targetTab.classList.add('active');
+
+                                const newMode = tabBtn.dataset.tab.includes('gradient') ? 'gradient' : 'solid';
+
+                                // 关键修复：根据不同的父容器，更新对应的mode状态
+                                if (parent.closest('#global-component-styles-section')) {
+                                    this.updateState('globalComponentStyles.bgMode', newMode, true, '切换全局组件背景模式');
+                                } else if (parent.closest('#page-styles-section')) {
+                                    if (tabBtn.dataset.tab.startsWith('page-bg-')) {
+                                        this.updateState('pageStyles.pageBgMode', newMode, true, '切换页面背景模式');
+                                    } else if (tabBtn.dataset.tab.startsWith('header-bg-')) {
+                                        this.updateState('pageStyles.headerBgMode', newMode, true, '切换头部背景模式');
+                                    }
+                                }
+                                return; // 处理完Tab点击，提前返回
+                            }
                         }
 
                         const actionButton = target.closest('button, .back-to-global-btn');
@@ -1120,6 +1117,7 @@
                                 this.showToast('头像位置与大小已重置', 'info');
                             },
                             '#random-palette-btn': () => this.applyRandomPalette(),
+                            '#smart-palette-btn': () => panel.querySelector('#smart-palette-input')?.click(),
                         };
                         for (const selector in actions) {
                             if (actionButton.matches(selector)) {
@@ -1154,67 +1152,31 @@
                             return;
                         }
 
-                        const blockEl = target.closest('.editor-block');
-                        if (blockEl) {
-                            const blockId = blockEl.dataset.blockId;
-                            if (target.closest('.block-delete-btn')) { this.deleteBlock(blockId); }
-                            else if (target.closest('.add-card-btn')) this.addCard('text', blockId);
-                            else if (target.closest('.add-button-card-btn')) this.addCard('button', blockId);
-                            else if (target.closest('.add-image-btn')) this.addImageCard(blockId);
-                            else if (target.closest('.add-timeline-event-btn')) this.addCard('timeline', blockId);
-
-                            const cardEl = target.closest('.editor-card, .timeline-event-editor');
-                            if (cardEl) {
-                                const cardId = cardEl.dataset.cardId;
-                                if (target.closest('.card-delete-btn')) this.deleteCard(blockId, cardId);
-                                else if (target.closest('.card-clear-bg-btn')) {
-                                    const card = this.findBlock(blockId)?.cards.find(c => c.id === cardId);
-                                    const oldImageUrl = card?.bgImageDataUrl;
-                                    this.updateCard(blockId, cardId, 'bgImageDataUrl', null, true, '清除卡片背景图');
-                                    this.deleteImageByUrl(oldImageUrl);
-                                    this.showToast('卡片背景图已清除', 'info');
-                                }
-                                else if (target.closest('.crop-image-btn')) this.cropImage(blockId, cardId);
-                                else if (target.closest('.select-icon-btn')) {
-                                    this.initIconPicker();
-                                    const block = this.findBlock(blockId);
-                                    const pickerType = block.type === 'button' ? 'button' : 'card';
-                                    this.showIconPicker(pickerType, blockId, cardId);
-                                }
-                                else if (target.closest('[data-reset-card-key]')) {
-                                    const keyToReset = target.closest('[data-reset-card-key]').dataset.resetCardKey;
-                                    this.updateCard(blockId, cardId, keyToReset, null, true, '重置卡片样式');
-                                    this.showToast('已重置为全局样式', 'info');
-                                }
-                            } else if (target.closest('.select-icon-btn[data-separator-icon-btn]')) {
-                                this.initIconPicker();
-                                this.showIconPicker('separator', blockId);
-                            } else if (target.closest('[data-reset-block-key]')) {
-                                const keyToReset = target.closest('[data-reset-block-key]').dataset.resetBlockKey;
-                                this.updateBlockSettings(blockId, keyToReset, null, true, '重置区块样式');
-                                this.showToast('已重置', 'info');
+                        const itemEl = target.closest('.editor-item');
+                        if (itemEl) {
+                            const itemId = itemEl.dataset.itemId;
+                            if (target.closest('.item-delete-btn')) { this.deleteItem(itemId); }
+                            else if (target.closest('.card-delete-btn')) {
+                                const cardEl = target.closest('.timeline-event-editor');
+                                if (cardEl) this.deleteTimelineCard(itemId, cardEl.dataset.cardId);
                             }
-                        }
-
-                        const tabBtn = target.closest('.tabs .tab-btn');
-                        if (tabBtn) {
-                            const parent = tabBtn.closest('.tab-group-wrapper, .editor-section > .section-content, .editor-section > .inset-controls');
-                            if (!parent) return;
-                            parent.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-                            tabBtn.classList.add('active');
-                            parent.querySelectorAll(':scope > .tab-content').forEach(content => content.classList.remove('active'));
-                            const targetTab = parent.querySelector(`#${tabBtn.dataset.tab}`);
-                            if (targetTab) targetTab.classList.add('active');
-
-                            const newMode = tabBtn.dataset.tab.includes('gradient') ? 'gradient' : 'solid';
-                            if (parent.closest('#global-card-styles-section')) {
-                                this.updateState('globalCardStyles.bgMode', newMode, true, '切换全局卡片背景模式');
-                            } else if (parent.closest('#page-styles-section')) {
-                                if (tabBtn.dataset.tab.startsWith('page-bg')) {
-                                    this.updateState('pageStyles.pageBgMode', newMode, true, '切换页面背景模式');
-                                } else if (tabBtn.dataset.tab.startsWith('header-bg')) {
-                                    this.updateState('pageStyles.headerBgMode', newMode, true, '切换头部背景模式');
-                                }
+                            else if (target.closest('.add-timeline-event-btn')) this.addTimelineEvent(itemId);
+                            else if (target.closest('.card-clear-bg-btn')) {
+                                const item = this.findItem(itemId);
+                                const oldImageUrl = item?.bgImageDataUrl;
+                                this.updateItem(itemId, 'bgImageDataUrl', null, true, '清除卡片背景图');
+                                this.deleteImageByUrl(oldImageUrl);
+                                this.showToast('卡片背景图已清除', 'info');
+                            }
+                            else if (target.closest('.crop-image-btn')) this.cropImage(itemId);
+                            else if (target.closest('.select-icon-btn')) {
+                                this.initIconPicker();
+                                this.showIconPicker('item', itemId);
+                            }
+                            else if (target.closest('[data-reset-item-key]')) {
+                                const keyToReset = target.closest('[data-reset-item-key]').dataset.resetItemKey;
+                                this.updateItem(itemId, keyToReset, null, true, '重置模块样式');
+                                this.showToast('已重置为全局样式', 'info');
                             }
                         }
                     });
@@ -1281,9 +1243,9 @@
                             e.preventDefault();
                             e.stopPropagation();
                             const target = pencil.parentElement;
-                            if (target.matches('.preview-card-content[data-card-key="content"]')) {
+                            if (target.matches('.preview-card-content[data-item-key="content"]')) {
                                 this.showRichTextEditor(target);
-                            } else if (target.closest('[data-state-key], [data-card-key], [data-tag-text-id], [data-separator-text-key]')) {
+                            } else if (target.closest('[data-state-key], [data-item-key], [data-tag-text-id], [data-separator-text-key]')) {
                                 this.triggerInlineEdit(target);
                             }
                             return;
@@ -1310,17 +1272,9 @@
                             return;
                         }
 
-                        const blockWrapper = e.target.closest('.preview-block-wrapper');
-                        if (blockWrapper && blockWrapper.dataset.blockId) {
-                            const cardWrapper = e.target.closest('.preview-card, figure, .preview-button, .timeline-event, .progress-bar-preview, .music-card-preview');
-                            const cardId = cardWrapper ? cardWrapper.dataset.cardId : null;
-                            this.setSelection({ type: 'block', id: blockWrapper.dataset.blockId, cardId: cardId });
-                            if (cardId) {
-                                const cardEditorEl = this.elements.inspectorPanel.querySelector(`.editor-card[data-card-id="${cardId}"], .timeline-event-editor[data-card-id="${cardId}"]`);
-                                if (cardEditorEl) {
-                                    cardEditorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                }
-                            }
+                        const itemWrapper = e.target.closest('.preview-item-wrapper');
+                        if (itemWrapper && itemWrapper.dataset.itemId) {
+                            this.setSelection({ type: 'item', id: itemWrapper.dataset.itemId });
                         } else {
                             if (e.target.closest('.preview-wrapper')) {
                                 this.setSelection({ type: 'global' });
@@ -1329,15 +1283,15 @@
                     });
 
                     this.elements.previewWrapper.addEventListener('dblclick', e => {
-                        if (this.elements.previewBlocksContainer.classList.contains('locked-mode')) return;
+                        if (this.elements.previewItemsContainer.classList.contains('locked-mode')) return;
 
-                        const cardContentTarget = e.target.closest('.preview-card-content[data-card-key="content"]');
+                        const cardContentTarget = e.target.closest('.preview-card-content[data-item-key="content"]');
                         if (cardContentTarget) {
                             this.showRichTextEditor(cardContentTarget);
                             return;
                         }
 
-                        const target = e.target.closest('[data-state-key], [data-card-key], [data-tag-text-id], [data-separator-text-key]');
+                        const target = e.target.closest('[data-state-key], [data-item-key], [data-tag-text-id], [data-separator-text-key]');
                         if (target) {
                             this.triggerInlineEdit(target);
                         }
@@ -1347,8 +1301,7 @@
                         const target = e.target;
                         if (target.contentEditable === 'true') {
                             const stateKey = target.dataset.stateKey;
-                            const cardKey = target.dataset.cardKey;
-                            const separatorKey = target.dataset.separatorTextKey;
+                            const itemKey = target.dataset.itemKey;
                             const tagId = target.dataset.tagTextId;
                             const value = target.innerText;
 
@@ -1362,23 +1315,16 @@
                             if (stateKey) {
                                 updateStateObject(stateKey, value);
                                 this.syncControl(stateKey);
-                            } else if (cardKey) {
-                                const cardEl = target.closest('.preview-card, figure, .preview-button, .timeline-event');
-                                const blockEl = target.closest('.preview-block-wrapper');
-                                if (cardEl && blockEl) {
-                                    const block = this.findBlock(blockEl.dataset.blockId);
-                                    const card = block?.cards.find(c => c.id === cardEl.dataset.cardId);
-                                    if (card) card[cardKey] = value;
+                            } else if (itemKey) {
+                                const itemEl = target.closest('.preview-item-wrapper');
+                                if (itemEl) {
+                                    const item = this.findItem(itemEl.dataset.itemId);
+                                    if (item) item[itemKey] = value;
 
-                                    const editorInput = this.elements.inspectorPanel.querySelector(`[data-card-id="${cardEl.dataset.cardId}"] [data-card-key="${cardKey}"]`);
+                                    const editorInput = this.elements.inspectorPanel.querySelector(`[data-item-id="${itemEl.dataset.itemId}"] [data-item-key="${itemKey}"]`);
                                     if (editorInput) editorInput.value = value;
                                     this.renderLayerPanel();
                                 }
-                            } else if (separatorKey) {
-                                const block = this.findBlock(separatorKey);
-                                if (block) block.settings.text = value;
-                                const editorInput = this.elements.inspectorPanel.querySelector(`.editor-block[data-block-id="${separatorKey}"] [data-setting-key="text"]`);
-                                if (editorInput) editorInput.value = value;
                             } else if (tagId) {
                                 const tag = this.state.personalInfo.tags.find(t => t.id === tagId);
                                 if (tag) {
@@ -1391,38 +1337,27 @@
                     });
 
                     this.elements.previewWrapper.addEventListener('touchstart', e => {
-                        if (this.elements.previewBlocksContainer.classList.contains('locked-mode')) return;
+                        if (this.elements.previewItemsContainer.classList.contains('locked-mode')) return;
 
                         clearTimeout(this.longPressTimer);
 
                         this.longPressTimer = setTimeout(() => {
                             e.preventDefault();
+                            this.vibrate(70);
 
                             let selection = null;
                             let controlToHighlight = null;
 
-                            const cardTarget = e.target.closest('.preview-card, figure, .preview-button');
-                            const blockWrapperTarget = e.target.closest('.preview-block-wrapper');
+                            const itemWrapperTarget = e.target.closest('.preview-item-wrapper');
                             const headerTarget = e.target.closest('.preview-header');
-                            const separatorTarget = e.target.closest('.separator-preview');
-                            const spacerTarget = e.target.closest('.spacer-preview');
 
-                            if (cardTarget && blockWrapperTarget) {
-                                const blockId = blockWrapperTarget.dataset.blockId;
-                                const cardId = cardTarget.dataset.cardId;
-                                selection = { type: 'block', id: blockId, cardId: cardId };
-                                controlToHighlight = `[data-card-id="${cardId}"]`;
-                            } else if ((separatorTarget || spacerTarget) && blockWrapperTarget) {
-                                const blockId = blockWrapperTarget.dataset.blockId;
-                                selection = { type: 'block', id: blockId };
-                                controlToHighlight = `.editor-block[data-block-id="${blockId}"]`;
+                            if (itemWrapperTarget) {
+                                const itemId = itemWrapperTarget.dataset.itemId;
+                                selection = { type: 'item', id: itemId };
+                                controlToHighlight = `.editor-item[data-item-id="${itemId}"]`;
                             } else if (headerTarget) {
                                 selection = { type: 'personalInfo' };
                                 controlToHighlight = '#personal-info-section';
-                            } else if (blockWrapperTarget) {
-                                const blockId = blockWrapperTarget.dataset.blockId;
-                                selection = { type: 'block', id: blockId };
-                                controlToHighlight = `.editor-block[data-block-id="${blockId}"]`;
                             }
 
                             if (selection) {
@@ -1434,7 +1369,7 @@
                                         const control = this.elements.inspectorPanel.querySelector(controlToHighlight);
                                         if (control) {
                                             control.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                            const highlightTarget = control.closest('.editor-section, .editor-card, .timeline-event-editor');
+                                            const highlightTarget = control.closest('.editor-section, .editor-item');
                                             if (highlightTarget) {
                                                 highlightTarget.classList.remove('highlight-animation');
                                                 void highlightTarget.offsetWidth;
@@ -1470,11 +1405,6 @@
                         target.removeEventListener('keydown', handleKeydown);
 
                         this.pushHistory('编辑文本');
-
-                        const blockEl = target.closest('.preview-block-wrapper');
-                        if (blockEl && this.masonryInstances[blockEl.dataset.blockId]) {
-                            this.masonryInstances[blockEl.dataset.blockId].layout();
-                        }
                     };
 
                     const handleKeydown = (ev) => {
@@ -1513,7 +1443,6 @@
                             const newWidth = window.innerWidth - e.clientX;
                             if (newWidth > 350 && newWidth < window.innerWidth * 0.6) {
                                 inspectorPanel.style.width = `${newWidth}px`;
-                                this.relayoutAllMasonry();
                             }
                             animationFrameId = null;
                         });
@@ -1530,12 +1459,14 @@
                     };
                 },
 
-                /**
-                 * @description 重新计算所有瀑布流布局。
-                 */
-                relayoutAllMasonry() {
-                    Object.values(this.masonryInstances).forEach(m => m && m.layout());
-                    this.updateExportSizePreview();
+                bindResizeListener() {
+                    window.addEventListener('resize', this.debounce(() => {
+                        // 只有在紧凑模式开启时才需要重新计算
+                        if (this.state.systemSettings.masonryEnabled) {
+                            this.applyGridCompactLayout();
+                        }
+                        this.updateExportSizePreview();
+                    }, 200));
                 },
 
                 /**
@@ -1543,15 +1474,15 @@
                  * @param {boolean} isInitial - 是否是首次渲染。
                  */
                 renderAll(isInitial = false) {
-                    this.updateGlobalThemeVars();
-                    this.updateGlobalCardStyleVars();
+                    this.updateGlobalComponentStyleVars();
                     this.updateGlobalBorderVars();
                     this.renderPersonalInfo();
                     this.renderPageStyles();
                     this.renderLayerPanel();
                     this.renderInspector();
-                    this.renderPreviewBlocks();
+                    this.renderPreviewItems();
                     this.renderMobileEditPencils();
+                    this.applyLayout();
                 },
 
                 /**
@@ -1563,6 +1494,8 @@
 
                     const borderSettings = this.state.globalBorderSettings;
                     header.classList.toggle('apply-global-border', borderSettings.applyTo.personalInfo);
+                    
+                    header.classList.toggle('apply-global-shadow', borderSettings.globalShadowSettings?.applyTo?.personalInfo);
                     header.dataset.borderStyle = borderSettings.style;
 
                     let innerHTML;
@@ -1753,13 +1686,12 @@
                  */
                 renderLayerPanel() {
                     const list = this.elements.layerList;
-                    const { type, id, cardId } = this.selection;
+                    const { type, id } = this.selection;
                     const info = this.state.personalInfo;
                     const isInfoHidden = info.isVisible === false;
 
                     let html = `<div class="layer-item-container">
                                     <div class="layer-item ${type === 'personalInfo' ? 'selected' : ''}" data-type="personalInfo">
-                                        <button class="layer-toggle"></button>
                                         <span class="layer-icon iconify" data-icon="mdi:account-circle-outline"></span>
                                         <span class="layer-name">个人信息</span>
                                         <div class="layer-actions">
@@ -1767,44 +1699,25 @@
                                     </div>
                                </div><hr>`;
 
-                    html += this.state.blocks.map(b => {
-                        const iconMap = { text: 'mdi:format-text-variant-outline', image: 'mdi:image-multiple-outline', button: 'mdi:button-pointer', separator: 'mdi:minus', spacer: 'mdi:arrow-expand-vertical', music: 'mdi:music-box-outline', progress: 'mdi:progress-check', timeline: 'mdi:timeline-text-outline' };
-                        const isHidden = b.isVisible === false;
-                        const isExpandable = ['text', 'image', 'button', 'timeline'].includes(b.type) && b.cards && b.cards.length > 0;
-                        const isExpanded = b.isExpanded ? 'is-expanded' : '';
-                        const hasQuickAdd = ['text', 'image', 'button', 'timeline'].includes(b.type);
+                    html += this.state.items.map(item => {
+                        const iconMap = { card: 'mdi:format-text-variant-outline', image: 'mdi:image-multiple-outline', button: 'mdi:button-pointer', separator: 'mdi:minus', spacer: 'mdi:arrow-expand-vertical', music: 'mdi:music-box-outline', progress: 'mdi:progress-check', timeline: 'mdi:timeline-text-outline' };
+                        const isHidden = item.isVisible === false;
 
-                        const cardsListHTML = isExpandable ? `<ul class="card-layer-list" data-block-id="${b.id}">
-                            ${b.cards.map(c => {
-                            let cardName;
-                            switch (b.type) {
-                                case 'button': cardName = c.text || '无文字按钮'; break;
-                                case 'timeline': cardName = c.time || '无时间事件'; break;
-                                default: cardName = c.title || '无标题卡片';
-                            }
-                            return `<li class="card-layer-item ${cardId === c.id ? 'selected' : ''}" data-card-id="${c.id}">${this.escapeHTML(cardName)}</li>`
-                        }).join('')}
-                        </ul>` : '';
+                        const title = item.title || item.text || item.label || `${item.type}模块`;
 
-                        const quickAddBtn = hasQuickAdd ? `<button class="btn-icon add-card-to-block-btn" title="添加项目"><span class="iconify" data-icon="mdi:plus"></span></button>` : '';
-
-                        return `<div class="layer-item-container ${isExpandable ? 'is-expandable' : ''} ${isExpanded}" data-block-id="${b.id}">
-                                    <div class="layer-item ${type === 'block' && id === b.id ? 'selected' : ''} ${isHidden ? 'is-hidden' : ''}" data-type="block" data-id="${b.id}">
-                                        <button class="layer-toggle"><span class="iconify" data-icon="mdi:chevron-right"></span></button>
-                                        <span class="layer-icon iconify" data-icon="${iconMap[b.type]}"></span>
-                                        <span class="layer-name">${this.escapeHTML(b.title)}</span>
+                        return `<div class="layer-item-container">
+                                    <div class="layer-item ${type === 'item' && id === item.id ? 'selected' : ''} ${isHidden ? 'is-hidden' : ''}" data-type="item" data-id="${item.id}">
+                                        <span class="layer-icon iconify" data-icon="${iconMap[item.type] || 'mdi:puzzle-outline'}"></span>
+                                        <span class="layer-name">${this.escapeHTML(title)}</span>
                                         <div class="layer-actions">
-                                            ${quickAddBtn}
                                             <button class="btn-icon toggle-visibility-btn" title="切换显示/隐藏"><span class="iconify" data-icon="${isHidden ? 'mdi:eye-off' : 'mdi:eye'}"></span></button>
-                                            <button class="btn-icon duplicate-block-btn" title="复制样式"><span class="iconify" data-icon="mdi:content-copy"></span></button>
+                                            <button class="btn-icon duplicate-item-btn" title="复制样式"><span class="iconify" data-icon="mdi:content-copy"></span></button>
                                         </div>
                                     </div>
-                                    ${cardsListHTML}
                                 </div>`;
                     }).join('');
 
                     list.innerHTML = html;
-                    this.initNestedSortables();
                 },
 
                 /**
@@ -1849,13 +1762,12 @@
                             const { type, id } = this.selection;
                             if (type === 'personalInfo') {
                                 html = this.createPersonalInfoInspectorHTML();
-                            } else if (type === 'block') {
-                                const block = this.findBlock(id);
-                                if (block) {
-                                    html = this.createEditorBlockHTML(block);
+                            } else if (type === 'item') {
+                                const item = this.findItem(id);
+                                if (item) {
+                                    html = this.createEditorItemHTML(item);
                                 } else {
-                                    // 保护逻辑：如果选中的区块ID不存在（可能刚被删除），显示占位符并重置选中状态
-                                    html = `<div class="inspector-placeholder"><span class="iconify" data-icon="mdi:alert-circle-outline"></span><p>未找到选中的区块<br>请重新选择。</p></div>`;
+                                    html = `<div class="inspector-placeholder"><span class="iconify" data-icon="mdi:alert-circle-outline"></span><p>未找到选中的模块<br>请重新选择。</p></div>`;
                                 }
                             } else {
                                 html = `<div class="inspector-placeholder"><span class="iconify" data-icon="mdi:cursor-default-click-outline"></span><p>在左侧预览区点击一个元素<br>或在内容图层中选择一项<br>来编辑其样式。</p></div>`;
@@ -1892,26 +1804,16 @@
                     } else if (activeTab === 'selected') {
                         // 异步加载图片缩略图
                         container.querySelectorAll('.thumbnail-wrapper img, .music-cover-thumb img').forEach(img => {
-                            let cardId, blockId;
-                            const cardEl = img.closest('.editor-card, .timeline-event-editor');
-                            if (cardEl) cardId = cardEl.dataset.cardId;
+                            let itemId;
+                            const itemEl = img.closest('.editor-item');
+                            if (itemEl) itemId = itemEl.dataset.itemId;
 
-                            const blockEl = img.closest('.editor-block');
-                            if (blockEl) blockId = blockEl.dataset.blockId;
+                            if (itemId) {
+                                const item = this.findItem(itemId);
+                                if (!item) return;
 
-                            if (blockId) {
-                                const block = this.findBlock(blockId);
-                                if (!block) return;
-
-                                let dataObject = block.settings; // 默认为区块设置 (用于音乐封面)
-                                let urlKey = 'coverArt';
-
-                                if (cardId) { // 如果是卡片内图片
-                                    dataObject = block.cards?.find(c => c.id === cardId);
-                                    urlKey = 'url';
-                                }
-
-                                if (dataObject && dataObject[urlKey]) {
+                                let urlKey = (item.type === 'music') ? 'coverArt' : 'url';
+                                if (item && item[urlKey]) {
                                     const setSrc = async (url) => {
                                         if (url && url.startsWith('idb://')) {
                                             const imageId = url.substring(6);
@@ -1921,20 +1823,16 @@
                                             img.src = url;
                                         }
                                     };
-                                    setSrc(dataObject[urlKey]);
+                                    setSrc(item[urlKey]);
                                 }
                             }
                         });
 
-                        // 初始化拖拽排序
                         const { type, id } = this.selection;
-                        if (type === 'block') {
-                            const block = this.findBlock(id);
-                            if (block) {
-                                if (block.type === 'text') this.initSortableCards(id);
-                                else if (block.type === 'image') this.initSortableImageCards(id);
-                                else if (block.type === 'button') this.initSortableButtonCards(id);
-                                else if (block.type === 'timeline') this.initSortableTimelineEvents(id);
+                        if (type === 'item') {
+                            const item = this.findItem(id);
+                            if (item && item.type === 'timeline') {
+                                this.initSortableTimelineEvents(id);
                             }
                         } else if (type === 'personalInfo') {
                             this.renderTagManager();
@@ -1944,6 +1842,7 @@
 
                     this.syncAllControls();
                     this.updateUndoRedoButtons();
+                    this.updateBorderRadiusControls();
                 },
 
                 createGlobalInspectorHTML() {
@@ -1999,6 +1898,26 @@
                                 </div>
                             </div>
                         </fieldset>
+<fieldset class="editor-section" id="global-layout-section">
+    <legend>布局设置</legend>
+    <div class="section-content">
+        <div class="form-group">
+            <label>模块间距 (px): <span class="gap-value">20</span></label>
+            <div class="input-group simple stepper-group">
+                <button class="btn btn-default btn-stepper minus" aria-label="减少">-</button>
+                <input type="range" data-state-key="systemSettings.previewGap" min="0" max="40" step="2">
+                <button class="btn btn-default btn-stepper plus" aria-label="增加">+</button>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="checkbox-group">
+                <input type="checkbox" data-state-key="systemSettings.masonryEnabled">
+                启用紧凑布局 (实验性)
+                <span class="tooltip-trigger" data-tooltip="使用CSS Grid技术智能排列模块，最大限度减少垂直空白，同时严格保持您的拖拽顺序。推荐在模块排布完成后开启。"><span class="iconify" data-icon="mdi:help-circle-outline"></span></span>
+            </label>
+        </div>
+    </div>
+</fieldset>
                         <fieldset class="editor-section" id="global-border-section">
                             <legend>🖼️ 全局边框样式</legend>
                             <div class="section-content">
@@ -2014,47 +1933,61 @@
                                 <h4>2. 选择应用目标</h4>
                                 <div class="form-group border-apply-to-list">
                                     <label class="checkbox-group is-parent"><input type="checkbox" data-state-key="globalBorderSettings.applyTo.personalInfo">个人信息面板</label>
-                                    <label class="checkbox-group is-parent"><input type="checkbox" data-state-key="globalBorderSettings.applyTo.cardsInTextBlocks">文本卡片</label>
-                                    <label class="checkbox-group is-parent"><input type="checkbox" data-state-key="globalBorderSettings.applyTo.imagesInImageBlocks">图片</label>
-                                    <label class="checkbox-group is-parent"><input type="checkbox" data-state-key="globalBorderSettings.applyTo.buttonsInButtonBlocks">按钮</label>
+                                    <label class="checkbox-group is-parent"><input type="checkbox" data-state-key="globalBorderSettings.applyTo.card">卡片模块</label>
+                                    <label class="checkbox-group is-parent"><input type="checkbox" data-state-key="globalBorderSettings.applyTo.image">图片模块</label>
+                                    <label class="checkbox-group is-parent"><input type="checkbox" data-state-key="globalBorderSettings.applyTo.button">按钮模块</label>
+                                    <label class="checkbox-group is-parent"><input type="checkbox" data-state-key="globalBorderSettings.applyTo.music">音乐模块</label>
+                                    <label class="checkbox-group is-parent"><input type="checkbox" data-state-key="globalBorderSettings.applyTo.timeline">时间轴模块</label>
+                                </div>
+                                <hr class="separator">
+                                <!-- [新增] 位于边框面板内的阴影设置 -->
+                                <div class="section-header" style="margin-bottom: 10px;"><h4 style="margin: 0;">🌫️ 全局阴影</h4></div>
+                                <div class="color-control-row">
+                                    <div class="color-control-group"><label>颜色:</label><div class="input-group"><input type="color" data-state-key="globalBorderSettings.globalShadowSettings.color"><input type="text" class="color-hex-input" data-state-key="globalBorderSettings.globalShadowSettings.color"></div></div>
+                                    <div class="color-control-group"><label>强度 (不透明度):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-state-key="globalBorderSettings.globalShadowSettings.opacity" min="0" max="1" step="0.05"><button class="btn btn-default btn-stepper plus">+</button></div></div>
+                                </div>
+                                <div class="color-control-row" style="margin-top: 8px;">
+                                    <div class="color-control-group"><label>X 偏移:</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-state-key="globalBorderSettings.globalShadowSettings.offsetX" min="-20" max="20" step="1"><button class="btn btn-default btn-stepper plus">+</button></div></div>
+                                    <div class="color-control-group"><label>Y 偏移:</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-state-key="globalBorderSettings.globalShadowSettings.offsetY" min="-20" max="20" step="1"><button class="btn btn-default btn-stepper plus">+</button></div></div>
+                                </div>
+                                <div class="form-group" style="margin-top: 8px;"><label>模糊半径 (Blur):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-state-key="globalBorderSettings.globalShadowSettings.blur" min="0" max="50" step="1"><button class="btn btn-default btn-stepper plus">+</button></div></div>
+                                
+                                <div class="form-group border-apply-to-list" style="margin-top: 15px;">
+                                    <label style="display:block; margin-bottom:5px; font-weight:600;">阴影应用到:</label>
+                                    <label class="checkbox-group is-parent"><input type="checkbox" data-state-key="globalBorderSettings.globalShadowSettings.applyTo.personalInfo">个人信息</label>
+                                    <label class="checkbox-group is-parent"><input type="checkbox" data-state-key="globalBorderSettings.globalShadowSettings.applyTo.card">卡片</label>
+                                    <label class="checkbox-group is-parent"><input type="checkbox" data-state-key="globalBorderSettings.globalShadowSettings.applyTo.image">图片</label>
+                                    <label class="checkbox-group is-parent"><input type="checkbox" data-state-key="globalBorderSettings.globalShadowSettings.applyTo.button">按钮</label>
+                                    <label class="checkbox-group is-parent"><input type="checkbox" data-state-key="globalBorderSettings.globalShadowSettings.applyTo.music">音乐</label>
+                                    <label class="checkbox-group is-parent"><input type="checkbox" data-state-key="globalBorderSettings.globalShadowSettings.applyTo.timeline">时间轴</label>
                                 </div>
                             </div>
                         </fieldset>
-                        <fieldset class="editor-section" id="global-card-styles-section">
-                            <legend>全局卡片样式</legend>
+                         <fieldset class="editor-section" id="global-component-styles-section">
+                            <legend>全局组件样式</legend>
                             <div class="section-content">
                                 <div style="text-align: right; margin-bottom: 10px;"><label class="checkbox-group advanced-toggle-label"><input type="checkbox" class="advanced-toggle"> 高级</label></div>
-                                <div class="tabs"><button class="tab-btn" data-tab="card-bg-solid">纯色</button><button class="tab-btn advanced-setting" data-tab="card-bg-gradient">渐变</button></div>
-                                <div id="card-bg-solid" class="tab-content"><div class="color-control-row"><div class="color-control-group"><label>背景色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.bgColor"><input type="text" class="color-hex-input" data-state-key="globalCardStyles.bgColor"></div></div><div class="color-control-group"><label>不透明度:</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-state-key="globalCardStyles.opacity" min="0" max="1" step="0.05"><button class="btn btn-default btn-stepper plus">+</button></div></div></div></div>
-                                <div id="card-bg-gradient" class="tab-content advanced-setting"><div class="gradient-controls"><div class="form-group"><label>起始颜色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.bgGradientStart"><input type="text" class="color-hex-input" data-state-key="globalCardStyles.bgGradientStart"></div></div><div class="form-group"><label>结束颜色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.bgGradientEnd"><input type="text" class="color-hex-input" data-state-key="globalCardStyles.bgGradientEnd"></div></div><div class="gradient-angle-control form-group"><label>角度 (<span class="angle-value">135</span>°):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-state-key="globalCardStyles.bgGradientAngle" min="0" max="360" step="1"><button class="btn btn-default btn-stepper plus">+</button></div></div></div></div>
-                                <div class="form-group"><label>圆角 (px): <span id="gCardRadiusValue">12</span></label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-state-key="globalCardStyles.radius" min="0" max="40" step="1"><button class="btn btn-default btn-stepper plus">+</button></div></div>
-                                <div class="form-group"><label>内边距 (px): <span class="padding-value">15</span></label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-state-key="globalCardStyles.padding" min="0" max="40" step="1"><button class="btn btn-default btn-stepper plus">+</button></div></div>
+                                <div class="tabs"><button class="tab-btn" data-tab="comp-bg-solid">纯色</button><button class="tab-btn advanced-setting" data-tab="comp-bg-gradient">渐变</button></div>
+                                <div id="comp-bg-solid" class="tab-content"><div class="color-control-row"><div class="color-control-group"><label>背景色:</label><div class="input-group"><input type="color" data-state-key="globalComponentStyles.bgColor"><input type="text" class="color-hex-input" data-state-key="globalComponentStyles.bgColor"></div></div><div class="color-control-group"><label>不透明度:</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-state-key="globalComponentStyles.opacity" min="0" max="1" step="0.05"><button class="btn btn-default btn-stepper plus">+</button></div></div></div></div>
+                                <div id="comp-bg-gradient" class="tab-content advanced-setting"><div class="gradient-controls"><div class="form-group"><label>起始颜色:</label><div class="input-group"><input type="color" data-state-key="globalComponentStyles.bgGradientStart"><input type="text" class="color-hex-input" data-state-key="globalComponentStyles.bgGradientStart"></div></div><div class="form-group"><label>结束颜色:</label><div class="input-group"><input type="color" data-state-key="globalComponentStyles.bgGradientEnd"><input type="text" class="color-hex-input" data-state-key="globalComponentStyles.bgGradientEnd"></div></div><div class="gradient-angle-control form-group"><label>角度 (<span class="angle-value">135</span>°):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-state-key="globalComponentStyles.bgGradientAngle" min="0" max="360" step="1"><button class="btn btn-default btn-stepper plus">+</button></div></div></div></div>
+                                <div class="form-group"><label>圆角 (px): <span id="gCompRadiusValue">12</span></label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-state-key="globalComponentStyles.radius" min="0" max="40" step="1"><button class="btn btn-default btn-stepper plus">+</button></div></div>
+                                <div class="form-group"><label>内边距 (px): <span class="padding-value">15</span></label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-state-key="globalComponentStyles.padding" min="0" max="40" step="1"><button class="btn btn-default btn-stepper plus">+</button></div></div>
                                 <hr class="separator">
                                 <div class="color-control-row">
-                                    <div class="color-control-group"><label>标题颜色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.titleColor"><input type="text" class="color-hex-input" data-state-key="globalCardStyles.titleColor" placeholder="同正文色"></div></div>
-                                    <div class="color-control-group"><label>正文颜色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.textColor"><input type="text" class="color-hex-input" data-state-key="globalCardStyles.textColor"></div></div>
+                                    <div class="color-control-group"><label>组件背景色:</label><div class="input-group"><input type="color" data-state-key="globalComponentStyles.bgColor"><input type="text" class="color-hex-input" data-state-key="globalComponentStyles.bgColor"></div></div>
+                                    <div class="color-control-group"><label>组件文字颜色:</label><div class="input-group"><input type="color" data-state-key="globalComponentStyles.textColor"><input type="text" class="color-hex-input" data-state-key="globalComponentStyles.textColor"></div></div>
                                 </div>
-                                <div class="form-group"><label>对齐:</label><div class="radio-group"><label><input type="radio" name="gCardAlign" value="left" data-state-key="globalCardStyles.textAlign">居左</label><label><input type="radio" name="gCardAlign" value="center" data-state-key="globalCardStyles.textAlign">居中</label><label><input type="radio" name="gCardAlign" value="right" data-state-key="globalCardStyles.textAlign">居右</label></div></div>
-                                <div class="form-group"><label>行高:</label><div class="radio-group"><label><input type="radio" name="gCardLineHeight" value="1.4" data-state-key="globalCardStyles.lineHeight">紧凑</label><label><input type="radio" name="gCardLineHeight" value="1.5" data-state-key="globalCardStyles.lineHeight">中等</label><label><input type="radio" name="gCardLineHeight" value="1.6" data-state-key="globalCardStyles.lineHeight">宽松</label></div></div>
+                                <div class="form-group" style="margin-top: 10px;"><label>标题颜色:</label><div class="input-group"><input type="color" data-state-key="globalComponentStyles.titleColor"><input type="text" class="color-hex-input" data-state-key="globalComponentStyles.titleColor" placeholder="同文字颜色"></div></div>
+                                <div class="form-group"><label>对齐:</label><div class="radio-group"><label><input type="radio" name="gCompAlign" value="left" data-state-key="globalComponentStyles.textAlign">居左</label><label><input type="radio" name="gCompAlign" value="center" data-state-key="globalComponentStyles.textAlign">居中</label><label><input type="radio" name="gCompAlign" value="right" data-state-key="globalComponentStyles.textAlign">居右</label></div></div>
+                                <div class="form-group"><label>行高:</label><div class="radio-group"><label><input type="radio" name="gCompLineHeight" value="1.4" data-state-key="globalComponentStyles.lineHeight">紧凑</label><label><input type="radio" name="gCompLineHeight" value="1.5" data-state-key="globalComponentStyles.lineHeight">中等</label><label><input type="radio" name="gCompLineHeight" value="1.6" data-state-key="globalComponentStyles.lineHeight">宽松</label></div></div>
                                 <hr class="separator">
-                                <div class="form-group"><label>字体:</label><div class="font-controls"><input type="text" id="font-search-input" placeholder="搜索本地字体..." style="margin-bottom: 5px;"><select id="font-family-select" data-state-key="globalCardStyles.fontFamily"></select><div class="buttons"><button id="load-local-fonts-btn" class="btn btn-default">加载本地</button><button id="upload-font-btn" class="btn btn-default">上传字体</button><button id="manage-fonts-btn" class="btn btn-default">管理</button></div><input type="file" id="font-upload-input" accept=".ttf,.woff,.woff2,.otf" multiple style="display: none;"></div></div>
+                                <div class="form-group"><label>字体:</label><div class="font-controls"><input type="text" id="font-search-input" placeholder="搜索本地字体..." style="margin-bottom: 5px;"><select id="font-family-select" data-state-key="globalComponentStyles.fontFamily"></select><div class="buttons"><button id="load-local-fonts-btn" class="btn btn-default">加载本地</button><button id="upload-font-btn" class="btn btn-default">上传字体</button><button id="manage-fonts-btn" class="btn btn-default">管理</button></div><input type="file" id="font-upload-input" accept=".ttf,.woff,.woff2,.otf" multiple style="display: none;"></div></div>
                                 <div class="color-control-row">
-                                    <div class="color-control-group"><label>标题字号:</label><select data-state-key="globalCardStyles.titleFontSize"><option value="1em">小</option><option value="1.1em">中</option><option value="1.2em">大</option><option value="1.4em">特大</option></select></div>
-                                    <div class="color-control-group"><label>正文字号:</label><select data-state-key="globalCardStyles.contentFontSize"><option value="0.8em">特小</option><option value="0.95em">小</option><option value="1em">中</option><option value="1.1em">大</option></select></div>
+                                    <div class="color-control-group"><label>标题字号:</label><select data-state-key="globalComponentStyles.titleFontSize"><option value="1em">小</option><option value="1.1em">中</option><option value="1.2em">大</option><option value="1.4em">特大</option></select></div>
+                                    <div class="color-control-group"><label>正文字号:</label><select data-state-key="globalComponentStyles.contentFontSize"><option value="0.8em">特小</option><option value="0.95em">小</option><option value="1em">中</option><option value="1.1em">大</option></select></div>
                                 </div>
-                                <div class="advanced-setting"><label>文字描边:<span class="tooltip-trigger" data-tooltip="为文字添加边框，建议宽度不超过2px，以保证可读性。"><span class="iconify" data-icon="mdi:help-circle-outline"></span></span></label><div class="color-control-row"><div class="color-control-group"><label>粗细(px):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-state-key="globalCardStyles.textStrokeWidth" min="0" max="5" step="0.5"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div><div class="color-control-group"><label>颜色:</label><div class="input-group"><input type="color" data-state-key="globalCardStyles.textStrokeColor"><input type="text" class="color-hex-input" data-state-key="globalCardStyles.textStrokeColor"></div></div></div></div>
-                            </div>
-                        </fieldset>
-                        <fieldset class="editor-section" id="global-button-styles-section">
-                            <legend>全局按钮样式</legend>
-                            <div class="section-content">
-                                <div class="color-control-row">
-                                    <div class="color-control-group"><label>背景色:</label><div class="input-group"><input type="color" data-state-key="globalButtonStyles.bgColor"><input type="text" class="color-hex-input" data-state-key="globalButtonStyles.bgColor"></div></div>
-                                    <div class="color-control-group"><label>文字颜色:</label><div class="input-group"><input type="color" data-state-key="globalButtonStyles.textColor"><input type="text" class="color-hex-input" data-state-key="globalButtonStyles.textColor"></div></div>
+                                <div class="advanced-setting"><label>文字描边:<span class="tooltip-trigger" data-tooltip="为文字添加边框，建议宽度不超过2px，以保证可读性。"><span class="iconify" data-icon="mdi:help-circle-outline"></span></span></label><div class="color-control-row"><div class="color-control-group"><label>粗细(px):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-state-key="globalComponentStyles.textStrokeWidth" min="0" max="5" step="0.5"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div><div class="color-control-group"><label>颜色:</label><div class="input-group"><input type="color" data-state-key="globalComponentStyles.textStrokeColor"><input type="text" class="color-hex-input" data-state-key="globalComponentStyles.textStrokeColor"></div></div></div></div>
                                 </div>
-                                <div class="form-group" style="margin-top: 15px;"><label>圆角 (px):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-state-key="globalButtonStyles.radius" min="0" max="40" step="1"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div>
-                                <div class="form-group"><label>内容对齐:</label><div class="radio-group"><label><input type="radio" name="gButtonAlign" value="flex-start" data-state-key="globalButtonStyles.textAlign">居左</label><label><input type="radio" name="gButtonAlign" value="center" data-state-key="globalButtonStyles.textAlign">居中</label><label><input type="radio" name="gButtonAlign" value="flex-end" data-state-key="globalButtonStyles.textAlign">居右</label></div></div>
-                            </div>
                         </fieldset>
                     `;
                 },
@@ -2064,9 +1997,15 @@
                          <fieldset class="editor-section" id="actions-section">
                              <legend>⚙️ 核心操作</legend>
                              <div class="section-content">
-                                 <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                                     <button id="random-palette-btn" class="btn btn-secondary">✨ 随机配色</button>
-                                     <button id="share-style-btn" class="btn btn-secondary">📱 二维码分享</button>
+                                 <div class="form-group">
+                                     <div class="input-group" style="display: flex; gap: 0;">
+                                         <button id="random-palette-btn" class="btn btn-default" style="flex: 1; border-radius: 6px 0 0 6px; border-right: none;">🎲 随机</button>
+                                         <button id="smart-palette-btn" class="btn btn-secondary" style="flex: 1.5; border-radius: 0 6px 6px 0;">🎨 自选生成</button>
+                                     </div>
+                                     <input type="color" id="smart-palette-input" style="visibility: hidden; position: absolute; width: 0; height: 0;">
+                                 </div>
+                                 <div class="form-group">
+                                     <button id="share-style-btn" class="btn btn-secondary" style="width: 100%;">📱 二维码分享样式</button>
                                  </div>
                                  <hr class="separator">
                                  <div class="form-group">
@@ -2091,8 +2030,8 @@
                                     <label>导出文件名前缀:</label>
                                     <input type="text" data-state-key="systemSettings.exportFilePrefix">
                                  </div>
-                                 <div id="mobile-export-toggle-container">
-                                     <div class="checkbox-group" style="margin-bottom: 10px;"><label><input type="checkbox" id="mobile-export-toggle"> 手机端导出预览</label></div>
+                                 <div id="mobile-simulation-controls">
+                                     <div class="checkbox-group for-desktop-only" style="margin-bottom: 10px;"><label><input type="checkbox" id="mobile-export-toggle"> 手机端导出预览</label></div>
                                  </div>
                                  <div class="checkbox-group" style="margin-bottom: 10px;"><label><input type="checkbox" id="hd-export-toggle"> 超清导出 (1800px)</label></div>
                                  <div class="checkbox-group" style="margin-bottom: 10px;"><label><input type="checkbox" id="custom-width-toggle"> 自定义尺寸</label></div>
@@ -2125,6 +2064,268 @@
                              </div>
                          </fieldset>
                      `;
+                },
+
+                
+                createEditorItemHTML(item) {
+                    let content = '';
+
+                    // 根据模块类型分发到具体的HTML生成函数
+                    switch (item.type) {
+                        case 'card': content = this.createCardEditorHTML(item); break;
+                        case 'image': content = this.createImageEditorHTML(item); break;
+                        case 'button': content = this.createButtonEditorHTML(item); break;
+                        case 'music': content = this.createMusicEditorHTML(item); break;
+                        case 'progress': content = this.createProgressEditorHTML(item); break;
+                        case 'timeline': content = this.createTimelineEditorHTML(item); break;
+                        case 'separator': content = this.createSeparatorEditorHTML(item); break;
+                        case 'spacer': content = this.createSpacerEditorHTML(item); break;
+                        default: content = '<p>未知模块类型</p>';
+                    }
+
+                    const title = item.title || item.text || item.label || '';
+                    const hasTitle = ['card', 'image', 'button', 'music', 'progress', 'timeline'].includes(item.type);
+                    const titleInputHTML = hasTitle ? `<input type="text" class="editor-item-title-input" data-item-id-for-title="${item.id}" value="${this.escapeHTML(title)}" placeholder="模块标题 (可选)">` : `<span class="editor-item-title-input" style="color:var(--text-secondary); cursor:default;">${item.type} 模块</span>`;
+
+                    // 所有模块通用的布局设置
+                    const commonLayoutSettings = `
+                        <div class="form-group">
+                            <label>布局宽度:</label>
+                            <div class="radio-group">
+                                <label><input type="radio" data-item-key="layout.width" name="item-layout-${item.id}" value="100" ${item.layout.width === 100 ? 'checked' : ''}> 100%</label>
+                                <label><input type="radio" data-item-key="layout.width" name="item-layout-${item.id}" value="67" ${item.layout.width === 67 ? 'checked' : ''}> 67%</label>
+                                <label><input type="radio" data-item-key="layout.width" name="item-layout-${item.id}" value="50" ${item.layout.width === 50 ? 'checked' : ''}> 50%</label>
+                                <label><input type="radio" data-item-key="layout.width" name="item-layout-${item.id}" value="33" ${item.layout.width === 33 ? 'checked' : ''}> 33%</label>
+                            </div>
+                        </div>
+                    `;
+
+                    return `<div class="editor-item" data-item-id="${item.id}">
+                                <div class="editor-item-header">
+                                    ${titleInputHTML}
+                                    <div class="item-actions">
+                                        <button class="btn btn-danger btn-small item-delete-btn">删除</button>
+                                    </div>
+                                </div>
+                                <div class="editor-item-content">
+                                    ${commonLayoutSettings}
+                                    <hr class="separator">
+                                    ${content}
+                                </div>
+                            </div>`;
+                },
+
+                
+                createCardEditorHTML(item) {
+                    const iconHTML = item.icon ? `<span class="iconify" data-icon="${item.icon}" style="font-size: 1.2em; vertical-align: middle; margin-right: 5px;"></span>` : '选择图标';
+                    const g = this.state.globalComponentStyles;
+                    const contentPreview = item.content || '<span style="color: var(--text-placeholder);">点击编辑内容...</span>';
+                    const advClass = item.isAdvancedOpen ? 'show-advanced' : '';
+
+                    return `<div class="${advClass}">
+                        <h4>基础设置</h4>
+                        <div class="form-group"><label>标题:</label><div class="input-group"><input type="text" data-item-key="title" value="${this.escapeHTML(item.title || '')}" style="border-right: none;"><button class="btn btn-default select-icon-btn" style="width: auto; flex-shrink: 0; border-radius: 0 6px 6px 0; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${iconHTML}</button></div></div>
+                        <div class="form-group">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                                <label style="margin-bottom: 0;">内容:</label>
+                                <button class="btn btn-default btn-small edit-content-btn"><span class="iconify" data-icon="mdi:pencil"></span> 编辑内容</button>
+                            </div>
+                            <div class="rich-text-editor-trigger"><div class="rich-text-preview">${contentPreview}</div></div>
+                        </div>
+                        <div class="form-group"><label>对齐:</label><div class="radio-group">
+                            <label><input type="radio" name="card-${item.id}-align" value="" data-item-key="textAlign" ${!['left', 'center', 'right'].includes(item.textAlign) ? 'checked' : ''}>默认</label>
+                            <label><input type="radio" name="card-${item.id}-align" value="left" data-item-key="textAlign" ${item.textAlign === 'left' ? 'checked' : ''}>左</label>
+                            <label><input type="radio" name="card-${item.id}-align" value="center" data-item-key="textAlign" ${item.textAlign === 'center' ? 'checked' : ''}>中</label>
+                            <label><input type="radio" name="card-${item.id}-align" value="right" data-item-key="textAlign" ${item.textAlign === 'right' ? 'checked' : ''}>右</label>
+                        </div></div>
+                         <div style="text-align: right; margin-bottom: 10px;">
+                            <label class="checkbox-group advanced-toggle-label"><input type="checkbox" class="advanced-toggle" ${item.isAdvancedOpen ? 'checked' : ''}> 高级独立样式</label>
+                        </div>
+                        <div class="advanced-setting">
+                            <hr class="separator">
+                            <h4>独立样式</h4>
+                            <div class="form-group"><label>装饰贴纸:</label><div class="radio-group"><label><input type="radio" name="card-${item.id}-sticker" value="none" data-item-key="sticker" ${item.sticker === 'none' || !item.sticker ? 'checked' : ''}>无</label><label><input type="radio" name="card-${item.id}-sticker" value="tape" data-item-key="sticker" ${item.sticker === 'tape' ? 'checked' : ''}>胶带</label><label><input type="radio" name="card-${item.id}-sticker" value="pushpin" data-item-key="sticker" ${item.sticker === 'pushpin' ? 'checked' : ''}>图钉</label></div></div>
+                            <div class="color-control-row">
+                                <div class="color-control-group"><label>背景色:</label><div class="input-group"><input type="color" data-item-key="bgColor" value="${item.bgColor || ''}"><input class="color-hex-input" type="text" data-item-key="bgColor" value="${item.bgColor || ''}" placeholder="${g.bgColor} (全局)"><button class="btn btn-default btn-small" data-reset-item-key="bgColor">重置</button></div></div>
+                                <div class="color-control-group"><label>正文颜色:</label><div class="input-group"><input type="color" data-item-key="textColor" value="${item.textColor || ''}"><input class="color-hex-input" type="text" data-item-key="textColor" value="${item.textColor || ''}" placeholder="${g.textColor} (全局)"><button class="btn btn-default btn-small" data-reset-item-key="textColor">重置</button></div></div>
+                            </div>
+                            <div class="color-control-row" style="margin-top: 10px;">
+                                <div class="color-control-group"><label>标题颜色:</label><div class="input-group"><input type="color" data-item-key="titleColor" value="${item.titleColor || ''}"><input class="color-hex-input" type="text" data-item-key="titleColor" value="${item.titleColor || ''}" placeholder="同正文色"><button class="btn btn-default btn-small" data-reset-item-key="titleColor">重置</button></div></div>
+                            </div>
+                            <hr class="separator">
+                            <div class="form-group"><label>背景图:</label><div class="input-group simple"><input type="file" class="card-bg-upload" accept="image/*"><button class="btn btn-default btn-small card-clear-bg-btn">清除</button></div></div>
+                        </div>
+                    </div>`;
+                },
+
+                
+                createImageEditorHTML(item) {
+                    return `<div class="image-card-editor-content">
+                                <div class="image-card-editor-thumb">
+                                    <div class="thumbnail-wrapper">
+                                        <img src="" loading="lazy">
+                                        <div class="thumbnail-actions">
+                                            <button class="btn btn-icon crop-image-btn" title="裁剪与调整"><span class="iconify" data-icon="mdi:crop-rotate"></span></button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="image-card-editor-fields">
+                                    <div class="form-group"><label>标题:</label><input type="text" data-item-key="title" value="${this.escapeHTML(item.title || '')}"></div>
+                                    <div class="form-group"><label>描述:</label><textarea data-item-key="description" rows="2">${this.escapeHTML(item.description || '')}</textarea></div>
+                                </div>
+                            </div>
+                            <div class="form-group" style="margin-top: 10px;">
+                                <label>图片填充模式:</label>
+                                <div class="radio-group">
+                                    <label><input type="radio" name="img-fill-${item.id}" value="cover" data-item-key="imageFillMode" ${item.imageFillMode === 'cover' || !item.imageFillMode ? 'checked' : ''}>填充 (Cover)</label>
+                                    <label><input type="radio" name="img-fill-${item.id}" value="contain" data-item-key="imageFillMode" ${item.imageFillMode === 'contain' ? 'checked' : ''}>完整 (Contain)</label>
+                                </div>
+                            </div>`;
+                },
+
+                
+                createButtonEditorHTML(item) {
+                    const iconHTML = item.icon ? `<span class="iconify" data-icon="${item.icon}"></span>` : '图标';
+                    return `
+                        <div class="form-group">
+                            <label>按钮内容:</label>
+                            <div class="input-group">
+                                <button class="btn btn-default select-icon-btn" style="width: auto; flex-shrink: 0; border-radius: 6px 0 0 6px;">${iconHTML}</button>
+                                <input type="text" data-item-key="text" value="${this.escapeHTML(item.text || '')}" placeholder="按钮文字" style="border-left: none;">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>对齐:</label>
+                            <div class="radio-group">
+                                <label><input type="radio" name="btn-align-${item.id}" value="" data-item-key="textAlign" ${!item.textAlign ? 'checked' : ''}>默认</label>
+                                <label><input type="radio" name="btn-align-${item.id}" value="flex-start" data-item-key="textAlign" ${item.textAlign === 'flex-start' ? 'checked' : ''}>居左</label>
+                                <label><input type="radio" name="btn-align-${item.id}" value="center" data-item-key="textAlign" ${item.textAlign === 'center' ? 'checked' : ''}>居中</label>
+                                <label><input type="radio" name="btn-align-${item.id}" value="flex-end" data-item-key="textAlign" ${item.textAlign === 'flex-end' ? 'checked' : ''}>居右</label>
+                            </div>
+                        </div>
+                        <hr class="separator">
+                        <h4>独立样式 (可选)</h4>
+                        <div class="color-control-row">
+                            <div class="color-control-group"><label>背景色:</label><div class="input-group"><input type="color" data-item-key="bgColor"><input type="text" class="color-hex-input" data-item-key="bgColor" placeholder="全局"><button class="btn btn-default btn-small" data-reset-item-key="bgColor">重置</button></div></div>
+                            <div class="color-control-group"><label>文字颜色:</label><div class="input-group"><input type="color" data-item-key="textColor"><input type="text" class="color-hex-input" data-item-key="textColor" placeholder="全局"><button class="btn btn-default btn-small" data-reset-item-key="textColor">重置</button></div></div>
+                        </div>
+                         <div class="form-group" style="margin-top: 15px;"><label>圆角 (px):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-item-key="radius" min="0" max="40"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div>
+                         <button class="btn btn-default btn-small" data-reset-item-key="radius" style="margin-left: 10px;">重置</button>`;
+                },
+
+                
+                createMusicEditorHTML(item) {
+                    const g = this.state.globalComponentStyles;
+                    const gTheme = this.state.globalTheme;
+                    return `
+                        <div class="form-group">
+                            <label>卡片样式:</label>
+                            <div class="radio-group">
+                                <label><input type="radio" name="music-style-${item.id}" value="default" data-item-key="style" ${item.style !== 'vinyl' ? 'checked' : ''}> 默认</label>
+                                <label><input type="radio" name="music-style-${item.id}" value="vinyl" data-item-key="style" ${item.style === 'vinyl' ? 'checked' : ''}> 黑胶</label>
+                            </div>
+                        </div>
+                        <hr class="separator">
+                        <div class="form-group"><label>专辑封面:</label>
+                             <div class="image-card-editor-content">
+                                <div class="music-cover-thumb" style="width: 80px; flex-shrink: 0;"><div class="thumbnail-wrapper"><img src="" loading="lazy"></div></div>
+                                <div class="image-card-editor-fields"><input type="file" id="music-cover-upload" accept="image/*">
+                                <div class="form-group" style="margin-top:5px; margin-bottom:0;"><label style="font-size:0.8rem">高亮色:</label><div class="input-group simple"><input type="color" data-item-key="accentColor" value="${item.accentColor || ''}"><input type="text" class="color-hex-input" data-item-key="accentColor" value="${item.accentColor || ''}" placeholder="${gTheme.accent}"><button class="btn btn-default btn-small" data-reset-item-key="accentColor">重置</button></div></div></div>
+                            </div>
+                        </div>
+                        <div class="form-group"><label>歌曲名称:</label><input type="text" data-item-key="songTitle" value="${this.escapeHTML(item.songTitle || '')}"></div>
+                        <div class="form-group"><label>歌手:</label><input type="text" data-item-key="artist" value="${this.escapeHTML(item.artist || '')}"></div>
+                        <div class="form-group"><label>播放进度 (输入时间自动计算):</label><div class="input-group simple"><input type="text" data-item-key="currentTime" value="${item.currentTime || '00:00'}" placeholder="01:20" style="text-align:center;"><span style="padding:0 5px;">/</span><input type="text" data-item-key="totalTime" value="${item.totalTime || '03:00'}" placeholder="03:00" style="text-align:center;"></div></div>
+                        <div class="form-group"><label>歌词 (居中显示):</label><textarea data-item-key="lyrics" rows="3" placeholder="上一句&#10;当前句(高亮)&#10;下一句">${this.escapeHTML(item.lyrics || '')}</textarea></div>
+                        <hr class="separator"><div style="text-align: right; margin-bottom: 10px;"><label class="checkbox-group advanced-toggle-label"><input type="checkbox" class="advanced-toggle"> 🎨 独立外观设置</label></div>
+                        <div class="advanced-setting">
+                            <div class="color-control-row">
+                                <div class="color-control-group"><label>背景色:</label><div class="input-group"><input type="color" data-item-key="bgColor" value="${item.bgColor || ''}"><input type="text" class="color-hex-input" data-item-key="bgColor" value="${item.bgColor || ''}" placeholder="${g.bgColor} (全局)"><button class="btn btn-default btn-small" data-reset-item-key="bgColor">重置</button></div></div>
+                                <div class="color-control-group"><label>文字色:</label><div class="input-group"><input type="color" data-item-key="textColor" value="${item.textColor || ''}"><input type="text" class="color-hex-input" data-item-key="textColor" value="${item.textColor || ''}" placeholder="${g.textColor} (全局)"><button class="btn btn-default btn-small" data-reset-item-key="textColor">重置</button></div></div>
+                            </div>
+                            <div class="color-control-row" style="margin-top:10px;">
+                                <div class="color-control-group"><label>不透明度:</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-item-key="opacity" min="0" max="1" step="0.05" value="${item.opacity ?? g.opacity}"><button class="btn btn-default btn-stepper plus">+</button></div><button class="btn btn-default btn-small" data-reset-item-key="opacity" style="margin-top:5px; width:100%;">重置 (跟随全局)</button></div>
+                                <div class="color-control-group"><label>圆角(px):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-item-key="radius" min="0" max="40" step="1" value="${item.radius ?? g.radius}"><button class="btn btn-default btn-stepper plus">+</button></div><button class="btn btn-default btn-small" data-reset-item-key="radius" style="margin-top:5px; width:100%;">重置 (跟随全局)</button></div>
+                            </div>
+                        </div>`;
+                },
+
+                
+                createProgressEditorHTML(item) {
+                    return `
+                        <div class="form-group"><label>标签:</label><input type="text" data-item-key="label" value="${this.escapeHTML(item.label)}"></div>
+                        <div class="form-group"><label>百分比: <span class="progress-value">${item.percentage}</span>%</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-item-key="percentage" min="0" max="100" step="1" value="${item.percentage}"><button class="btn btn-default btn-stepper plus">+</button></div></div>
+                        <div class="color-control-row">
+                            <div class="color-control-group"><label>进度颜色:</label><div class="input-group"><input type="color" data-item-key="color" value="${item.color}"><input type="text" class="color-hex-input" data-item-key="color" value="${item.color}"></div></div>
+                            <div class="color-control-group"><label>轨道颜色:</label><div class="input-group"><input type="color" data-item-key="trackColor" value="${item.trackColor}"><input type="text" class="color-hex-input" data-item-key="trackColor" value="${item.trackColor}"></div></div>
+                        </div>
+                        <div class="form-group" style="margin-top: 10px;"><label>粗细 (px):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-item-key="thickness" min="2" max="30" step="1" value="${item.thickness}"><button class="btn btn-default btn-stepper plus">+</button></div></div>
+                    `;
+                },
+
+                
+                createTimelineEditorHTML(item) {
+                    const g = this.state.globalComponentStyles;
+                    const advClass = item.isAdvancedOpen ? 'show-advanced' : '';
+                    let eventsHTML = !item.cards?.length ? '<div class="empty-placeholder">暂无事件</div>' : item.cards.map(c => this.createEditorTimelineEventHTML(c)).join('');
+
+                    return `
+        <div class="color-control-row">
+            <div class="color-control-group"><label>时间点颜色:</label><div class="input-group"><input type="color" data-item-key="timeColor" value="${item.timeColor || ''}"><input type="text" class="color-hex-input" data-item-key="timeColor" value="${item.timeColor || ''}" placeholder="默认灰色"><button class="btn btn-default btn-small" data-reset-item-key="timeColor">重置</button></div></div>
+            <div class="color-control-group"><label>节点/线颜色:</label><div class="input-group"><input type="color" data-item-key="accentColor" value="${item.accentColor || ''}"><input type="text" class="color-hex-input" data-item-key="accentColor" value="${item.accentColor || ''}" placeholder="默认主色"><button class="btn btn-default btn-small" data-reset-item-key="accentColor">重置</button></div></div>
+        </div>
+        <hr class="separator">
+        <div class="timeline-editors-list">${eventsHTML}</div>
+        <button class="btn btn-default add-timeline-event-btn" style="margin-top: 15px;">➕ 添加事件</button>
+        <hr class="separator">
+        <div class="advanced-settings-wrapper ${advClass}">
+            <div style="text-align: right; margin-bottom: 10px;">
+                <label class="checkbox-group advanced-toggle-label"><input type="checkbox" class="advanced-toggle" ${item.isAdvancedOpen ? 'checked' : ''}> 🎨 独立外观设置</label>
+            </div>
+            <div class="advanced-setting">
+                <div class="color-control-row">
+                    <div class="color-control-group"><label>背景色:</label><div class="input-group"><input type="color" data-item-key="bgColor" value="${item.bgColor || ''}"><input type="text" class="color-hex-input" data-item-key="bgColor" value="${item.bgColor || ''}" placeholder="${g.bgColor} (全局)"><button class="btn btn-default btn-small" data-reset-item-key="bgColor">重置</button></div></div>
+                    <div class="color-control-group"><label>内容颜色:</label><div class="input-group"><input type="color" data-item-key="textColor" value="${item.textColor || ''}"><input type="text" class="color-hex-input" data-item-key="textColor" value="${item.textColor || ''}" placeholder="${g.textColor} (全局)"><button class="btn btn-default btn-small" data-reset-item-key="textColor">重置</button></div></div>
+                </div>
+                <div class="color-control-row" style="margin-top:10px;">
+                    <div class="color-control-group"><label>不透明度:</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-item-key="opacity" min="0" max="1" step="0.1" value="${item.opacity ?? g.opacity}"><button class="btn btn-default btn-stepper plus">+</button></div><button class="btn btn-default btn-small" data-reset-item-key="opacity" style="margin-top:5px; width:100%;">重置</button></div>
+                    <div class="color-control-group"><label>圆角(px):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-item-key="radius" min="0" max="40" step="1" value="${item.radius ?? g.radius}"><button class="btn btn-default btn-stepper plus">+</button></div><button class="btn btn-default btn-small" data-reset-item-key="radius" style="margin-top:5px; width:100%;">重置</button></div>
+                </div>
+            </div>
+        </div>
+    `;
+                },
+
+                createEditorTimelineEventHTML(card) {
+                    return `
+        <div class="timeline-event-editor" data-card-id="${card.id}">
+            <span class="card-drag-handle">☰</span>
+            <div class="editor-card-header" style="padding: 4px 8px;"><button class="btn btn-danger btn-small card-delete-btn">删</button></div>
+            <div class="editor-card-content" style="padding: 10px;">
+                <div class="form-group"><label>时间点:</label><input type="text" data-timeline-card-key="time" value="${this.escapeHTML(card.time || '')}"></div>
+                <div class="form-group" style="margin-bottom:0;"><label>事件内容:</label><textarea data-timeline-card-key="content" rows="2">${this.escapeHTML(card.content || '')}</textarea></div>
+            </div>
+        </div>`;
+                },
+
+                
+                createSeparatorEditorHTML(item) {
+                    const iconHTML = item.icon ? `<span class="iconify" data-icon="${item.icon}"></span>` : '选择图标';
+                    return `
+                        <div class="form-group"><label>样式:</label><div class="radio-group"><label><input type="radio" name="sep-style-${item.id}" data-item-key="style" value="solid" ${item.style === 'solid' ? 'checked' : ''}>实线</label><label><input type="radio" name="sep-style-${item.id}" data-item-key="style" value="dashed" ${item.style === 'dashed' ? 'checked' : ''}>虚线</label><label><input type="radio" name="sep-style-${item.id}" data-item-key="style" value="dotted" ${item.style === 'dotted' ? 'checked' : ''}>点状</label></div></div>
+                        <div class="color-control-row">
+                            <div class="color-control-group"><label>线条颜色:</label><div class="input-group"><input type="color" data-item-key="color" value="${item.color}"><input type="text" class="color-hex-input" data-item-key="color" value="${item.color}"></div></div>
+                            <div class="color-control-group"><label>粗细(px):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-item-key="thickness" min="1" max="10" value="${item.thickness}"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div>
+                        </div>
+                        <div class="form-group"><label>垂直间距(px):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-item-key="margin" min="0" max="50" value="${item.margin}"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div>
+                        <hr class="separator">
+                        <div class="form-group"><label>嵌入文本 (可选):</label><div class="input-group"><input type="text" data-item-key="text" value="${this.escapeHTML(item.text || '')}" style="border-right: none;"><button class="btn btn-default select-icon-btn" style="width: auto; flex-shrink: 0; border-radius: 0 6px 6px 0;">${iconHTML}</button></div></div>
+                        <div class="form-group"><label>文本颜色:</label><div class="input-group"><input type="color" data-item-key="textColor" value="${item.textColor}"><input type="text" class="color-hex-input" data-item-key="textColor" value="${item.textColor}"></div></div>`;
+                },
+
+                
+                createSpacerEditorHTML(item) {
+                    return `<div class="form-group"><label>高度 (px): <span class="spacer-height-value">${item.height}</span></label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-item-key="height" min="1" max="200" value="${item.height}"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div>`;
                 },
 
                 createPersonalInfoInspectorHTML() {
@@ -2180,483 +2381,140 @@
                 },
 
                 /**
-                 * @description 渲染所有区块的预览效果。
+                 * @description 渲染所有模块的预览效果。
                  */
-                renderPreviewBlocks() {
-                    const borderSettings = this.state.globalBorderSettings;
-                    this.elements.previewBlocksContainer.innerHTML = this.state.blocks.length ? this.state.blocks.map(b => {
-                        const applyToKey = `${b.type}Blocks`;
-                        const shouldApplyBorder = borderSettings.applyTo[applyToKey];
-                        const borderClass = shouldApplyBorder ? 'apply-global-border' : '';
+                renderPreviewItems() {
+                    const container = this.elements.previewItemsContainer;
+                    container.innerHTML = this.state.items.length ? this.state.items.map(item => this.createPreviewItemHTML(item)).join('') : '<div class="empty-placeholder">(预览区) 无模块</div>';
 
-                        return `<div class="preview-block-wrapper ${b.isVisible === false ? 'is-hidden' : ''} ${borderClass}" data-block-id="${b.id}" data-border-style="${borderSettings.style}">
-                                  ${this.createPreviewBlockHTML(b)}
-                                </div>`;
-                    }).join('') : '<div class="empty-placeholder">(预览区) 无区块</div>';
-
-                    this.postRenderAsyncUpdates(this.elements.previewBlocksContainer);
+                    this.postRenderAsyncUpdates(container);
                     this.updateHighlights();
                     this.renderMobileEditPencils();
                 },
 
-                createEditorBlockHTML(block) {
-                    let content = '';
-                    const masonryCheckboxHTML = `
-                        <div class="masonry-toggle-container" style="${['dual', 'triple'].includes(block.settings.layout) ? 'display: block;' : 'display: none;'}">
-                            <div class="checkbox-group" style="margin-top: 10px;">
-                                <label><input type="checkbox" data-setting-key="masonryEnabled" ${block.settings.masonryEnabled ? 'checked' : ''}> 启用瀑布流
-                                <span class="tooltip-trigger" data-tooltip="使卡片高度自适应内容，实现紧凑的砌体式布局。适合图片或文字长短不一的场景。"><span class="iconify" data-icon="mdi:help-circle-outline"></span></span>
-                                </label>
-                            </div>
-                        </div>`;
-                    const layoutRadiosHTML = `
-                        <div class="radio-group">
-                            <label><input type="radio" data-setting-key="layout" name="block-layout-${block.id}" value="single" ${block.settings.layout === 'single' ? 'checked' : ''}> 单排</label>
-                            <label><input type="radio" data-setting-key="layout" name="block-layout-${block.id}" value="dual" ${block.settings.layout === 'dual' ? 'checked' : ''}> 双排</label>
-                            <label><input type="radio" data-setting-key="layout" name="block-layout-${block.id}" value="triple" ${block.settings.layout === 'triple' ? 'checked' : ''}> 三排</label>
-                        </div>`;
-
-                    if (block.type === 'text') {
-                        let cardsHTML = !block.cards?.length ? '<div class="empty-placeholder">暂无卡片</div>' : block.cards.map(c => `<div class="editor-card ${this.selection.cardId === c.id ? 'is-active' : ''}" data-card-id="${c.id}">${this.createEditorCardHTML(c)}</div>`).join('');
-                        content = `<div class="form-group"><label>布局:</label>${layoutRadiosHTML}${masonryCheckboxHTML}</div>
-                                   <hr class="separator"><div class="card-editors-list">${cardsHTML}</div><button class="btn btn-default add-card-btn" style="margin-top: 15px;">➕ 添加卡片</button>`;
-                    } else if (block.type === 'image') {
-                        let imageCardsHTML = !block.cards?.length ? '<div class="empty-placeholder">暂无图片</div>' : block.cards.map(c => `<div class="editor-card ${this.selection.cardId === c.id ? 'is-active' : ''}" data-card-id="${c.id}">${this.createEditorImageCardHTML(c)}</div>`).join('');
-                        content = `<div class="form-group"><label>布局:</label>${layoutRadiosHTML}${masonryCheckboxHTML}</div>
-                                   <div class="form-group"><label>文字颜色:</label><div class="input-group"><input type="color" data-setting-key="textColor" value="${block.settings.textColor || ''}"><input type="text" class="color-hex-input" data-setting-key="textColor" value="${block.settings.textColor || ''}" placeholder="全局默认"><button class="btn btn-default btn-small" data-reset-block-key="textColor">重置</button></div></div>
-                                   <hr class="separator"><div class="image-card-editors-list">${imageCardsHTML}</div><button class="btn btn-default add-image-btn" style="margin-top: 15px;">➕ 添加图片</button>
-                                   <input type="file" class="image-upload-input" multiple accept="image/*" style="display: none;">`;
-                    } else if (block.type === 'button') {
-                        let buttonCardsHTML = !block.cards?.length ? '<div class="empty-placeholder">暂无按钮</div>' : block.cards.map(c => `<div class="editor-card ${this.selection.cardId === c.id ? 'is-active' : ''}" data-card-id="${c.id}">${this.createEditorButtonCardHTML(c)}</div>`).join('');
-                        content = `<div class="form-group"><label>按钮间距 (px):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-setting-key="gap" min="0" max="40" value="${block.settings.gap || 15}"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div>
-                                   <hr class="separator"><div class="button-card-editors-list">${buttonCardsHTML}</div><button class="btn btn-default add-button-card-btn" style="margin-top: 15px;">➕ 添加按钮</button>`;
-                    } else if (block.type === 'music') {
-                        content = this.createEditorMusicBlockHTML(block);
-                    } else if (block.type === 'progress') {
-                        const s = block.settings;
-                        content = `
-                            <div class="form-group"><label>标签:</label><input type="text" data-setting-key="label" value="${this.escapeHTML(s.label)}"></div>
-                            <div class="form-group"><label>百分比: <span class="progress-value">${s.percentage}</span>%</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-setting-key="percentage" min="0" max="100" step="1" value="${s.percentage}"><button class="btn btn-default btn-stepper plus">+</button></div></div>
-                            <div class="color-control-row">
-                                <div class="color-control-group"><label>进度颜色:</label><div class="input-group"><input type="color" data-setting-key="color" value="${s.color}"><input type="text" class="color-hex-input" data-setting-key="color" value="${s.color}"></div></div>
-                                <div class="color-control-group"><label>轨道颜色:</label><div class="input-group"><input type="color" data-setting-key="trackColor" value="${s.trackColor}"><input type="text" class="color-hex-input" data-setting-key="trackColor" value="${s.trackColor}"></div></div>
-                            </div>
-                            <div class="form-group" style="margin-top: 10px;"><label>粗细 (px):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-setting-key="thickness" min="2" max="30" step="1" value="${s.thickness}"><button class="btn btn-default btn-stepper plus">+</button></div></div>
-                            <hr class="separator"><div style="text-align: right; margin-bottom: 10px;"><label class="checkbox-group advanced-toggle-label"><input type="checkbox" class="advanced-toggle"> 🎨 独立外观设置</label></div>
-                            <div class="advanced-setting">
-                                 <div class="color-control-row">
-                                    <div class="color-control-group"><label>背景色:</label><div class="input-group"><input type="color" data-setting-key="bgColor" value="${s.bgColor || ''}"><input type="text" class="color-hex-input" data-setting-key="bgColor" value="${s.bgColor || ''}" placeholder="默认透明"><button class="btn btn-default btn-small" data-reset-block-key="bgColor">重置</button></div></div>
-                                    <div class="color-control-group"><label>文字色:</label><div class="input-group"><input type="color" data-setting-key="textColor" value="${s.textColor || ''}"><input type="text" class="color-hex-input" data-setting-key="textColor" value="${s.textColor || ''}" placeholder="全局"><button class="btn btn-default btn-small" data-reset-block-key="textColor">重置</button></div></div>
-                                </div>
-                                <div class="color-control-row" style="margin-top:10px;">
-                                    <div class="color-control-group"><label>不透明度:</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-setting-key="opacity" min="0" max="1" step="0.1" value="${s.opacity !== undefined && s.opacity !== '' ? s.opacity : 1}"><button class="btn btn-default btn-stepper plus">+</button></div><button class="btn btn-default btn-small" data-reset-block-key="opacity" style="margin-top:5px; width:100%;">重置</button></div>
-                                    <div class="color-control-group"><label>圆角(px):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-setting-key="radius" min="0" max="40" step="1" value="${s.radius !== undefined && s.radius !== '' ? s.radius : 12}"><button class="btn btn-default btn-stepper plus">+</button></div><button class="btn btn-default btn-small" data-reset-block-key="radius" style="margin-top:5px; width:100%;">重置</button></div>
-                                </div>
-                                <div class="form-group" style="margin-top: 10px;"><label>内边距(px):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-setting-key="padding" min="0" max="40" step="1" value="${s.padding !== undefined && s.padding !== '' ? s.padding : 0}"><button class="btn btn-default btn-stepper plus">+</button></div><button class="btn btn-default btn-small" data-reset-block-key="padding" style="margin-top:5px; width:100%;">重置</button></div>
-                            </div>
-                        `;
-                    } else if (block.type === 'timeline') {
-                        let eventsHTML = !block.cards?.length ? '<div class="empty-placeholder">暂无事件</div>' : block.cards.map(c => this.createEditorTimelineEventHTML(c)).join('');
-                        const s = block.settings;
-                        const g = this.state.globalCardStyles;
-                        content = `
-                            <div class="color-control-row">
-                                <div class="color-control-group"><label>时间点颜色:</label><div class="input-group"><input type="color" data-setting-key="timeColor" value="${s.timeColor || ''}"><input type="text" class="color-hex-input" data-setting-key="timeColor" value="${s.timeColor || ''}" placeholder="默认灰色"></div></div>
-                                <div class="color-control-group"><label>节点/线颜色:</label><div class="input-group"><input type="color" data-setting-key="accentColor" value="${s.accentColor || ''}"><input type="text" class="color-hex-input" data-setting-key="accentColor" value="${s.accentColor || ''}" placeholder="默认主色"></div></div>
-                            </div>
-                            <hr class="separator"><div style="text-align: right; margin-bottom: 10px;"><label class="checkbox-group advanced-toggle-label"><input type="checkbox" class="advanced-toggle"> 🎨 独立外观设置</label></div>
-                            <div class="advanced-setting">
-                                <div class="color-control-row">
-                                    <div class="color-control-group"><label>背景色:</label><div class="input-group"><input type="color" data-setting-key="bgColor" value="${s.bgColor || ''}"><input type="text" class="color-hex-input" data-setting-key="bgColor" value="${s.bgColor || ''}" placeholder="${g.bgColor} (全局)"><button class="btn btn-default btn-small" data-reset-block-key="bgColor">重置</button></div></div>
-                                    <div class="color-control-group"><label>内容颜色:</label><div class="input-group"><input type="color" data-setting-key="textColor" value="${s.textColor || ''}"><input type="text" class="color-hex-input" data-setting-key="textColor" value="${s.textColor || ''}" placeholder="${g.textColor} (全局)"><button class="btn btn-default btn-small" data-reset-block-key="textColor">重置</button></div></div>
-                                </div>
-                                <div class="color-control-row" style="margin-top:10px;">
-                                    <div class="color-control-group"><label>不透明度:</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-setting-key="opacity" min="0" max="1" step="0.1" value="${s.opacity !== undefined && s.opacity !== '' ? s.opacity : g.opacity}"><button class="btn btn-default btn-stepper plus">+</button></div><button class="btn btn-default btn-small" data-reset-block-key="opacity" style="margin-top:5px; width:100%;">重置 (跟随全局)</button></div>
-                                    <div class="color-control-group"><label>圆角(px):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-setting-key="radius" min="0" max="40" step="1" value="${s.radius !== undefined && s.radius !== '' ? s.radius : g.radius}"><button class="btn btn-default btn-stepper plus">+</button></div><button class="btn btn-default btn-small" data-reset-block-key="radius" style="margin-top:5px; width:100%;">重置 (跟随全局)</button></div>
-                                </div>
-                            </div>
-                            <hr class="separator"><div class="timeline-editors-list">${eventsHTML}</div><button class="btn btn-default add-timeline-event-btn" style="margin-top: 15px;">➕ 添加事件</button>`;
-                    } else if (block.type === 'separator') {
-                        const s = block.settings;
-                        const iconHTML = s.icon ? `<span class="iconify" data-icon="${s.icon}"></span>` : '选择图标';
-                        content = `<div class="form-group"><label>样式:</label><div class="radio-group"><label><input type="radio" name="sep-style-${block.id}" data-setting-key="style" value="solid" ${s.style === 'solid' ? 'checked' : ''}>实线</label><label><input type="radio" name="sep-style-${block.id}" data-setting-key="style" value="dashed" ${s.style === 'dashed' ? 'checked' : ''}>虚线</label><label><input type="radio" name="sep-style-${block.id}" data-setting-key="style" value="dotted" ${s.style === 'dotted' ? 'checked' : ''}>点状</label></div></div><div class="color-control-row"><div class="color-control-group"><label>线条颜色:</label><div class="input-group"><input type="color" data-setting-key="color" value="${s.color}"><input type="text" class="color-hex-input" data-setting-key="color" value="${s.color}"><button class="btn btn-default btn-small" data-reset-block-key="color">重置</button></div></div><div class="color-control-group"><label>粗细(px):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-setting-key="thickness" min="1" max="10" value="${s.thickness}"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div></div><div class="form-group"><label>垂直间距(px):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-setting-key="margin" min="0" max="50" value="${s.margin}"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div><hr class="separator"><div class="form-group"><label>嵌入文本 (可选):</label><div class="input-group"><input type="text" data-setting-key="text" value="${this.escapeHTML(s.text || '')}" style="border-right: none;"><button class="btn btn-default select-icon-btn" data-separator-icon-btn="true" style="width: auto; flex-shrink: 0; border-radius: 0 6px 6px 0;">${iconHTML}</button></div></div><div class="form-group"><label>文本颜色:</label><div class="input-group"><input type="color" data-setting-key="textColor" value="${s.textColor}"><input type="text" class="color-hex-input" data-setting-key="textColor" value="${s.textColor}"><button class="btn btn-default btn-small" data-reset-block-key="textColor">重置</button></div></div>`;
-                    } else if (block.type === 'spacer') {
-                        const s = block.settings;
-                        content = `<div class="form-group"><label>高度 (px): <span class="spacer-height-value">${s.height}</span></label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-setting-key="height" min="1" max="200" value="${s.height}"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div>`;
-                    }
-
-                    return `<div class="editor-block" data-block-id="${block.id}"><div class="editor-block-header"><input type="text" class="editor-block-title-input" data-block-id-for-title="${block.id}" value="${this.escapeHTML(block.title || '')}" placeholder="区块标题 (可编辑)"><div class="block-actions"><button class="btn btn-danger btn-small block-delete-btn">删除</button></div></div><div class="editor-block-content">${content}</div></div>`;
-                },
-
-                createPreviewBlockHTML(block) {
-                    let layoutClass = 'preview-cards-single';
-                    if (block.settings.layout === 'dual') layoutClass = 'preview-cards-dual';
-                    if (block.settings.layout === 'triple') layoutClass = 'preview-cards-triple';
-
-                    let cardsHTML = '';
-                    if (block.type === 'text') {
-                        cardsHTML = (block.cards || []).map(card => this.createPreviewCardHTML(card, block.type)).join('');
-                    } else if (block.type === 'image') {
-                        cardsHTML = (block.cards || []).map(card => this.createPreviewImageCardHTML(card, block.settings)).join('');
-                    } else if (block.type === 'button') {
-                        return `<div class="preview-buttons-container" style="gap: ${block.settings.gap || 15}px;">
-                            ${(block.cards || []).map(card => this.createPreviewButtonCardHTML(card)).join('')}
-                        </div>`;
-                    }
-
-                    if (block.type === 'text' || block.type === 'image') {
-                        return `<div class="preview-cards-container ${layoutClass}">${cardsHTML}</div>`;
-                    } else if (block.type === 'music') {
-                        return this.createPreviewMusicBlockHTML(block);
-                    } else if (block.type === 'progress') {
-                        return this.createPreviewProgressBlockHTML(block);
-                    } else if (block.type === 'timeline') {
-                        return this.createPreviewTimelineBlockHTML(block);
-                    } else if (block.type === 'separator') {
-                        const s = block.settings;
-                        const hasTextOrIcon = s.text || s.icon;
-                        const iconHTML = s.icon ? `<span class="iconify" data-icon="${s.icon}" style="margin-right: 8px; vertical-align: -0.15em;"></span>` : '';
-                        const textHTML = `<span data-separator-text-key="${block.id}" style="color: ${s.textColor}; padding: 0 12px; flex-shrink: 0;">${iconHTML}${this.escapeHTML(s.text || '')}</span>`;
-                        const lineHTML = `<div class="separator-preview-line" style="flex-grow: 1; border-top: ${s.thickness}px ${s.style} ${s.color};"></div>`;
-                        return `<div class="separator-preview" style="margin: ${s.margin}px 0;">${lineHTML}${hasTextOrIcon ? textHTML + lineHTML : ''}</div>`;
-                    } else if (block.type === 'spacer') {
-                        return `<div class="spacer-preview" style="height: ${block.settings.height}px;"></div>`;
-                    }
-                    return '';
-                },
-
-                createPreviewCardHTML(card, blockType) {
+                createPreviewItemHTML(item) {
                     const borderSettings = this.state.globalBorderSettings;
-                    const applyToKey = `cardsIn${blockType.charAt(0).toUpperCase() + blockType.slice(1)}Blocks`;
+                    const applyToKey = item.type;
+
                     const shouldApplyBorder = borderSettings.applyTo[applyToKey];
                     const borderClass = shouldApplyBorder ? 'apply-global-border' : '';
 
-                    const stickerHTML = card.sticker && card.sticker !== 'none' ? `<div class="preview-card-sticker ${card.sticker}"></div>` : '';
+                    
+                    const shadowSettings = borderSettings.globalShadowSettings;
+                    const shouldApplyShadow = shadowSettings && shadowSettings.applyTo && shadowSettings.applyTo[applyToKey];
+                    const shadowClass = shouldApplyShadow ? 'apply-global-shadow' : '';
 
-                    const cardEl = document.createElement('div');
-                    cardEl.className = `preview-card ${borderClass}`;
-                    cardEl.dataset.cardId = card.id;
-                    cardEl.dataset.borderStyle = borderSettings.style;
-                    cardEl.style.setProperty('--card-transition-name', `card-${card.id}`);
-                    const iconHTML = card.icon ? `<span class="iconify" data-icon="${card.icon}"></span>` : '';
+                    const isHiddenClass = item.isVisible === false ? 'is-hidden' : '';
 
-                    const g = this.state.globalCardStyles;
-                    const finalAlign = card.textAlign || g.textAlign;
-                    const justifyContent = { left: 'flex-start', center: 'center', right: 'flex-end' }[finalAlign] || 'flex-start';
-                    const finalTitleColor = card.titleColor || g.titleColor || g.textColor;
+                    let styleAttribute = '';
 
-                    cardEl.innerHTML = `
-                        ${stickerHTML}
-                        <div class="preview-card-inner">
-                            <h3 class="preview-card-title" data-card-key="title" style="justify-content: ${justifyContent}; color: ${finalTitleColor};">${iconHTML}${this.escapeHTML(card.title || '')}</h3>
-                            <div class="preview-card-content" data-card-key="content">${this.sanitizeHTML(card.content || '')}</div>
-                        </div>`;
-                    return cardEl.outerHTML;
-                },
-
-                createPreviewImageCardHTML(card, blockSettings = {}) {
-                    const borderSettings = this.state.globalBorderSettings;
-                    const shouldApplyBorder = borderSettings.applyTo.imagesInImageBlocks;
-                    const borderClass = shouldApplyBorder ? 'apply-global-border' : '';
-
-                    const textColorStyle = blockSettings.textColor ? `style="color: ${blockSettings.textColor};"` : '';
-                    const figcaptionContent = (card.title || card.description) ?
-                        `<figcaption ${textColorStyle}>
-                            ${card.title ? `<strong data-card-key="title">${this.escapeHTML(card.title)}</strong>` : ''}
-                            <span data-card-key="description">${this.escapeHTML(card.description || '')}</span>
-                        </figcaption>`
-                        : '';
-
-                    const figureHTML = `<figure data-card-id="${card.id}" class="${borderClass}" data-border-style="${borderSettings.style}">
-                        <img src="" alt="${this.escapeHTML(card.title || '')}" loading="lazy" style="object-fit: ${card.imageFillMode || 'cover'};">
-                        ${figcaptionContent}
-                    </figure>`;
-
-                    return figureHTML;
-                },
-
-                createPreviewButtonCardHTML(card) {
-                    const borderSettings = this.state.globalBorderSettings;
-                    const shouldApplyBorder = borderSettings.applyTo.buttonsInButtonBlocks;
-                    const borderClass = shouldApplyBorder ? 'apply-global-border' : '';
-
-                    const g = this.state.globalButtonStyles;
-                    const iconHTML = card.icon ? `<span class="iconify" data-icon="${card.icon}"></span>` : '';
-                    const alignSelf = { 'left': 'flex-start', 'center': 'center', 'right': 'flex-end' }[card.textAlign] || 'center';
-
-                    const styles = [];
-                    if (card.bgColor) styles.push(`--button-bg-color: ${card.bgColor}`);
-                    if (card.textColor) styles.push(`--button-text-color: ${card.textColor}`);
-                    if (card.radius != null) styles.push(`--button-border-radius: ${card.radius}px`);
-                    if (card.textAlign) styles.push(`--button-text-align: ${card.textAlign}`);
-                    if (card.width) styles.push(`--button-width: ${card.width}`);
-                    styles.push(`--button-align-self: ${alignSelf}`);
-                    const styleString = styles.join(';');
-
-                    return `<div class="preview-button ${borderClass}" data-card-id="${card.id}" style="${styleString}" data-border-style="${borderSettings.style}">
-                        ${iconHTML}<span data-card-key="text">${this.escapeHTML(card.text || '')}</span>
-                    </div>`;
-                },
-
-                createPreviewMusicBlockHTML(block) {
-                    const s = block.settings;
-                    return `
-                        <div class="music-card-preview">
-                            <img src="" class="music-cover" alt="Album Cover">
-                            <div class="music-info">
-                                <div class="music-title" data-setting-key="songTitle">${this.escapeHTML(s.songTitle)}</div>
-                                <div class="music-artist" data-setting-key="artist">${this.escapeHTML(s.artist)}</div>
-                                <div class="music-lyrics" data-setting-key="lyrics">${this.escapeHTML(s.lyrics)}</div>
-                                <div class="music-progress-bar">
-                                    <div class="music-progress-fill" style="width: ${s.progress}%;"></div>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                },
-
-                createPreviewProgressBlockHTML(block) {
-                    const s = block.settings;
-                    const h = s.thickness || 8;
-                    const g = this.state.globalCardStyles;
-
-                    const rawBg = s.bgColor || 'transparent';
-                    let finalBgColor = 'transparent';
-
-                    if (s.bgColor) {
-                        const finalOpacity = (s.opacity !== undefined && s.opacity !== '') ? s.opacity : g.opacity;
-                        finalBgColor = this.hexToRgba(rawBg, finalOpacity);
+                    // 仅在非紧凑模式下应用Flexbox的宽度计算
+                    if (!this.state.systemSettings.masonryEnabled) {
+                        const width = parseInt(item.layout.width, 10);
+                        let widthStyle;
+                        switch (width) {
+                            case 100: widthStyle = `width: 100%;`; break;
+                            case 67: widthStyle = `width: calc((100% - var(--preview-gap)) * 0.6666);`; break;
+                            case 50: widthStyle = `width: calc((100% - var(--preview-gap)) / 2);`; break;
+                            case 33: widthStyle = `width: calc((100% - (var(--preview-gap) * 2)) / 3);`; break;
+                            default: widthStyle = 'width: 100%;';
+                        }
+                        styleAttribute = `style="${widthStyle}"`;
                     }
 
-                    const textColor = s.textColor || g.textColor;
-                    const radius = (s.radius !== undefined && s.radius !== '') ? s.radius : (s.bgColor ? g.radius : 0);
-                    const padding = (s.padding !== undefined && s.padding !== '') ? s.padding : 0;
+                    let innerHTML = '';
+                    switch (item.type) {
+                        case 'card': innerHTML = this.createPreviewCardHTML(item); break;
+                        case 'image': innerHTML = this.createPreviewImageHTML(item); break;
+                        case 'button': innerHTML = this.createPreviewButtonHTML(item); break;
+                        case 'music': innerHTML = this.createPreviewMusicHTML(item); break;
+                        case 'progress': innerHTML = this.createPreviewProgressHTML(item); break;
+                        case 'timeline': innerHTML = this.createPreviewTimelineHTML(item); break;
+                        case 'separator': innerHTML = this.createPreviewSeparatorHTML(item); break;
+                        case 'spacer': innerHTML = this.createPreviewSpacerHTML(item); break;
+                    }
 
-                    const bgStyle = `background-color: ${finalBgColor}; padding: ${padding}px; border-radius: ${radius}px;`;
-
-                    return `
-        <div class="progress-bar-preview" style="${bgStyle}">
-            <div class="progress-bar-header" style="color: ${textColor};">
-                <span class="progress-bar-label" data-setting-key="label">${this.escapeHTML(s.label)}</span>
-                <span class="progress-bar-value">${s.percentage}%</span>
-            </div>
-            <div class="progress-bar-track" style="background-color: ${s.trackColor || '#eee'}; height: ${h}px; border-radius: ${h / 2}px;">
-                <div class="progress-bar-fill" style="width: ${s.percentage}%; background-color: ${s.color};"></div>
-            </div>
-        </div>
-    `;
-                },
-
-                createPreviewTimelineBlockHTML(block) {
-                    const s = block.settings;
-                    const g = this.state.globalCardStyles;
-
-                    const rawBg = s.bgColor || g.bgColor;
-                    const finalOpacity = (s.opacity !== undefined && s.opacity !== '') ? s.opacity : g.opacity;
-                    const finalBgColor = this.hexToRgba(rawBg, finalOpacity);
-
-                    const textColor = s.textColor || g.textColor;
-                    const radius = (s.radius !== undefined && s.radius !== '') ? s.radius : g.radius;
-
-                    const styleVars = `
-        --tl-text-color: ${textColor};
-        --tl-time-color: ${s.timeColor || 'var(--text-secondary)'};
-        --tl-accent-color: ${s.accentColor || 'var(--g-theme-primary)'};
-    `;
-
-                    const eventsHTML = (block.cards || []).map(event => `
-        <div class="timeline-event" data-card-id="${event.id}">
-             <div class="timeline-dot" style="border-color: var(--tl-accent-color); background-color: var(--bg-preview-page);"></div>
-             <div class="timeline-time" data-card-key="time" style="color: var(--tl-time-color);">${this.escapeHTML(event.time)}</div>
-             <div class="timeline-content" data-card-key="content" style="color: var(--tl-text-color);">${this.escapeHTML(event.content)}</div>
-        </div>
-    `).join('');
-
-                    return `<div class="timeline-preview" style="${styleVars} background-color: ${finalBgColor}; border-radius: ${radius}px;">
-                <div class="timeline-line" style="background-color: var(--border-color);"></div>
-                ${eventsHTML}
+                    return `<div class="preview-item-wrapper ${isHiddenClass} ${borderClass} ${shadowClass}" 
+                 data-item-id="${item.id}" 
+                 data-border-style="${borderSettings.style}"
+                 ${styleAttribute}>
+              ${innerHTML}
             </div>`;
                 },
 
-                createEditorCardHTML(card) {
-                    const iconHTML = card.icon ? `<span class="iconify" data-icon="${card.icon}" style="font-size: 1.2em; vertical-align: middle; margin-right: 5px;"></span>` : '选择图标';
-                    const g = this.state.globalCardStyles;
-                    const contentPreview = card.content || '<span style="color: var(--text-placeholder);">点击编辑内容...</span>';
+                createPreviewCardHTML(item) {
+                    const stickerHTML = item.sticker && item.sticker !== 'none' ? `<div class="preview-card-sticker ${item.sticker}"></div>` : '';
+                    const iconHTML = item.icon ? `<span class="iconify" data-icon="${item.icon}"></span>` : '';
 
-                    // 读取状态
-                    const advClass = card.isAdvancedOpen ? 'show-advanced' : '';
+                    const g = this.state.globalComponentStyles;
+                    const finalAlign = item.textAlign || g.textAlign;
+                    const justifyContent = { left: 'flex-start', center: 'center', right: 'flex-end' }[finalAlign] || 'flex-start';
+                    const finalTitleColor = item.titleColor || g.titleColor || item.textColor || g.textColor;
 
-                    return `<span class="card-drag-handle">☰</span><div class="editor-card-header"><button class="btn btn-danger btn-small card-delete-btn">删</button></div>
-                        <div class="editor-card-content ${advClass}">
-                            <h4>基础设置</h4>
-                            <div class="form-group"><label>标题:</label><div class="input-group"><input type="text" data-card-key="title" value="${this.escapeHTML(card.title || '')}" style="border-right: none;"><button class="btn btn-default select-icon-btn" style="width: auto; flex-shrink: 0; border-radius: 0 6px 6px 0; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${iconHTML}</button></div></div>
-                            <div class="form-group">
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-                                    <label style="margin-bottom: 0;">内容:<span class="tooltip-trigger" data-tooltip="此处支持富文本编辑。卡片内部设置的文本颜色、背景色等设置会覆盖外部的样式。"><span class="iconify" data-icon="mdi:help-circle-outline"></span></span></label>
-                                    <button class="btn btn-default btn-small edit-content-btn"><span class="iconify" data-icon="mdi:pencil"></span> 编辑内容</button>
-                                </div>
-                                <div class="rich-text-editor-trigger">
-                                    <div class="rich-text-preview">${contentPreview}</div>
-                                </div>
-                            </div>
-                            <div class="form-group"><label>对齐:</label><div class="radio-group">
-                                <label><input type="radio" name="card-${card.id}-align" value="" data-card-key="textAlign" ${!['left', 'center', 'right'].includes(card.textAlign) ? 'checked' : ''}>默认</label>
-                                <label><input type="radio" name="card-${card.id}-align" value="left" data-card-key="textAlign" ${card.textAlign === 'left' ? 'checked' : ''}>左</label>
-                                <label><input type="radio" name="card-${card.id}-align" value="center" data-card-key="textAlign" ${card.textAlign === 'center' ? 'checked' : ''}>中</label>
-                                <label><input type="radio" name="card-${card.id}-align" value="right" data-card-key="textAlign" ${card.textAlign === 'right' ? 'checked' : ''}>右</label>
-                            </div></div>
-                             <div style="text-align: right; margin-bottom: 10px;">
-                                <label class="checkbox-group advanced-toggle-label"><input type="checkbox" class="advanced-toggle" ${card.isAdvancedOpen ? 'checked' : ''}> 高级独立样式</label>
-                            </div>
-                            <div class="advanced-setting">
-                                <hr class="separator">
-                                <h4>独立样式</h4>
-                                <div class="form-group"><label>装饰贴纸:</label><div class="radio-group"><label><input type="radio" name="card-${card.id}-sticker" value="none" data-card-key="sticker" ${card.sticker === 'none' || !card.sticker ? 'checked' : ''}>无</label><label><input type="radio" name="card-${card.id}-sticker" value="tape" data-card-key="sticker" ${card.sticker === 'tape' ? 'checked' : ''}>胶带</label><label><input type="radio" name="card-${card.id}-sticker" value="pushpin" data-card-key="sticker" ${card.sticker === 'pushpin' ? 'checked' : ''}>图钉</label></div></div>
-                                <div class="color-control-row">
-                                    <div class="color-control-group"><label>背景色:</label><div class="input-group"><input type="color" data-card-key="bgColor" value="${card.bgColor || ''}"><input class="color-hex-input" type="text" data-card-key="bgColor" value="${card.bgColor || ''}" placeholder="${g.bgColor} (全局)"><button class="btn btn-default btn-small" data-reset-card-key="bgColor">重置</button></div></div>
-                                    <div class="color-control-group"><label>正文颜色:</label><div class="input-group"><input type="color" data-card-key="textColor" value="${card.textColor || ''}"><input class="color-hex-input" type="text" data-card-key="textColor" value="${card.textColor || ''}" placeholder="${g.textColor} (全局)"><button class="btn btn-default btn-small" data-reset-card-key="textColor">重置</button></div></div>
-                                </div>
-                                <div class="color-control-row" style="margin-top: 10px;">
-                                    <div class="color-control-group"><label>标题颜色:</label><div class="input-group"><input type="color" data-card-key="titleColor" value="${card.titleColor || ''}"><input class="color-hex-input" type="text" data-card-key="titleColor" value="${card.titleColor || ''}" placeholder="同正文色"><button class="btn btn-default btn-small" data-reset-card-key="titleColor">重置</button></div></div>
-                                </div>
-                                <div class="color-control-row" style="margin-top: 10px;">
-                                    <div class="color-control-group"><label>标题字号:</label><select data-card-key="titleFontSize"><option value="">默认</option><option value="1em">小</option><option value="1.1em">中</option><option value="1.2em">大</option><option value="1.4em">特大</option></select></div>
-                                    <div class="color-control-group"><label>正文字号:</label><select data-card-key="contentFontSize"><option value="">默认</option><option value="0.8em">特小</option><option value="0.95em">小</option><option value="1em">中</option><option value="1.1em">大</option></select></div>
-                                </div>
-                                <hr class="separator">
-                                <div class="form-group"><label>背景图:</label><div class="input-group simple"><input type="file" class="card-bg-upload" accept="image/*"><button class="btn btn-default btn-small card-clear-bg-btn">清除</button></div></div>
-                                <div class="card-overlay-controls" style="${card.bgImageDataUrl ? '' : 'display:none;'}"><label>图片蒙版:</label><div class="color-control-row"><div class="color-control-group"><label>颜色:</label><div class="input-group"><input type="color" data-card-key="overlayColor" value="${card.overlayColor || '#ffffff'}"><input class="color-hex-input" type="text" data-card-key="overlayColor" value="${card.overlayColor || '#ffffff'}"></div></div><div class="color-control-group"><label>不透明度:</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-card-key="overlayOpacity" min="0" max="1" step="0.05" value="${card.overlayOpacity ?? 0.5}"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div></div></div>
-                            </div>
+                    const cardHTML = `
+                        ${stickerHTML}
+                        <div class="preview-card-inner">
+                            <h3 class="preview-card-title" data-item-key="title" style="justify-content: ${justifyContent}; color: ${finalTitleColor};">${iconHTML}${this.escapeHTML(item.title || '')}</h3>
+                            <div class="preview-card-content" data-item-key="content">${this.sanitizeHTML(item.content || '')}</div>
                         </div>`;
+
+                    const cardEl = document.createElement('div');
+                    cardEl.className = 'preview-card';
+                    cardEl.style.setProperty('--card-transition-name', `card-${item.id}`);
+                    cardEl.innerHTML = cardHTML;
+
+                    return cardEl.outerHTML;
                 },
 
-                createEditorButtonCardHTML(card) {
-                    const iconHTML = card.icon ? `<span class="iconify" data-icon="${card.icon}"></span>` : '图标';
-                    const advClass = card.isAdvancedOpen ? 'show-advanced' : ''; // 读取状态
+                createPreviewImageHTML(item) {
+                    const textColorStyle = item.textColor ? `style="color: ${item.textColor};"` : '';
+                    const figcaptionContent = (item.title || item.description) ?
+                        `<figcaption ${textColorStyle}>
+                            ${item.title ? `<strong data-item-key="title">${this.escapeHTML(item.title)}</strong>` : ''}
+                            <span data-item-key="description">${this.escapeHTML(item.description || '')}</span>
+                        </figcaption>`
+                        : '';
 
-                    return `
-                        <span class="card-drag-handle">☰</span>
-                        <div class="editor-card-header"><button class="btn btn-danger btn-small card-delete-btn">删</button></div>
-                        <div class="editor-card-content ${advClass}">
-                            <div style="text-align: right; margin-bottom: 10px;">
-                                <label class="checkbox-group advanced-toggle-label"><input type="checkbox" class="advanced-toggle" ${card.isAdvancedOpen ? 'checked' : ''}> 高级独立样式</label>
-                            </div>
-                            <div class="form-group">
-                                <label>按钮内容:</label>
-                                <div class="input-group">
-                                    <button class="btn btn-default select-icon-btn" style="width: auto; flex-shrink: 0; border-radius: 6px 0 0 6px;">${iconHTML}</button>
-                                    <input type="text" data-card-key="text" value="${this.escapeHTML(card.text || '')}" placeholder="按钮文字" style="border-left: none;">
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label>宽度:</label>
-                                <div class="radio-group">
-                                    <label><input type="radio" name="btn-width-${card.id}" value="" data-card-key="width" ${!card.width ? 'checked' : ''}>自动</label>
-                                    <label><input type="radio" name="btn-width-${card.id}" value="50%" data-card-key="width" ${card.width === '50%' ? 'checked' : ''}>50%</label>
-                                    <label><input type="radio" name="btn-width-${card.id}" value="100%" data-card-key="width" ${card.width === '100%' ? 'checked' : ''}>100%</label>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label>对齐:</label>
-                                <div class="radio-group">
-                                    <label><input type="radio" name="btn-align-${card.id}" value="" data-card-key="textAlign" ${!card.textAlign ? 'checked' : ''}>默认</label>
-                                    <label><input type="radio" name="btn-align-${card.id}" value="flex-start" data-card-key="textAlign" ${card.textAlign === 'flex-start' ? 'checked' : ''}>居左</label>
-                                    <label><input type="radio" name="btn-align-${card.id}" value="center" data-card-key="textAlign" ${card.textAlign === 'center' ? 'checked' : ''}>居中</label>
-                                    <label><input type="radio" name="btn-align-${card.id}" value="flex-end" data-card-key="textAlign" ${card.textAlign === 'flex-end' ? 'checked' : ''}>居右</label>
-                                </div>
-                            </div>
-                            <hr class="separator">
-                            <h4>独立样式 (可选)</h4>
-                            <div class="color-control-row">
-                                <div class="color-control-group"><label>背景色:</label><div class="input-group"><input type="color" data-card-key="bgColor"><input type="text" class="color-hex-input" data-card-key="bgColor" placeholder="全局"><button class="btn btn-default btn-small" data-reset-card-key="bgColor">重置</button></div></div>
-                                <div class="color-control-group"><label>文字颜色:</label><div class="input-group"><input type="color" data-card-key="textColor"><input type="text" class="color-hex-input" data-card-key="textColor" placeholder="全局"><button class="btn btn-default btn-small" data-reset-card-key="textColor">重置</button></div></div>
-                            </div>
-                             <div class="form-group" style="margin-top: 15px;"><label>圆角 (px):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-card-key="radius" min="0" max="40"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div>
-                             <button class="btn btn-default btn-small" data-reset-card-key="radius" style="margin-left: 10px;">重置</button>
-                        </div>`;
+                    return `<figure>
+                                <img src="" alt="${this.escapeHTML(item.title || '')}" loading="lazy" style="object-fit: ${item.imageFillMode || 'cover'};">
+                                ${figcaptionContent}
+                            </figure>`;
                 },
 
-                createEditorImageCardHTML(card) {
-                    const imgHTML = `<img src="" loading="lazy">`;
+                createPreviewButtonHTML(item) {
+                    const g = this.state.globalComponentStyles;
+                    const iconHTML = item.icon ? `<span class="iconify" data-icon="${item.icon}"></span>` : '';
 
-                    return `<span class="card-drag-handle">☰</span>
-                        <div class="editor-card-header"><button class="btn btn-danger btn-small card-delete-btn">删</button></div>
-                        <div class="editor-card-content">
-                            <div class="image-card-editor-content">
-                                <div class="image-card-editor-thumb">
-                                    <div class="thumbnail-wrapper">
-                                        ${imgHTML}
-                                        <div class="thumbnail-actions">
-                                            <button class="btn btn-icon crop-image-btn" title="裁剪与调整"><span class="iconify" data-icon="mdi:crop-rotate"></span></button>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="image-card-editor-fields">
-                                    <div class="form-group"><label>标题:</label><input type="text" data-card-key="title" value="${this.escapeHTML(card.title || '')}"></div>
-                                    <div class="form-group"><label>描述:</label><textarea data-card-key="description" rows="2">${this.escapeHTML(card.description || '')}</textarea></div>
-                                </div>
-                            </div>
-                            <div class="form-group" style="margin-top: 10px;">
-                                <label>图片填充模式:</label>
-                                <div class="radio-group">
-                                    <label><input type="radio" name="img-fill-${card.id}" value="cover" data-card-key="imageFillMode" ${card.imageFillMode === 'cover' || !card.imageFillMode ? 'checked' : ''}>填充 (Cover)</label>
-                                    <label><input type="radio" name="img-fill-${card.id}" value="contain" data-card-key="imageFillMode" ${card.imageFillMode === 'contain' ? 'checked' : ''}>完整 (Contain)</label>
-                                </div>
-                            </div>
-                        </div>`;
+                    const styles = [];
+                    styles.push(`--button-bg-color: ${item.bgColor || g.bgColor}`);
+                    styles.push(`--button-text-color: ${item.textColor || g.textColor}`);
+                    if (item.radius != null) styles.push(`--button-border-radius: ${item.radius}px`);
+
+                    const finalAlign = item.textAlign || 'center';
+                    styles.push(`--button-text-align: ${finalAlign}`);
+
+                    return `<div class="preview-button" style="${styles.join(';')}">
+                        ${iconHTML}<span data-item-key="text">${this.escapeHTML(item.text || '')}</span>
+                    </div>`;
                 },
 
-                createEditorMusicBlockHTML(block) {
-                    const s = block.settings;
-                    const g = this.state.globalCardStyles;
-                    const gTheme = this.state.globalTheme;
-                    return `
-                        <div class="form-group"><label>专辑封面:</label>
-                             <div class="image-card-editor-content">
-                                <div class="music-cover-thumb" style="width: 80px; flex-shrink: 0;"><div class="thumbnail-wrapper"><img src="" loading="lazy"></div></div>
-                                <div class="image-card-editor-fields"><input type="file" id="music-cover-upload" accept="image/*">
-                                <div class="form-group" style="margin-top:5px; margin-bottom:0;"><label style="font-size:0.8rem">高亮色:</label><div class="input-group simple"><input type="color" data-setting-key="accentColor" value="${s.accentColor || ''}"><input type="text" class="color-hex-input" data-setting-key="accentColor" value="${s.accentColor || ''}" placeholder="${gTheme.accent}"><button class="btn btn-default btn-small" data-reset-block-key="accentColor">重置</button></div></div></div>
-                            </div>
-                        </div>
-                        <div class="form-group"><label>歌曲名称:</label><input type="text" data-setting-key="songTitle" value="${this.escapeHTML(s.songTitle || '')}"></div>
-                        <div class="form-group"><label>歌手:</label><input type="text" data-setting-key="artist" value="${this.escapeHTML(s.artist || '')}"></div>
-                        <div class="form-group"><label>播放进度 (输入时间自动计算):</label><div class="input-group simple"><input type="text" data-setting-key="currentTime" value="${s.currentTime || '00:00'}" placeholder="01:20" style="text-align:center;"><span style="padding:0 5px;">/</span><input type="text" data-setting-key="totalTime" value="${s.totalTime || '03:00'}" placeholder="03:00" style="text-align:center;"></div></div>
-                        <div class="form-group"><label>歌词 (居中显示):</label><textarea data-setting-key="lyrics" rows="3" placeholder="上一句&#10;当前句(高亮)&#10;下一句">${this.escapeHTML(s.lyrics || '')}</textarea></div>
-                        <hr class="separator"><div style="text-align: right; margin-bottom: 10px;"><label class="checkbox-group advanced-toggle-label"><input type="checkbox" class="advanced-toggle"> 🎨 独立外观设置</label></div>
-                        <div class="advanced-setting">
-                            <div class="color-control-row">
-                                <div class="color-control-group"><label>背景色:</label><div class="input-group"><input type="color" data-setting-key="bgColor" value="${s.bgColor || ''}"><input type="text" class="color-hex-input" data-setting-key="bgColor" value="${s.bgColor || ''}" placeholder="${g.bgColor} (全局)"><button class="btn btn-default btn-small" data-reset-block-key="bgColor">重置</button></div></div>
-                                <div class="color-control-group"><label>文字色:</label><div class="input-group"><input type="color" data-setting-key="textColor" value="${s.textColor || ''}"><input type="text" class="color-hex-input" data-setting-key="textColor" value="${s.textColor || ''}" placeholder="${g.textColor} (全局)"><button class="btn btn-default btn-small" data-reset-block-key="textColor">重置</button></div></div>
-                            </div>
-                            <div class="color-control-row" style="margin-top:10px;">
-                                <div class="color-control-group"><label>不透明度:</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-setting-key="opacity" min="0" max="1" step="0.05" value="${s.opacity !== undefined && s.opacity !== '' ? s.opacity : g.opacity}"><button class="btn btn-default btn-stepper plus">+</button></div><button class="btn btn-default btn-small" data-reset-block-key="opacity" style="margin-top:5px; width:100%;">重置 (跟随全局)</button></div>
-                                <div class="color-control-group"><label>圆角(px):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-setting-key="radius" min="0" max="40" step="1" value="${s.radius !== undefined && s.radius !== '' ? s.radius : g.radius}"><button class="btn btn-default btn-stepper plus">+</button></div><button class="btn btn-default btn-small" data-reset-block-key="radius" style="margin-top:5px; width:100%;">重置 (跟随全局)</button></div>
-                            </div>
-                        </div>`;
-                },
-
-                parseTimeToSeconds(timeStr) {
-                    if (!timeStr) return 0;
-                    const parts = timeStr.split(':');
-                    if (parts.length !== 2) return 0;
-                    return parseInt(parts[0]) * 60 + parseInt(parts[1]);
-                },
-
-                createPreviewMusicBlockHTML(block) {
-                    const s = block.settings;
-                    const currentSec = this.parseTimeToSeconds(s.currentTime);
-                    const totalSec = this.parseTimeToSeconds(s.totalTime);
+                createPreviewMusicHTML(item) {
+                    if (item.style === 'vinyl') {
+                        return this.createPreviewVinylMusicHTML(item);
+                    }
+                    const currentSec = this.parseTimeToSeconds(item.currentTime);
+                    const totalSec = this.parseTimeToSeconds(item.totalTime);
                     const percent = totalSec > 0 ? (currentSec / totalSec) * 100 : 0;
-                    const lines = (s.lyrics || '').split('\n');
+                    const lines = (item.lyrics || '').split('\n');
 
-                    const g = this.state.globalCardStyles;
-                    const rawBg = s.bgColor || g.bgColor;
-                    const opacity = (s.opacity !== undefined && s.opacity !== '') ? s.opacity : g.opacity;
+                    const g = this.state.globalComponentStyles;
+                    const rawBg = item.bgColor || g.bgColor;
+                    const opacity = (item.opacity !== undefined && item.opacity !== '') ? item.opacity : g.opacity;
                     const bgVar = this.hexToRgba(rawBg, opacity);
 
-                    const textVar = s.textColor || g.textColor;
-                    const accentVar = s.accentColor || this.state.globalTheme.accent;
-                    const radiusVar = (s.radius !== undefined && s.radius !== '') ? `${s.radius}px` : `${g.radius}px`;
+                    const textVar = item.textColor || g.textColor;
+                    const accentVar = item.accentColor || this.state.globalTheme.accent;
+                    const radiusVar = (item.radius !== undefined && item.radius !== '') ? `${item.radius}px` : `${g.radius}px`;
 
                     const l1 = lines[0] || '&nbsp;';
                     const l2 = lines[1] || '暂无歌词';
@@ -2667,8 +2525,8 @@
                             <img src="" class="music-cover" alt="Cover">
                             <div class="music-info">
                                 <div class="music-header">
-                                    <div class="music-title" data-setting-key="songTitle">${this.escapeHTML(s.songTitle)}</div>
-                                    <div class="music-artist" data-setting-key="artist">${this.escapeHTML(s.artist)}</div>
+                                    <div class="music-title" data-item-key="songTitle">${this.escapeHTML(item.songTitle)}</div>
+                                    <div class="music-artist" data-item-key="artist">${this.escapeHTML(item.artist)}</div>
                                 </div>
                                 <div class="music-lyrics-container">
                                     <div class="lyrics-line prev">${this.escapeHTML(l1)}</div>
@@ -2678,7 +2536,7 @@
                                 <div class="music-bottom-area">
                                     <div class="music-progress-area">
                                         <div class="music-progress-bar"><div class="music-progress-fill" style="width: ${percent}%;"></div></div>
-                                        <div class="music-time-labels"><span>${s.currentTime || '00:00'}</span><span>${s.totalTime || '00:00'}</span></div>
+                                        <div class="music-time-labels"><span>${item.currentTime || '00:00'}</span><span>${item.totalTime || '00:00'}</span></div>
                                     </div>
                                     <div class="music-controls">
                                         <span class="iconify" data-icon="mdi:skip-previous"></span>
@@ -2690,32 +2548,117 @@
                         </div>`;
                 },
 
-                createEditorTimelineEventHTML(card) {
+                createPreviewVinylMusicHTML(item) {
+                    const g = this.state.globalComponentStyles;
+                    const bgVar = this.hexToRgba(item.bgColor || g.bgColor, item.opacity ?? g.opacity);
+                    const textVar = item.textColor || g.textColor;
+                    const radiusVar = (item.radius !== undefined && item.radius !== '') ? `${item.radius}px` : `${g.radius}px`;
+
                     return `
-                        <div class="timeline-event-editor" data-card-id="${card.id}">
-                            <span class="card-drag-handle">☰</span>
-                            <div class="editor-card-header" style="padding: 4px 8px;"><button class="btn btn-danger btn-small card-delete-btn">删</button></div>
-                            <div class="editor-card-content" style="padding: 10px;">
-                                <div class="form-group"><label>时间点:</label><input type="text" data-card-key="time" value="${this.escapeHTML(card.time || '')}"></div>
-                                <div class="form-group" style="margin-bottom:0;"><label>事件内容:</label><textarea data-card-key="content" rows="2">${this.escapeHTML(card.content || '')}</textarea></div>
+                    <div class="music-card-preview music-card-vinyl" style="--music-bg-color:${bgVar}; --music-text-color:${textVar}; --music-radius:${radiusVar};">
+                        <div class="vinyl-player">
+                            <div class="vinyl-record">
+                                <img src="" class="music-cover vinyl-label" alt="Cover">
+                            </div>
+                            <div class="vinyl-tonearm"></div>
+                        </div>
+                        <div class="music-info">
+                            <div class="music-title" data-item-key="songTitle">${this.escapeHTML(item.songTitle)}</div>
+                            <div class="music-artist" data-item-key="artist">${this.escapeHTML(item.artist)}</div>
+                            <div class="music-controls" style="font-size: 1.5em; margin-top: 10px;">
+                                <span class="iconify" data-icon="mdi:skip-previous"></span>
+                                <span class="iconify" data-icon="mdi:play-circle" style="font-size: 1.4em;"></span>
+                                <span class="iconify" data-icon="mdi:skip-next"></span>
+                            </div>
+                        </div>
+                    </div>`;
+                },
+
+                createPreviewProgressHTML(item) {
+                    const h = item.thickness || 8;
+                    const g = this.state.globalComponentStyles;
+
+                    const rawBg = item.bgColor || 'transparent';
+                    let finalBgColor = 'transparent';
+
+                    if (item.bgColor) {
+                        const finalOpacity = (item.opacity !== undefined && item.opacity !== '') ? item.opacity : g.opacity;
+                        finalBgColor = this.hexToRgba(rawBg, finalOpacity);
+                    }
+
+                    const textColor = item.textColor || g.textColor;
+                    const radius = (item.radius !== undefined && item.radius !== '') ? item.radius : (item.bgColor ? g.radius : 0);
+                    const padding = (item.padding !== undefined && item.padding !== '') ? item.padding : 0;
+
+                    const bgStyle = `background-color: ${finalBgColor}; padding: ${padding}px; border-radius: ${radius}px;`;
+
+                    return `
+                        <div class="progress-bar-preview" style="${bgStyle}">
+                            <div class="progress-bar-header" style="color: ${textColor};">
+                                <span class="progress-bar-label" data-item-key="label">${this.escapeHTML(item.label)}</span>
+                                <span class="progress-bar-value">${item.percentage}%</span>
+                            </div>
+                            <div class="progress-bar-track" style="background-color: ${item.trackColor || '#eee'}; height: ${h}px; border-radius: ${h / 2}px;">
+                                <div class="progress-bar-fill" style="width: ${item.percentage}%; background-color: ${item.color};"></div>
                             </div>
                         </div>`;
+                },
+
+                createPreviewTimelineHTML(item) {
+                    const g = this.state.globalComponentStyles;
+
+                    const rawBg = item.bgColor || g.bgColor;
+                    const finalOpacity = (item.opacity !== undefined && item.opacity !== '') ? item.opacity : g.opacity;
+                    const finalBgColor = this.hexToRgba(rawBg, finalOpacity);
+
+                    const textColor = item.textColor || g.textColor;
+                    const radius = (item.radius !== undefined && item.radius !== '') ? item.radius : g.radius;
+
+                    const styleVars = `
+                        --tl-text-color: ${textColor};
+                        --tl-time-color: ${item.timeColor || 'var(--text-secondary)'};
+                        --tl-accent-color: ${item.accentColor || 'var(--g-theme-primary)'};
+                    `;
+
+                    const eventsHTML = (item.cards || []).map(event => `
+                        <div class="timeline-event" data-card-id="${event.id}">
+                             <div class="timeline-dot" style="border-color: var(--tl-accent-color); background-color: var(--bg-preview-page);"></div>
+                             <div class="timeline-time" data-card-key="time" style="color: var(--tl-time-color);">${this.escapeHTML(event.time)}</div>
+                             <div class="timeline-content" data-card-key="content" style="color: var(--tl-text-color);">${this.escapeHTML(event.content)}</div>
+                        </div>`).join('');
+
+                    return `<div class="timeline-preview" style="${styleVars} background-color: ${finalBgColor}; border-radius: ${radius}px;">
+                                <div class="timeline-line" style="background-color: var(--border-color);"></div>
+                                ${eventsHTML}
+                            </div>`;
+                },
+
+                createPreviewSeparatorHTML(item) {
+                    const hasTextOrIcon = item.text || item.icon;
+                    const iconHTML = item.icon ? `<span class="iconify" data-icon="${item.icon}" style="margin-right: 8px; vertical-align: -0.15em;"></span>` : '';
+                    const textHTML = `<span data-item-key="text" style="color: ${item.textColor}; padding: 0 12px; flex-shrink: 0;">${iconHTML}${this.escapeHTML(item.text || '')}</span>`;
+                    const lineHTML = `<div class="separator-preview-line" style="flex-grow: 1; border-top: ${item.thickness}px ${item.style} ${item.color};"></div>`;
+
+                    return `<div class="separator-preview" style="margin: ${item.margin}px 0;">
+                                ${lineHTML}${hasTextOrIcon ? textHTML + lineHTML : ''}
+                            </div>`;
+                },
+
+                createPreviewSpacerHTML(item) {
+                    return `<div class="spacer-preview" style="height: ${item.height}px;"></div>`;
                 },
 
                 /**
                  * @description 将卡片的样式（包括全局样式和独立样式）应用到指定的DOM元素上。
                  * @param {HTMLElement} cardEl - 目标卡片的DOM元素。
-                 * @param {object} cardData - 卡片的状态数据。
+                 * @param {object} itemData - 卡片的状态数据。
                  */
-                async applyCardStyles(cardEl, cardData) {
-                    const g = this.state.globalCardStyles;
+                async applyCardStyles(cardEl, itemData) {
+                    const g = this.state.globalComponentStyles;
                     const use = (key, val) => (val === undefined || val === null || val === '') ? g[key] : val;
 
-                    const followGlobalOpacity = cardData.followGlobalOpacity !== false;
-                    const finalOpacity = followGlobalOpacity ? g.opacity : (cardData.opacity ?? 1.0);
-
                     // 竖排文字支持
-                    if (cardData.writingMode === 'vertical-rl') {
+                    if (itemData.writingMode === 'vertical-rl') {
                         cardEl.classList.add('vertical-rl');
                     } else {
                         cardEl.classList.remove('vertical-rl');
@@ -2726,23 +2669,23 @@
 
                     const titleEl = cardEl.querySelector('.preview-card-title');
                     const contentEl = cardEl.querySelector('.preview-card-content');
-                    innerEl.style.textAlign = use('textAlign', cardData.textAlign);
+                    innerEl.style.textAlign = use('textAlign', itemData.textAlign);
                     if (titleEl) {
-                        titleEl.style.fontSize = cardData.titleFontSize ? cardData.titleFontSize : '';
+                        titleEl.style.fontSize = itemData.titleFontSize ? itemData.titleFontSize : '';
                     }
                     if (contentEl) {
-                        contentEl.style.fontSize = cardData.contentFontSize ? cardData.contentFontSize : '';
+                        contentEl.style.fontSize = itemData.contentFontSize ? itemData.contentFontSize : '';
                     }
 
 
-                    const finalTextColor = use('textColor', cardData.textColor);
-                    const finalTitleColor = cardData.titleColor || g.titleColor || finalTextColor;
+                    const finalTextColor = use('textColor', itemData.textColor);
+                    const finalTitleColor = itemData.titleColor || g.titleColor || finalTextColor;
                     if (titleEl) titleEl.style.color = finalTitleColor;
 
 
                     let finalBg;
-                    if (cardData.bgImageDataUrl) {
-                        let imageUrl = cardData.bgImageDataUrl;
+                    if (itemData.bgImageDataUrl) {
+                        let imageUrl = itemData.bgImageDataUrl;
                         if (imageUrl.startsWith('idb://')) {
                             try {
                                 const imageId = imageUrl.substring(6);
@@ -2751,11 +2694,13 @@
                             } catch (e) { console.error('从数据库加载卡片背景失败:', e); }
                         }
                         finalBg = `url(${imageUrl})`;
-                    } else if (cardData.bgColor) {
-                        finalBg = cardData.bgColor;
+                    } else if (itemData.bgColor) {
+                        finalBg = itemData.bgColor;
                     } else {
                         finalBg = g.bgMode === 'gradient' ? `linear-gradient(${g.bgGradientAngle}deg, ${g.bgGradientStart}, ${g.bgGradientEnd})` : g.bgColor;
                     }
+
+                    const finalOpacity = use('opacity', itemData.opacity);
 
                     innerEl.style.setProperty('--card-bg-final', finalBg);
                     innerEl.style.setProperty('--card-bg-opacity', finalOpacity);
@@ -2765,8 +2710,8 @@
                     } else {
                         innerEl.style.setProperty('--card-text-color', finalTextColor);
                         innerEl.style.setProperty('--active-card-text-shadow', 'none');
-                        const overlayOpacity = cardData.bgImageDataUrl ? (cardData.overlayOpacity ?? 0.5) : 0;
-                        innerEl.style.setProperty('--card-overlay-color', cardData.overlayColor || '#FFF');
+                        const overlayOpacity = itemData.bgImageDataUrl ? (itemData.overlayOpacity ?? 0.5) : 0;
+                        innerEl.style.setProperty('--card-overlay-color', itemData.overlayColor || '#FFF');
                         innerEl.style.setProperty('--card-overlay-opacity', parseFloat(overlayOpacity) > 0 ? overlayOpacity : 0);
                         innerEl.style.boxShadow = 'var(--active-card-shadow)';
                     }
@@ -2790,15 +2735,15 @@
                                 'text': '文本', 'title': '标题', 'songTitle': '歌名', 'artist': '歌手', 'lyrics': '歌词',
                                 'percentage': '进度', 'label': '标签', 'time': '时间', 'content': '内容',
                                 'gap': '间距', 'width': '宽度', 'height': '高度', 'margin': '边距',
-                                'layout': '布局', 'masonryEnabled': '瀑布流开关', 'coverArt': '封面',
+                                'layout': '布局', 'coverArt': '封面',
                                 'accentColor': '高亮色', 'trackColor': '轨道色', 'thickness': '粗细',
                                 'timeColor': '时间色', 'style': '样式', 'color': '颜色',
                                 'isVisible': '可见性', 'headerBgColor': '头部背景', 'headerTextColor': '头部文字',
                                 'pageBgSolidColor': '页面背景', 'nickname': '昵称', 'subtitle': '副标题', 'bio': '简介'
                             };
                             const parentMap = {
-                                'blocks': '区块', 'personalInfo': '个人信息', 'pageStyles': '页面样式',
-                                'globalCardStyles': '全局卡片', 'globalButtonStyles': '全局按钮'
+                                'items': '模块', 'personalInfo': '个人信息', 'pageStyles': '页面样式',
+                                'globalComponentStyles': '全局组件',
                             };
                             const actionName = nameMap[keyName] || keyName;
                             const scopeName = parentMap[parts[0]] || '';
@@ -2825,8 +2770,7 @@
                  */
                 triggerRender(keyPath) {
                     const styles = this.state.pageStyles;
-                    const gCard = this.state.globalCardStyles;
-                    const gButton = this.state.globalButtonStyles;
+                    const gComp = this.state.globalComponentStyles;
                     const gBorder = this.state.globalBorderSettings;
                     const gTheme = this.state.globalTheme;
                     const info = this.state.personalInfo;
@@ -2855,36 +2799,57 @@
                         'pageStyles.pageOverlayOpacity': () => this.renderPageStyles(),
                         'pageStyles.pageOverlayColor': () => this.renderPageStyles(),
 
-                        // 全局按钮
-                        'globalButtonStyles.bgColor': () => r.setProperty('--g-button-bg-color', gButton.bgColor),
-                        'globalButtonStyles.textColor': () => r.setProperty('--g-button-text-color', gButton.textColor),
-                        'globalButtonStyles.radius': () => r.setProperty('--g-button-border-radius', `${gButton.radius}px`),
-                        'globalButtonStyles.textAlign': () => r.setProperty('--g-button-text-align', gButton.textAlign),
+                        // 全局组件
+                        'globalComponentStyles.opacity': () => { r.setProperty('--g-comp-opacity', gComp.opacity); this.renderPreviewItems(); },
+                        'globalComponentStyles.radius': () => r.setProperty('--g-comp-border-radius', `${gComp.radius}px`),
+                        'globalComponentStyles.bgColor': () => { r.setProperty('--g-comp-bg-color', gComp.bgColor); if (gComp.bgMode === 'solid') this.renderPreviewItems(); },
+                        'globalComponentStyles.textColor': () => { r.setProperty('--g-comp-text-color', gComp.textColor); this.renderPreviewItems(); },
+                        'globalComponentStyles.bgGradientStart': () => { if (gComp.bgMode === 'gradient') this.renderPreviewItems(); },
+                        'globalComponentStyles.bgGradientEnd': () => { if (gComp.bgMode === 'gradient') this.renderPreviewItems(); },
+                        'globalComponentStyles.bgGradientAngle': () => { if (gComp.bgMode === 'gradient') this.renderPreviewItems(); },
+                        'globalComponentStyles.textStrokeWidth': () => { r.setProperty('--g-comp-text-stroke', gComp.textStrokeWidth > 0 ? `${gComp.textStrokeWidth}px ${gComp.textStrokeColor}` : '0px transparent'); },
+                        'globalComponentStyles.textStrokeColor': () => { r.setProperty('--g-comp-text-stroke', gComp.textStrokeWidth > 0 ? `${gComp.textStrokeWidth}px ${gComp.textStrokeColor}` : '0px transparent'); },
+                        'globalComponentStyles.titleColor': () => { this.renderPreviewItems(); },
+                        'globalComponentStyles.titleFontSize': () => { r.setProperty('--g-comp-title-font-size', gComp.titleFontSize); },
+                        'globalComponentStyles.contentFontSize': () => { r.setProperty('--g-comp-content-font-size', gComp.contentFontSize); },
+                        'globalComponentStyles.padding': () => { r.setProperty('--g-comp-padding', `${gComp.padding}px`); },
 
-                        // 全局卡片
-                        'globalCardStyles.opacity': () => { r.setProperty('--g-card-opacity', gCard.opacity); this.renderPreviewBlocks(); },
-                        'globalCardStyles.radius': () => r.setProperty('--g-card-border-radius', `${gCard.radius}px`),
-                        'globalCardStyles.bgColor': () => { r.setProperty('--g-card-bg-color', gCard.bgColor); if (gCard.bgMode === 'solid') this.renderPreviewBlocks(); },
-                        'globalCardStyles.textColor': () => { r.setProperty('--g-card-text-color', gCard.textColor); this.renderPreviewBlocks(); },
-                        'globalCardStyles.bgGradientStart': () => { if (gCard.bgMode === 'gradient') this.renderPreviewBlocks(); },
-                        'globalCardStyles.bgGradientEnd': () => { if (gCard.bgMode === 'gradient') this.renderPreviewBlocks(); },
-                        'globalCardStyles.bgGradientAngle': () => { if (gCard.bgMode === 'gradient') this.renderPreviewBlocks(); },
-                        'globalCardStyles.textStrokeWidth': () => { r.setProperty('--g-card-text-stroke', gCard.textStrokeWidth > 0 ? `${gCard.textStrokeWidth}px ${gCard.textStrokeColor}` : '0px transparent'); },
-                        'globalCardStyles.textStrokeColor': () => { r.setProperty('--g-card-text-stroke', gCard.textStrokeWidth > 0 ? `${gCard.textStrokeWidth}px ${gCard.textStrokeColor}` : '0px transparent'); },
-                        'globalCardStyles.titleColor': () => { this.renderPreviewBlocks(); },
-                        'globalCardStyles.titleFontSize': () => { r.setProperty('--g-card-title-font-size', gCard.titleFontSize); },
-                        'globalCardStyles.contentFontSize': () => { r.setProperty('--g-card-content-font-size', gCard.contentFontSize); },
-                        'globalCardStyles.padding': () => { r.setProperty('--g-card-padding', `${gCard.padding}px`); },
+                        
+                        'globalComponentStyles.shadowColor': () => this.updateGlobalComponentStyleVars(),
+                        'globalComponentStyles.shadowOpacity': () => this.updateGlobalComponentStyleVars(),
+                        'globalComponentStyles.shadowOffsetX': () => this.updateGlobalComponentStyleVars(),
+                        'globalComponentStyles.shadowOffsetY': () => this.updateGlobalComponentStyleVars(),
+                        'globalComponentStyles.shadowBlur': () => this.updateGlobalComponentStyleVars(),
 
                         // 全局边框
-                        'globalBorderSettings.style': () => { this.updateGlobalBorderVars(); this.renderPreviewBlocks(); },
+                        'globalBorderSettings.style': () => {
+                            this.updateGlobalBorderVars();
+                            this.renderPreviewItems();
+                            this.renderPersonalInfo(); 
+                        },
                         'globalBorderSettings.width': () => this.updateGlobalBorderVars(),
                         'globalBorderSettings.color': () => this.updateGlobalBorderVars(),
                         'globalBorderSettings.shadowOffset': () => this.updateGlobalBorderVars(),
                         'globalBorderSettings.applyTo.personalInfo': () => this.renderPersonalInfo(),
-                        'globalBorderSettings.applyTo.cardsInTextBlocks': () => this.renderPreviewBlocks(),
-                        'globalBorderSettings.applyTo.imagesInImageBlocks': () => this.renderPreviewBlocks(),
-                        'globalBorderSettings.applyTo.buttonsInButtonBlocks': () => this.renderPreviewBlocks(),
+                        'globalBorderSettings.applyTo.card': () => this.renderPreviewItems(),
+                        'globalBorderSettings.applyTo.image': () => this.renderPreviewItems(),
+                        'globalBorderSettings.applyTo.button': () => this.renderPreviewItems(),
+                        'globalBorderSettings.applyTo.music': () => this.renderPreviewItems(),
+                        'globalBorderSettings.applyTo.timeline': () => this.renderPreviewItems(),
+
+                        
+                        'globalBorderSettings.globalShadowSettings.color': () => this.updateGlobalBorderVars(),
+                        'globalBorderSettings.globalShadowSettings.opacity': () => this.updateGlobalBorderVars(),
+                        'globalBorderSettings.globalShadowSettings.offsetX': () => this.updateGlobalBorderVars(),
+                        'globalBorderSettings.globalShadowSettings.offsetY': () => this.updateGlobalBorderVars(),
+                        'globalBorderSettings.globalShadowSettings.blur': () => this.updateGlobalBorderVars(),
+                        // 应用目标改变需要重绘 HTML class
+                        'globalBorderSettings.globalShadowSettings.applyTo.personalInfo': () => this.renderPersonalInfo(),
+                        'globalBorderSettings.globalShadowSettings.applyTo.card': () => this.renderPreviewItems(),
+                        'globalBorderSettings.globalShadowSettings.applyTo.image': () => this.renderPreviewItems(),
+                        'globalBorderSettings.globalShadowSettings.applyTo.button': () => this.renderPreviewItems(),
+                        'globalBorderSettings.globalShadowSettings.applyTo.music': () => this.renderPreviewItems(),
+                        'globalBorderSettings.globalShadowSettings.applyTo.timeline': () => this.renderPreviewItems(),
 
                         // 个人信息
                         'personalInfo.nicknameColor': () => { this.elements.previewHeader.querySelector('#preview-nickname').style.color = info.nicknameColor; },
@@ -2946,175 +2911,119 @@
                         return;
                     }
 
-                    if (['pageStyles', 'globalCardStyles', 'globalButtonStyles', 'globalBorderSettings', 'globalTheme', 'exportSettings', 'systemSettings'].includes(mainKey)) {
-                        this.updateGlobalThemeVars();
-                        this.updateGlobalCardStyleVars();
-                        this.updateGlobalBorderVars();
-                        if (mainKey === 'exportSettings') this.updatePreviewAspectRatio();
-                        this.renderPageStyles();
-                        this.renderPreviewBlocks();
-                        if (this.selection.type === 'global') this.syncAllControls();
-                        return;
+                    if (['pageStyles', 'globalComponentStyles', 'globalBorderSettings', 'globalTheme', 'exportSettings', 'systemSettings'].includes(mainKey)) {
+                        switch (mainKey) {
+                            case 'globalComponentStyles':
+                                // 核心修复：只更新CSS变量，不再重新渲染所有模块。
+                                this.updateGlobalComponentStyleVars();
+                                break;
+                            case 'globalBorderSettings':
+                                this.updateGlobalBorderVars();
+                                // 仅当边框的“样式”或“应用目标”改变时才需要重绘，因为这会改变HTML的class和属性。
+                                if (keyPath.includes('style') || keyPath.includes('applyTo')) {
+                                    this.renderPreviewItems();
+                                }
+                                break;
+                            case 'pageStyles':
+                            case 'globalTheme':
+                                this.renderPageStyles();
+                                break;
+                            case 'exportSettings':
+                                this.updatePreviewAspectRatio();
+                                break;
+                            case 'systemSettings':
+                                this.applyLayout();
+                                break;
+                        }
+
+                        // 如果当前就在“全局”编辑面板，同步一下控件状态
+                        if (this.selection.type === 'global') {
+                            this.syncAllControls();
+                        }
+                        return; // 处理完毕，提前返回
                     }
 
-                    if (mainKey === 'blocks') {
+                    if (mainKey === 'items') {
                         if (keyParts.length <= 2) {
                             this.renderLayerPanel();
-                            this.renderPreviewBlocks();
+                            this.renderPreviewItems();
                             return;
                         }
 
-                        const blockIndex = parseInt(keyParts[1], 10);
-                        const block = this.state.blocks[blockIndex];
-                        if (!block) return;
+                        const itemIndex = parseInt(keyParts[1], 10);
+                        const item = this.state.items[itemIndex];
+                        if (!item) return;
 
                         const updatedProperty = keyParts[2];
 
                         if (updatedProperty === 'title') {
-                            const layerItem = this.elements.layerList.querySelector(`.layer-item[data-id="${block.id}"] .layer-name`);
-                            if (layerItem) layerItem.textContent = block.title;
+                            this.renderLayerPanel();
+                            this.renderPreviewItemById(item.id);
                             return;
                         }
 
-                        if (updatedProperty === 'isVisible' || updatedProperty === 'settings' || updatedProperty === 'isExpanded') {
-                            this.renderPreviewBlockById(block.id);
-                            const layerItemContainer = this.elements.layerList.querySelector(`.layer-item-container[data-block-id="${block.id}"]`);
-                            if (layerItemContainer) {
-                                layerItemContainer.querySelector('.layer-item').classList.toggle('is-hidden', block.isVisible === false);
-                                const eyeIcon = layerItemContainer.querySelector('.toggle-visibility-btn .iconify');
-                                if (eyeIcon) eyeIcon.dataset.icon = block.isVisible === false ? 'mdi:eye-off' : 'mdi:eye';
-                                layerItemContainer.classList.toggle('is-expanded', block.isExpanded === true);
-                            }
+                        if (updatedProperty === 'isVisible' || updatedProperty === 'isExpanded' || updatedProperty === 'layout') {
+                            this.renderPreviewItemById(item.id);
+                            this.renderLayerPanel();
                             return;
                         }
 
-                        if (updatedProperty === 'cards') {
-                            if (keyParts.length <= 4) {
-                                this.renderLayerPanel();
-                                this.renderPreviewBlockById(block.id);
-                                return;
-                            }
+                        this.renderPreviewItemById(item.id);
+                    }
+                    if (keyPath.startsWith('items') || keyPath.startsWith('systemSettings.masonryEnabled') || keyPath.startsWith('systemSettings.previewGap')) {
+                        setTimeout(() => this.applyLayout(), 50);
+                    }
+                },
 
-                            const cardIndex = parseInt(keyParts[3], 10);
-                            const cardProp = keyParts[4];
-                            const card = block.cards[cardIndex];
-                            if (!card) return;
+                handleMusicCoverUpload(event, itemId) {
+                    const item = this.findItem(itemId);
+                    if (!item) return;
+                    this.handleImageUpload(event, 'musicCover', { itemId, oldImageUrl: item.coverArt });
+                },
 
-                            if (['title', 'content', 'icon', 'text', 'time'].includes(cardProp)) {
-                                this.renderPreviewCardById(block.id, card.id);
-                                if (['title', 'text', 'time'].includes(cardProp)) {
-                                    this.renderLayerPanel();
-                                }
-                            } else {
-                                this.renderPreviewBlockById(block.id);
-                            }
-                            return;
+                handleItemBgUpload(event, itemId) {
+                    const item = this.findItem(itemId);
+                    this.handleImageUpload(event, 'cardBg', { itemId, oldImageUrl: item?.bgImageDataUrl });
+                },
+
+                async handleImageGalleryUpload(itemId, files) {
+                    if (!files.length) return;
+                    this.showLoading(`正在上传 ${files.length} 张图片...`);
+
+                    const successItems = [];
+                    const failedFiles = [];
+
+                    const results = await Promise.allSettled(Array.from(files).map(async file => {
+                        const objectUrl = URL.createObjectURL(file);
+                        const compressedUrl = await this.compressImage(objectUrl, 0.9, 1200, file.type);
+                        const blob = this.dataURLToBlob(compressedUrl);
+                        const imageId = this.generateId('img');
+                        await this.saveImageToDB({ id: imageId, blob });
+                        return { id: this.generateId('i'), type: 'image', isVisible: true, url: `idb://${imageId}`, title: '', description: '', imageFillMode: 'cover', layout: { width: 50 } };
+                    }));
+
+                    results.forEach((result, index) => {
+                        if (result.status === 'fulfilled') {
+                            successItems.push(result.value);
+                        } else {
+                            failedFiles.push(files[index].name);
+                            console.error(`处理文件 ${files[index].name} 失败:`, result.reason);
                         }
-                    }
-                },
+                    });
 
-                /**
-                 * @description 向指定区块添加一个新卡片或项目。
-                 * @param {string} blockType - 目标区块的类型。
-                 * @param {string} blockId - 目标区块的ID。
-                 * @param {boolean} isQuickAdd - 是否是通过图层面板的快捷按钮添加。
-                 */
-                addCard(blockType, blockId, isQuickAdd = false) {
-                    const block = this.findBlock(blockId);
-                    if (!block) return;
-
-                    let newCard;
-                    switch (blockType) {
-                        case 'text':
-                            newCard = { id: this.generateId('c'), icon: '', title: `新卡片`, content: '点击编辑内容', sticker: 'none' };
-                            break;
-                        case 'button':
-                            newCard = { id: this.generateId('c'), icon: '', text: '新按钮' };
-                            break;
-                        case 'timeline':
-                            newCard = { id: this.generateId('c'), time: '新时间点', content: '新事件内容' };
-                            break;
-                        default:
-                            return;
+                    if (successItems.length > 0) {
+                        this.pushHistory(`添加 ${successItems.length} 张图片`);
+                        const insertIndex = this.findItemIndex(itemId) + 1;
+                        this.state.items.splice(insertIndex, 0, ...successItems);
+                        this.debouncedSaveToLocal();
                     }
 
-                    this.pushHistory(`添加 ${blockType === 'timeline' ? '事件' : '项目'}`);
-                    if (!block.cards) block.cards = [];
-                    block.cards.push(newCard);
-                    this.debouncedSaveToLocal();
+                    this.renderAll();
+                    this.hideLoading();
 
-                    if (isQuickAdd) {
-                        const cardListEl = this.elements.layerList.querySelector(`.layer-item-container[data-block-id="${blockId}"] .card-layer-list`);
-                        if (cardListEl) {
-                            const newCardLayerItem = document.createElement('li');
-                            newCardLayerItem.className = 'card-layer-item';
-                            newCardLayerItem.dataset.cardId = newCard.id;
-                            newCardLayerItem.textContent = newCard.title || newCard.text || newCard.time;
-                            cardListEl.appendChild(newCardLayerItem);
-                            this.toggleLayerExpansion(blockId, true);
-                        }
-                    } else {
-                        this.renderLayerPanel();
+                    if (failedFiles.length > 0) {
+                        this.showErrorModal('部分图片上传失败', `以下文件未能成功上传: ${failedFiles.join(', ')}`);
                     }
-
-                    this.renderInspectorContent();
-                    this.renderPreviewBlockById(blockId);
-
-                    const newCardEditorEl = this.elements.inspectorPanel.querySelector(`[data-card-id="${newCard.id}"]`);
-                    if (newCardEditorEl) {
-                        newCardEditorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }
-                },
-
-                handleMusicCoverUpload(event, blockId) {
-                    const block = this.findBlock(blockId);
-                    if (!block) return;
-                    this.handleImageUpload(event, 'musicCover', { blockId, oldImageUrl: block.settings.coverArt });
-                },
-
-                /**
-                 * @description 触发图片上传流程以添加图片卡片。
-                 * @param {string} blockId - 目标区块的ID。
-                 */
-                addImageCard(blockId) {
-                    const blockEl = this.elements.inspectorPanel.querySelector(`.editor-block[data-block-id="${blockId}"]`);
-                    if (blockEl) {
-                        blockEl.querySelector('.image-upload-input').click();
-                    }
-                },
-
-                /**
-                 * @description 从指定区块中删除一个卡片或项目。
-                 * @param {string} blockId - 目标区块的ID。
-                 * @param {string} cardId - 目标卡片的ID。
-                 */
-                async deleteCard(blockId, cardId) {
-                    const block = this.findBlock(blockId);
-                    if (!block) return;
-
-                    const confirmed = await this.showConfirm('确认删除', '确定要删除这个项目吗？');
-                    if (!confirmed) return;
-
-                    const cardToDelete = block.cards.find(c => c.id === cardId);
-                    if (cardToDelete) {
-                        await this.deleteImageByUrl(cardToDelete.url);
-                        await this.deleteImageByUrl(cardToDelete.bgImageDataUrl);
-                    }
-
-                    this.pushHistory('删除项目');
-                    block.cards = block.cards.filter(c => c.id !== cardId);
-                    this.debouncedSaveToLocal();
-
-                    if (this.selection.cardId === cardId) {
-                        this.setSelection({ type: 'block', id: blockId });
-                    } else {
-                        this.renderInspectorContent();
-                    }
-
-                    this.renderLayerPanel();
-                    this.renderPreviewBlockById(blockId);
-
-                    this.showToast('项目已删除', 'info');
                 },
 
                 /**
@@ -3122,13 +3031,19 @@
                  */
                 async loadFromLocal() {
                     const json = localStorage.getItem('blokkoState');
-                    const historyJson = localStorage.getItem('blokkoHistory');
                     if (!json) {
                         await this.loadFontsFromDB();
                         return;
                     };
                     try {
                         let saved = JSON.parse(json);
+
+                        
+                        if (saved.blocks) {
+                            saved = this.migrateV1DataToV2(saved);
+                            this.showToast('检测到旧版本数据，已自动升级到 v2.0 模块化布局！', 'success');
+                        }
+
                         if (saved && saved.personalInfo) {
                             saved = await this.processStateForImageMigration(saved);
 
@@ -3138,42 +3053,8 @@
                                 this.showToast('旧版配置已加载，标签数据已自动转换。', 'info');
                             }
 
-                            let migrated = false;
-                            saved.blocks.forEach(block => {
-                                if (block.type === 'image' && block.images && !block.cards) {
-                                    block.cards = block.images.map(img => ({ ...img, id: this.generateId('ic') }));
-                                    delete block.images;
-                                    migrated = true;
-                                }
-                                if (block.isVisible === undefined) block.isVisible = true;
-                                if (block.isExpanded === undefined) block.isExpanded = false;
-                            });
-                            if (migrated) this.showToast('旧版图片区块已自动升级', 'info');
-
                             const defaultState = this.getDefaultState();
                             this.state = this.mergeDeep(defaultState, saved);
-
-                            if (saved.uploadedFonts) {
-                                for (const font of saved.uploadedFonts) {
-                                    if (font.data) {
-                                        try {
-                                            const fontBuffer = this.base64ToArrayBuffer(font.data);
-                                            await this.saveFontToDB({ family: font.family, fullName: font.fullName, data: fontBuffer });
-                                        } catch (e) { console.error("从localStorage迁移字体失败:", e) }
-                                    }
-                                }
-                                delete this.state.uploadedFonts;
-                                this.saveToLocal();
-                            }
-                        }
-                        if (historyJson) {
-                            try {
-                                const savedHistory = JSON.parse(historyJson);
-                                if (Array.isArray(savedHistory) && savedHistory.length > 0) {
-                                    this.history = savedHistory;
-                                    this.historyIndex = this.history.length - 1;
-                                }
-                            } catch (e) { }
                         }
                     } catch (e) {
                         localStorage.removeItem('blokkoState');
@@ -3183,6 +3064,82 @@
                         await this.loadFontsFromDB();
                         this.hideLoading();
                     }
+                },
+
+                migrateV1DataToV2(oldState) {
+                    const newState = this.getDefaultState();
+                    newState.personalInfo = oldState.personalInfo;
+                    newState.pageStyles = oldState.pageStyles;
+                    newState.globalBorderSettings = oldState.globalBorderSettings;
+                    newState.systemSettings = oldState.systemSettings;
+                    newState.customIcons = oldState.customIcons || [];
+
+                    // 迁移样式
+                    newState.globalComponentStyles = oldState.globalCardStyles || newState.globalComponentStyles;
+                    if (oldState.globalButtonStyles) {
+                        newState.globalComponentStyles.buttonBgColor = oldState.globalButtonStyles.bgColor;
+                        newState.globalComponentStyles.buttonTextColor = oldState.globalButtonStyles.textColor;
+                    }
+
+                    // 迁移核心内容
+                    newState.items = [];
+                    oldState.blocks.forEach(block => {
+                        switch (block.type) {
+                            case 'text':
+                            case 'image':
+                            case 'button':
+                                let width = 100;
+                                if (block.settings.layout === 'dual') width = 50;
+                                if (block.settings.layout === 'triple') width = 33;
+                                block.cards.forEach(card => {
+                                    const newItem = {
+                                        ...card,
+                                        type: block.type === 'text' ? 'card' : block.type,
+                                        isVisible: block.isVisible,
+                                        layout: { width: width },
+                                        // 继承旧区块的文本颜色设置
+                                        textColor: block.settings.textColor || card.textColor
+                                    };
+                                    newState.items.push(newItem);
+                                });
+                                break;
+
+                            case 'music':
+                            case 'progress':
+                                newState.items.push({
+                                    ...block.settings,
+                                    id: block.id,
+                                    type: block.type,
+                                    isVisible: block.isVisible,
+                                    layout: { width: 100 }
+                                });
+                                break;
+
+                            case 'timeline':
+                                newState.items.push({
+                                    ...block.settings,
+                                    id: block.id,
+                                    type: block.type,
+                                    isVisible: block.isVisible,
+                                    cards: block.cards,
+                                    layout: { width: 100 }
+                                });
+                                break;
+
+                            case 'separator':
+                            case 'spacer':
+                                newState.items.push({
+                                    ...block.settings,
+                                    id: block.id,
+                                    type: block.type,
+                                    isVisible: block.isVisible,
+                                    layout: { width: 100 }
+                                });
+                                break;
+                        }
+                    });
+
+                    return newState;
                 },
 
                 /**
@@ -3215,7 +3172,7 @@
                 syncControl(keyPath) {
                     this.isRestoringState = true;
                     try {
-                        const inputs = this.elements.inspectorPanel.querySelectorAll(`[data-state-key="${keyPath}"], [data-setting-key="${keyPath.split('.').slice(2).join('.')}"]`);
+                        const inputs = this.elements.inspectorPanel.querySelectorAll(`[data-state-key="${keyPath}"], [data-item-key="${keyPath.split('.').slice(2).join('.')}"]`);
                         if (inputs.length === 0) return;
 
                         const value = keyPath.split('.').reduce((o, k) => o && o[k], this.state);
@@ -3244,18 +3201,19 @@
                 syncAllControls() {
                     this.isRestoringState = true;
                     try {
-                        this.elements.inspectorPanel.querySelectorAll('[data-state-key], [data-setting-key]').forEach(input => {
+                        this.elements.inspectorPanel.querySelectorAll('[data-state-key], [data-item-key]').forEach(input => {
                             try {
                                 const stateKey = input.dataset.stateKey;
-                                const settingKey = input.dataset.settingKey;
+                                const itemKey = input.dataset.itemKey;
                                 let value;
 
                                 if (stateKey) {
                                     if (stateKey === 'personalInfo.tags') return;
                                     value = stateKey.split('.').reduce((o, k) => o && o[k], this.state);
-                                } else if (settingKey && this.selection.type === 'block') {
-                                    const block = this.findBlock(this.selection.id);
-                                    if (block) value = block.settings[settingKey];
+                                } else if (itemKey && this.selection.type === 'item') {
+                                    const item = this.findItem(this.selection.id);
+                                    if (item) value = itemKey.split('.').reduce((o, k) => o && o[k], item);
+
                                 }
 
                                 if (value !== undefined) {
@@ -3263,7 +3221,7 @@
                                         input.checked = (input.value == value);
                                     } else if (input.type === 'checkbox') {
                                         input.checked = !!value;
-                                    } else if (input.matches('textarea[data-card-key="content"]')) {
+                                    } else if (input.matches('textarea[data-item-key="content"]')) {
                                         input.value = (value || '').replace(/<[^>]*>?/gm, '');
                                     }
                                     else {
@@ -3294,11 +3252,11 @@
                             this.updateAttributionLink();
                         }
 
-                        const gCardSection = this.elements.inspectorPanel.querySelector('#global-card-styles-section');
-                        if (gCardSection) {
-                            const gCardActiveTab = this.state.globalCardStyles.bgMode === 'gradient' ? 'card-bg-gradient' : 'card-bg-solid';
-                            gCardSection.querySelectorAll('.tab-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === gCardActiveTab));
-                            gCardSection.querySelectorAll(':scope > .section-content > .tab-content').forEach(c => c.classList.toggle('active', c.id === gCardActiveTab));
+                        const gCompSection = this.elements.inspectorPanel.querySelector('#global-component-styles-section');
+                        if (gCompSection) {
+                            const activeTab = this.state.globalComponentStyles.bgMode === 'gradient' ? 'comp-bg-gradient' : 'comp-bg-solid';
+                            gCompSection.querySelectorAll('.tab-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === activeTab));
+                            gCompSection.querySelectorAll(':scope > .section-content > .tab-content').forEach(c => c.classList.toggle('active', c.id === activeTab));
                         }
 
                         const customDimControls = this.elements.inspectorPanel.querySelector('#custom-dimensions-controls');
@@ -3343,90 +3301,30 @@
                     }
                 },
 
-                findBlock(blockId) { return this.state.blocks.find(b => b.id === blockId); },
-                findBlockIndex(blockId) { return this.state.blocks.findIndex(b => b.id === blockId); },
-                updateBlockTitle(blockId, title, pushHistory, historyDescription) {
-                    const blockIndex = this.findBlockIndex(blockId);
-                    if (blockIndex > -1) this.updateState(`blocks.${blockIndex}.title`, title, pushHistory, historyDescription);
-                },
-                updateBlockSettings(blockId, key, value, pushHistory, historyDescription) {
-                    const blockIndex = this.findBlockIndex(blockId);
-                    if (blockIndex > -1) this.updateState(`blocks.${blockIndex}.settings.${key}`, value, pushHistory, historyDescription);
-                },
-                updateCard(blockId, cardId, key, value, pushHistory, historyDescription) {
-                    const blockIndex = this.findBlockIndex(blockId);
-                    if (blockIndex > -1) {
-                        const cardIndex = this.state.blocks[blockIndex].cards.findIndex(c => c.id === cardId);
-                        if (cardIndex > -1) this.updateState(`blocks.${blockIndex}.cards.${cardIndex}.${key}`, value, pushHistory, historyDescription);
-                    }
+                findItem(itemId) { return this.state.items.find(item => item.id === itemId); },
+                findItemIndex(itemId) { return this.state.items.findIndex(item => item.id === itemId); },
+
+                updateItem(itemId, key, value, pushHistory, historyDescription) {
+                    const itemIndex = this.findItemIndex(itemId);
+                    if (itemIndex > -1) this.updateState(`items.${itemIndex}.${key}`, value, pushHistory, historyDescription);
                 },
 
-                renderPreviewBlockById(blockId) {
-                    const wrapper = this.elements.previewBlocksContainer.querySelector(`.preview-block-wrapper[data-block-id="${blockId}"]`);
-                    const block = this.findBlock(blockId);
-                    if (block && wrapper) {
-                        wrapper.classList.toggle('is-hidden', block.isVisible === false);
-                        wrapper.innerHTML = this.createPreviewBlockHTML(block);
-                        this.postRenderAsyncUpdates(wrapper);
-                        this.initMasonryForBlock(blockId);
+                renderPreviewItemById(itemId) {
+                    const wrapper = this.elements.previewItemsContainer.querySelector(`.preview-item-wrapper[data-item-id="${itemId}"]`);
+                    const item = this.findItem(itemId);
+                    if (item && wrapper) {
+                        // 替换新 HTML
+                        wrapper.outerHTML = this.createPreviewItemHTML(item);
+                        const newWrapper = this.elements.previewItemsContainer.querySelector(`.preview-item-wrapper[data-item-id="${itemId}"]`);
+                        this.postRenderAsyncUpdates(newWrapper);
+
+                        // 如果紧凑模式开启，单个元素的变化可能影响全局，需要重新计算布局
+                        if (this.state.systemSettings.masonryEnabled) {
+                            // 使用 requestAnimationFrame 确保在DOM更新后立即重新计算布局
+                            requestAnimationFrame(() => this.applyGridCompactLayout());
+                        }
                     }
                     this.renderMobileEditPencils();
-                },
-
-                renderPreviewCardById(blockId, cardId) {
-                    const block = this.findBlock(blockId);
-                    const cardData = block?.cards.find(c => c.id === cardId);
-                    if (!cardData) return;
-
-                    const cardEl = this.elements.previewBlocksContainer.querySelector(`[data-card-id="${cardId}"]`);
-                    if (!cardEl) {
-                        this.renderPreviewBlockById(blockId);
-                        return;
-                    }
-
-                    if (cardEl.matches('.preview-card')) {
-                        const titleEl = cardEl.querySelector('.preview-card-title');
-                        const contentEl = cardEl.querySelector('.preview-card-content');
-
-                        if (titleEl) {
-                            const iconHTML = cardData.icon ? `<span class="iconify" data-icon="${cardData.icon}"></span>` : '';
-                            titleEl.innerHTML = iconHTML + this.escapeHTML(cardData.title || '');
-                        }
-                        if (contentEl) {
-                            contentEl.innerHTML = this.sanitizeHTML(cardData.content || '');
-                        }
-                        this.applyCardStyles(cardEl, cardData);
-                    } else if (cardEl.matches('.preview-button')) {
-                        const textSpan = cardEl.querySelector('span[data-card-key="text"]');
-                        const iconSpan = cardEl.querySelector('.iconify');
-                        if (textSpan) textSpan.textContent = cardData.text || '';
-
-                        if (cardData.icon) {
-                            if (iconSpan) {
-                                iconSpan.dataset.icon = cardData.icon;
-                            } else {
-                                const newIcon = document.createElement('span');
-                                newIcon.className = 'iconify';
-                                newIcon.dataset.icon = cardData.icon;
-                                cardEl.insertBefore(newIcon, textSpan);
-                            }
-                        } else if (iconSpan) {
-                            iconSpan.remove();
-                        }
-                        const g = this.state.globalButtonStyles;
-                        const alignSelf = { 'left': 'flex-start', 'center': 'center', 'right': 'flex-end' }[cardData.textAlign] || 'center';
-                        cardEl.style.setProperty('--button-bg-color', cardData.bgColor || g.bgColor);
-                        cardEl.style.setProperty('--button-text-color', cardData.textColor || g.textColor);
-                        cardEl.style.setProperty('--button-border-radius', (cardData.radius != null ? cardData.radius : g.radius) + 'px');
-                        cardEl.style.setProperty('--button-text-align', cardData.textAlign || g.textAlign);
-                        cardEl.style.setProperty('--button-width', cardData.width || '100%');
-                        cardEl.style.setProperty('--button-align-self', alignSelf);
-                    } else if (cardEl.matches('.timeline-event')) {
-                        const timeEl = cardEl.querySelector('.timeline-time');
-                        const contentEl = cardEl.querySelector('.timeline-content');
-                        if (timeEl) timeEl.textContent = cardData.time || '';
-                        if (contentEl) contentEl.textContent = cardData.content || '';
-                    }
                 },
 
                 pushHistory(description = '操作') {
@@ -3517,7 +3415,59 @@
                     }
                 },
 
-                async handleImageUpload(event, target, cardInfo = null) {
+                async handleImageGalleryUpload(files) {
+                    if (!files.length) return;
+                    this.showLoading(`正在上传 ${files.length} 张图片...`);
+
+                    const successItems = [];
+                    const failedFiles = [];
+
+                    const results = await Promise.allSettled(Array.from(files).map(async file => {
+                        const objectUrl = URL.createObjectURL(file);
+                        const compressedUrl = await this.compressImage(objectUrl, 0.9, 1200, file.type);
+                        const blob = this.dataURLToBlob(compressedUrl);
+                        const imageId = this.generateId('img');
+                        await this.saveImageToDB({ id: imageId, blob });
+                        return {
+                            id: this.generateId('i'),
+                            type: 'image',
+                            isVisible: true,
+                            url: `idb://${imageId}`,
+                            title: '',
+                            description: '',
+                            imageFillMode: 'cover',
+                            layout: { width: 50 } // 默认50%宽度，可以自己调整
+                        };
+                    }));
+
+                    results.forEach((result, index) => {
+                        if (result.status === 'fulfilled') {
+                            successItems.push(result.value);
+                        } else {
+                            failedFiles.push(files[index].name);
+                            console.error(`处理文件 ${files[index].name} 失败:`, result.reason);
+                        }
+                    });
+
+                    if (successItems.length > 0) {
+                        this.pushHistory(`添加 ${successItems.length} 张图片`);
+
+                        const currentSelectionIndex = this.selection.id ? this.findItemIndex(this.selection.id) : -1;
+                        const insertIndex = currentSelectionIndex > -1 ? currentSelectionIndex + 1 : this.state.items.length;
+
+                        this.state.items.splice(insertIndex, 0, ...successItems);
+                        this.debouncedSaveToLocal();
+                    }
+
+                    this.renderAll();
+                    this.hideLoading();
+
+                    if (failedFiles.length > 0) {
+                        this.showErrorModal('部分图片上传失败', `以下文件未能成功上传: ${failedFiles.join(', ')}`);
+                    }
+                },
+
+                async handleImageUpload(event, target, itemInfo = null) {
                     const file = event.target.files[0];
                     if (!file) return;
                     this.showLoading('正在处理图片...');
@@ -3537,11 +3487,21 @@
                         const maxDim = (target === 'pageBg') ? 1920 : 1200;
                         const compressedUrl = await this.compressImage(objectUrl, 0.9, maxDim);
 
-                        if (['avatar', 'pageBg', 'cardBg', 'imageCard', 'musicCover'].includes(target)) {
+                        if (['avatar', 'pageBg', 'cardBg', 'image', 'musicCover'].includes(target)) {
                             if (target === 'pageBg') {
                                 this.updateState('pageStyles.pageBgImageAttribution', null, false);
                             }
-                            this.showCropper(compressedUrl, { type: target, ...cardInfo, originalType: file.type });
+                            if (target === 'image') {
+                                // For image items, we save directly and don't open cropper immediately
+                                const blob = this.dataURLToBlob(compressedUrl);
+                                const imageId = this.generateId('img');
+                                await this.saveImageToDB({ id: imageId, blob });
+                                const newItem = { id: this.generateId('i'), type: 'image', isVisible: true, url: `idb://${imageId}`, title: '', description: '', imageFillMode: 'cover', layout: { width: 50 } };
+                                this.addItem(null, null, newItem);
+                                this.hideLoading();
+                            } else {
+                                this.showCropper(compressedUrl, { type: target, ...itemInfo, originalType: file.type });
+                            }
                         } else {
                             this.hideLoading();
                         }
@@ -3550,58 +3510,6 @@
                         this.hideLoading();
                     } finally {
                         event.target.value = '';
-                    }
-                },
-
-                handleCardBgUpload(event, blockId, cardId) {
-                    const card = this.findBlock(blockId)?.cards.find(c => c.id === cardId);
-                    this.handleImageUpload(event, 'cardBg', { blockId, cardId, oldImageUrl: card?.bgImageDataUrl });
-                },
-
-                /**
-                 * @description 健壮性优化: 处理批量图片上传，即使部分失败也能继续。
-                 * @param {string} blockId - 目标区块的ID。
-                 * @param {FileList} files - 用户选择的文件列表。
-                 */
-                async handleImageGalleryUpload(blockId, files) {
-                    const block = this.findBlock(blockId);
-                    if (!block || !files.length) return;
-                    this.showLoading(`正在上传 ${files.length} 张图片...`);
-
-                    const successCards = [];
-                    const failedFiles = [];
-
-                    const results = await Promise.allSettled(Array.from(files).map(async file => {
-                        const objectUrl = URL.createObjectURL(file);
-                        const compressedUrl = await this.compressImage(objectUrl, 0.9, 1200, file.type);
-                        const blob = this.dataURLToBlob(compressedUrl);
-                        const imageId = this.generateId('img');
-                        await this.saveImageToDB({ id: imageId, blob });
-                        return { id: this.generateId('ic'), url: `idb://${imageId}`, title: '', description: '', imageFillMode: 'cover' };
-                    }));
-
-                    results.forEach((result, index) => {
-                        if (result.status === 'fulfilled') {
-                            successCards.push(result.value);
-                        } else {
-                            failedFiles.push(files[index].name);
-                            console.error(`处理文件 ${files[index].name} 失败:`, result.reason);
-                        }
-                    });
-
-                    if (successCards.length > 0) {
-                        this.pushHistory(`添加 ${successCards.length} 张图片`);
-                        block.cards.push(...successCards);
-                        this.debouncedSaveToLocal();
-                    }
-
-                    this.renderInspectorContent();
-                    this.renderLayerPanel();
-                    this.renderPreviewBlockById(blockId);
-                    this.hideLoading();
-
-                    if (failedFiles.length > 0) {
-                        this.showErrorModal('部分图片上传失败', `以下文件未能成功上传: ${failedFiles.join(', ')}`);
                     }
                 },
 
@@ -3643,22 +3551,29 @@
                         user: imageData.user,
                         pageURL: imageData.pageURL
                     };
+                    this.elements.imageSourceModal.classList.remove('visible');
+                    // v2.0 适配：直接调用 showCropper，目标是页面背景
                     this.updateState('pageStyles.pageBgImageAttribution', attribution, true);
                     this.showCropper(imageData.largeImageURL, { type: 'pageBg', originalType: 'image/jpeg' });
                 },
 
-                async cropImage(blockId, cardId) {
-                    const block = this.findBlock(blockId);
-                    const card = block?.cards.find(c => c.id === cardId);
-                    if (card && card.url) {
-                        let imageUrl = card.url;
+                handleMusicCoverUpload(event, itemId) {
+                    const item = this.findItem(itemId);
+                    if (!item) return;
+                    this.handleImageUpload(event, 'musicCover', { itemId, oldImageUrl: item.coverArt });
+                },
+
+                async cropImage(itemId) {
+                    const item = this.findItem(itemId);
+                    if (item && item.url) {
+                        let imageUrl = item.url;
                         if (imageUrl.startsWith('idb://')) {
                             const record = await this.getImageFromDB(imageUrl.substring(6));
                             if (record && record.blob) {
                                 imageUrl = URL.createObjectURL(record.blob);
                             }
                         }
-                        this.showCropper(imageUrl, { type: 'imageCard', blockId, cardId, oldImageUrl: card.url, originalType: 'image/png' });
+                        this.showCropper(imageUrl, { type: 'image', itemId, oldImageUrl: item.url, originalType: 'image/png' });
                     }
                 },
 
@@ -3741,7 +3656,7 @@
                     if (!this.cropper || !this.currentCropTarget) return;
                     this.showLoading('正在保存图片...');
                     try {
-                        const { type, blockId, cardId, originalType, oldImageUrl } = this.currentCropTarget;
+                        const { type, itemId, originalType, oldImageUrl } = this.currentCropTarget;
                         let quality = 0.9;
 
                         let finalCanvas = document.getElementById('cropper-preview-canvas');
@@ -3769,12 +3684,12 @@
                                 this.updateState('personalInfo.avatarDataUrl', idbUrl, false);
                             } else if (type === 'pageBg') {
                                 this.updateState('pageStyles.pageBgImageDataUrl', idbUrl, false);
-                            } else if (type === 'imageCard') {
-                                this.updateCard(blockId, cardId, 'url', idbUrl, false);
+                            } else if (type === 'image') {
+                                this.updateItem(itemId, 'url', idbUrl, false);
                             } else if (type === 'cardBg') {
-                                this.updateCard(blockId, cardId, 'bgImageDataUrl', idbUrl, false);
+                                this.updateItem(itemId, 'bgImageDataUrl', idbUrl, false);
                             } else if (type === 'musicCover') {
-                                this.updateBlockSettings(blockId, 'coverArt', idbUrl, false);
+                                this.updateItem(itemId, 'coverArt', idbUrl, false);
                             }
                             this.hideCropper();
                             this.hideLoading();
@@ -3862,18 +3777,15 @@
                 showRichTextEditor(targetElement) {
                     if (!targetElement) return;
 
-                    const cardEl = targetElement.closest('.preview-card');
-                    const blockEl = targetElement.closest('.preview-block-wrapper');
-                    if (!cardEl || !blockEl) return;
+                    const itemEl = targetElement.closest('.preview-item-wrapper');
+                    if (!itemEl) return;
 
                     this.currentRichTextTarget = {
-                        blockId: blockEl.dataset.blockId,
-                        cardId: cardEl.dataset.cardId,
+                        itemId: itemEl.dataset.itemId,
                         element: targetElement
                     };
 
-                    const block = this.findBlock(this.currentRichTextTarget.blockId);
-                    const card = block.cards.find(c => c.id === this.currentRichTextTarget.cardId);
+                    const item = this.findItem(this.currentRichTextTarget.itemId);
 
                     const container = this.elements.richTextEditorContainer;
                     const parent = container.parentElement;
@@ -3919,7 +3831,7 @@
 
                     this.richTextEditor = new Quill(container, quillOptions);
 
-                    this.richTextEditor.root.innerHTML = card.content || '';
+                    this.richTextEditor.root.innerHTML = item.content || '';
 
                     this.elements.richTextEditorModal.classList.add('visible');
                     this.richTextEditor.focus();
@@ -3933,17 +3845,12 @@
                 saveRichText() {
                     if (!this.richTextEditor || !this.currentRichTextTarget) return;
 
-                    const { blockId, cardId } = this.currentRichTextTarget;
+                    const { itemId } = this.currentRichTextTarget;
                     const newContent = this.richTextEditor.root.innerHTML;
 
-                    this.updateCard(blockId, cardId, 'content', newContent, true, '编辑卡片内容');
+                    this.updateItem(itemId, 'content', newContent, true, '编辑卡片内容');
                     this.hideRichTextEditor();
                     this.showToast('内容已保存', 'success');
-
-                    const block = this.findBlock(blockId);
-                    if (block && block.settings.masonryEnabled) {
-                        this.initMasonryForBlock(blockId);
-                    }
                 },
 
                 async loadLocalFonts() {
@@ -4003,7 +3910,7 @@
                     if (successCount > 0) {
                         this.populateFontList();
                         if (lastUploadedFontFamily) {
-                            this.updateState('globalCardStyles.fontFamily', lastUploadedFontFamily, true, `上传 ${successCount} 个字体`);
+                            this.updateState('globalComponentStyles.fontFamily', lastUploadedFontFamily, true, `上传 ${successCount} 个字体`);
                         }
                         this.showToast(`${successCount} 个字体上传成功！`, 'success');
                     }
@@ -4012,7 +3919,7 @@
                 populateFontList(searchTerm = '') {
                     const select = this.elements.inspectorPanel.querySelector('#font-family-select');
                     if (!select) return;
-                    const currentFont = this.state.globalCardStyles.fontFamily;
+                    const currentFont = this.state.globalComponentStyles.fontFamily;
                     select.innerHTML = '';
 
                     const recommendedFonts = [
@@ -4083,8 +3990,8 @@
                 },
                 getAllRequiredFonts() {
                     const fonts = new Set();
-                    if (this.state.globalCardStyles.fontFamily) {
-                        fonts.add(this.state.globalCardStyles.fontFamily);
+                    if (this.state.globalComponentStyles.fontFamily) {
+                        fonts.add(this.state.globalComponentStyles.fontFamily);
                     }
                     return Array.from(fonts);
                 },
@@ -4101,11 +4008,11 @@
                     this.state.pageStyles.headerBgGradientEnd = preset.headerBgGradientEnd;
                     this.state.pageStyles.headerTextColor = preset.headerTextColor;
 
-                    this.state.globalCardStyles.bgColor = preset.gCardBgColor;
-                    this.state.globalCardStyles.bgGradientStart = preset.gCardBgGradientStart;
-                    this.state.globalCardStyles.bgGradientEnd = preset.gCardBgGradientEnd;
-                    this.state.globalCardStyles.textColor = preset.gCardTextColor;
-                    this.state.globalCardStyles.opacity = preset.gCardOpacity;
+                    this.state.globalComponentStyles.bgColor = preset.gCardBgColor;
+                    this.state.globalComponentStyles.bgGradientStart = preset.gCardBgGradientStart;
+                    this.state.globalComponentStyles.bgGradientEnd = preset.gCardBgGradientEnd;
+                    this.state.globalComponentStyles.textColor = preset.gCardTextColor;
+                    this.state.globalComponentStyles.opacity = preset.gCardOpacity;
 
                     this.state.personalInfo.nicknameColor = preset.pNicknameColor;
                     this.state.personalInfo.subtitleColor = preset.pSubtitleColor;
@@ -4115,7 +4022,7 @@
 
                     this.state.pageStyles.pageBgMode = 'solid';
                     this.state.pageStyles.headerBgMode = 'solid';
-                    this.state.globalCardStyles.bgMode = 'solid';
+                    this.state.globalComponentStyles.bgMode = 'solid';
 
                     this.debouncedSaveToLocal();
                     this.renderAll();
@@ -4224,16 +4131,24 @@
                         stateToSave.pageStyles.pageBgPattern = '';
                         stateToSave.customIcons = [];
 
-                        stateToSave.blocks.forEach(block => {
-                            if (['text', 'image', 'button', 'music', 'progress', 'timeline'].includes(block.type)) {
-                                block.title = this.getDefaultState().blocks.find(b => b.type === block.type)?.title || block.title;
-                                if (block.type === 'image') {
-                                    block.cards = [];
-                                } else if (block.cards) {
-                                    block.cards = this.getDefaultState().blocks.find(b => b.type === block.type)?.cards || [];
-                                }
-                                if (block.type === 'music' || block.type === 'progress') {
-                                    block.settings = this.getDefaultState().blocks.find(b => b.type === block.type)?.settings || {};
+                        stateToSave.items.forEach(item => {
+                            if (['card', 'image', 'button', 'music', 'progress', 'timeline'].includes(item.type)) {
+                                item.title = this.getDefaultState().items.find(i => i.type === item.type)?.title || item.title;
+                                if (item.type === 'image') {
+                                    item.url = null;
+                                    item.description = '';
+                                } else if (item.type === 'card' || item.type === 'button') {
+                                    item.content = '示例内容';
+                                    item.text = '示例按钮';
+                                } else {
+                                    const defaultItem = this.getDefaultState().items.find(i => i.type === item.type);
+                                    if (defaultItem) {
+                                        Object.keys(defaultItem).forEach(key => {
+                                            if (!['id', 'type', 'isVisible', 'layout'].includes(key)) {
+                                                item[key] = defaultItem[key];
+                                            }
+                                        });
+                                    }
                                 }
                             }
                         });
@@ -4288,7 +4203,7 @@
                         await processObject(stateClone);
 
                         zip.file("config.json", JSON.stringify(stateClone, null, 2));
-                        zip.file("readme.txt", `Blokko 强化导出备份\n版本: 1.8.1\n导出时间: ${new Date().toLocaleString()}\n\n此 .zip 文件包含了您的配置文件 (config.json) 和所有图片资源 (images/ 文件夹)。`);
+                        zip.file("readme.txt", `Blokko 强化导出备份\n版本: 2.0.0\n导出时间: ${new Date().toLocaleString()}\n\n此 .zip 文件包含了您的配置文件 (config.json) 和所有图片资源 (images/ 文件夹)。`);
 
                         const blob = await zip.generateAsync({ type: "blob" });
                         const filename = this.generateFilename('Enhanced-Backup') + '.zip';
@@ -4383,6 +4298,12 @@
                         this.showLoading('正在导入图片资源...');
                         await processObject(importedState);
 
+                        
+                        if (importedState.blocks) {
+                            importedState = this.migrateV1DataToV2(importedState);
+                            this.showToast('旧版ZIP包已自动升级为新版布局！', 'info');
+                        }
+
                         this.state = this.mergeDeep(this.getDefaultState(), importedState);
                         localStorage.setItem('blokkoState', JSON.stringify(this.state));
 
@@ -4427,7 +4348,13 @@
                     reader.onload = async (re) => {
                         try {
                             let importedState = JSON.parse(re.target.result);
-                            if (!importedState || !importedState.personalInfo || !importedState.blocks) throw new Error('无效的文件格式');
+                            if (!importedState || !importedState.personalInfo) throw new Error('无效的文件格式');
+
+                            
+                            if (importedState.blocks) {
+                                importedState = this.migrateV1DataToV2(importedState);
+                                this.showToast('旧版JSON配置已自动升级为新版布局！', 'info');
+                            }
 
                             importedState = await this.processStateForImageMigration(importedState);
 
@@ -4436,16 +4363,6 @@
                                     .map(text => ({ id: this.generateId('t'), icon: null, text }));
                                 this.showToast('旧版配置已导入并自动升级。', 'info');
                             }
-
-                            let migrated = false;
-                            importedState.blocks.forEach(block => {
-                                if (block.type === 'image' && block.images && !block.cards) {
-                                    block.cards = block.images.map(img => ({ ...img, id: this.generateId('ic') }));
-                                    delete block.images;
-                                    migrated = true;
-                                }
-                            });
-                            if (migrated) this.showToast('旧版图片区块已自动升级', 'info');
 
                             this.state = this.mergeDeep(this.getDefaultState(), importedState);
                             localStorage.setItem('blokkoState', JSON.stringify(this.state));
@@ -4471,6 +4388,7 @@
                             this.syncAllControls();
                             this.populateFontList();
                             this.initAllSortables();
+                            this.bindResizeListener();
                             this.updateExportSizePreview();
                             this.showToast('配置导入成功', 'success');
                         } catch (err) {
@@ -4484,220 +4402,227 @@
                     e.target.value = '';
                 },
 
-                async bakeOverlaysForExport(clone) {
-                },
-
                 async exportPNG() {
-                    const safeBakeOverlays = async (cloneEl) => {
-                        if (typeof this.bakeOverlaysForExport === 'function') {
-                            try { await this.bakeOverlaysForExport(cloneEl); } catch (e) { console.warn('Bake overlays failed', e); }
-                        }
-                    };
-
                     try {
                         this.showLoading('加载导出组件...');
-                        await this.loadScript('https://cdn.bootcdn.net/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+                        if (typeof domtoimage === 'undefined') {
+                            await this.loadScript('https://cdn.jsdelivr.net/npm/dom-to-image-more@3.1.5/dist/dom-to-image-more.min.js');
+                        }
                     } catch (error) {
                         this.hideLoading();
-                        this.showErrorModal('加载失败', '导出组件加载失败。');
+                        this.showErrorModal('加载失败', '导出组件加载失败。请检查网络连接。');
                         return;
                     }
 
                     this.showLoading('等待字体加载...');
-                    try { await document.fonts.ready; } catch (e) { }
+                    try { await document.fonts.ready; } catch (e) { console.warn("字体等待失败，继续导出。", e); }
 
                     this.showLoading('正在准备导出...');
-
-                    const s = this.state.exportSettings;
-                    const panel = this.elements.inspectorPanel;
                     const sourceElement = this.elements.previewWrapper;
 
+                    // 1. 计算目标尺寸和缩放比例
+                    const panel = this.elements.inspectorPanel;
+                    const s = this.state.exportSettings;
                     const isMobileExport = panel.querySelector('#mobile-export-toggle').checked;
                     const isCustomWidth = panel.querySelector('#custom-width-toggle').checked;
                     const isHD = panel.querySelector('#hd-export-toggle').checked;
 
-                    const originalWidth = sourceElement.offsetWidth;
-                    const originalHeight = sourceElement.offsetHeight;
-                    const aspectRatio = originalHeight / originalWidth;
+                    const rect = sourceElement.getBoundingClientRect();
+                    const osWidth = sourceElement.offsetWidth;
+                    const osHeight = sourceElement.offsetHeight;
+                    const osRatio = osHeight > 0 && osWidth > 0 ? osHeight / osWidth : 1.5;
 
                     let targetWidth = 1200;
                     if (isMobileExport) targetWidth = 1200;
                     else if (isHD) targetWidth = 1800;
                     else if (isCustomWidth) targetWidth = s.customWidth;
 
-                    let targetHeight = Math.round(targetWidth * aspectRatio);
+                    let targetHeight = Math.round(targetWidth * osRatio);
                     if (isCustomWidth && !s.lockAspectRatio) targetHeight = s.customHeight;
 
-                    const scale = targetWidth / originalWidth;
+                    const scaleFactor = targetWidth / osWidth;
+
                     let clone = null;
 
-                    const wasLayerOpen = this.elements.layerPanel.classList.contains('is-open');
-                    const wasInspectorOpen = this.elements.inspectorPanel.classList.contains('is-open');
-
                     try {
+                        // 新增：在开始导出过程时，为body添加一个类来隐藏辅助元素
                         document.body.classList.add('export-mode');
 
-                        if (wasLayerOpen || wasInspectorOpen) {
-                            this.togglePanelDrawer(false);
-                            await this.sleep(200);
-                        }
-
+                        // 2. 创建克隆体
                         clone = sourceElement.cloneNode(true);
                         clone.id = "export-clone-container";
 
-                        Object.assign(clone.style, {
-                            position: 'fixed',
-                            top: '0',
-                            left: '0',
-                            zIndex: '-9999',
-                            width: `${originalWidth}px`,
-                            height: 'auto',
-                            margin: '0',
-                            transform: 'none',
-                            borderRadius: '0',
-                            overflow: 'visible',
-                            transition: 'none',
-                            viewTransitionName: 'none'
-                        });
+                        // --- 关键修复：移除所有铅笔图标 ---
+                        clone.querySelectorAll('.mobile-edit-pencil').forEach(el => el.remove());
+
+                        // --- 布局修复样式 ---
+                        clone.style.position = 'absolute';
+                        clone.style.left = '-9999px';
+                        clone.style.top = '0px';
+                        clone.style.margin = '0';
+                        clone.style.transform = 'none';
+                        clone.style.boxShadow = 'none';
+                        clone.style.width = `${osWidth}px`;
+                        clone.style.height = `${osHeight}px`;
+                        clone.style.boxSizing = 'border-box';
+
+                        document.body.appendChild(clone);
 
                         const styleReset = document.createElement('style');
                         styleReset.innerHTML = `
-                            #export-clone-container, #export-clone-container * {
-                                transition: none !important;
-                                animation: none !important;
-                                view-transition-name: none !important;
-                            }
-                        `;
+            #export-clone-container, #export-clone-container * { 
+                transition: none !important; 
+                animation: none !important; 
+                view-transition-name: none !important;
+            }
+            #export-clone-container {
+                width: ${osWidth}px !important;
+                margin: 0 !important;
+                transform: none !important;
+            }
+        `;
                         clone.appendChild(styleReset);
 
+                        // 3. 内联图片数据
+                        this.showLoading('正在内联图片数据...');
+                        const imagePromises = [];
+
+                        const inlineImageSrc = async (url) => {
+                            if (url && url.startsWith('idb://')) {
+                                try {
+                                    const imageId = url.substring(6);
+                                    const record = await this.getImageFromDB(imageId);
+                                    if (record && record.blob) {
+                                        return await this.blobToDataURL(record.blob);
+                                    }
+                                } catch (e) { console.error(`无法内联图片 ${url}:`, e); }
+                            }
+                            return url;
+                        };
+
                         clone.querySelectorAll('img').forEach(img => {
-                            img.loading = 'eager';
-                            img.removeAttribute('loading');
-                            img.style.opacity = '1';
+                            const originalImg = Array.from(sourceElement.querySelectorAll('img')).find(orig => orig.src === img.src) || img;
+                            const itemEl = originalImg.closest('.preview-item-wrapper, .preview-header');
+
+                            let dataUrlKey;
+                            if (itemEl && itemEl.id === 'preview-header') {
+                                dataUrlKey = this.state.personalInfo.avatarDataUrl;
+                            } else if (itemEl) {
+                                const itemId = itemEl.dataset.itemId;
+                                const item = this.findItem(itemId);
+                                if (item) dataUrlKey = item.url || item.coverArt;
+                            }
+
+                            if (dataUrlKey && dataUrlKey.startsWith('idb://')) {
+                                const promise = inlineImageSrc(dataUrlKey).then(dataUrl => {
+                                    if (dataUrl) img.src = dataUrl;
+                                });
+                                imagePromises.push(promise);
+                            }
                         });
 
-                        clone.querySelectorAll('.preview-cards-container, .preview-card, figure, .preview-button').forEach(el => {
-                            el.style.removeProperty('position');
-                            el.style.removeProperty('top');
-                            el.style.removeProperty('left');
-                            el.style.removeProperty('transform');
-                            el.classList.remove('masonry-active');
+                        const elementsWithBg = [
+                            { el: clone, url: this.state.pageStyles.pageBgImageDataUrl },
+                            { el: clone.querySelector('.preview-header'), url: null },
+                        ];
+                        clone.querySelectorAll('.preview-card-inner').forEach(cardInner => {
+                            const itemId = cardInner.closest('.preview-item-wrapper').dataset.itemId;
+                            const item = this.findItem(itemId);
+                            if (item && item.bgImageDataUrl) {
+                                elementsWithBg.push({ el: cardInner, url: item.bgImageDataUrl });
+                            }
                         });
 
+                        elementsWithBg.forEach(({ el, url }) => {
+                            if (el && url && url.startsWith('idb://')) {
+                                const promise = inlineImageSrc(url).then(dataUrl => {
+                                    if (dataUrl) {
+                                        const currentBg = window.getComputedStyle(el).backgroundImage;
+                                        const newBg = `url("${dataUrl}")`;
+                                        el.style.backgroundImage = currentBg.replace(/url\(.+\)/, newBg);
+                                    }
+                                });
+                                imagePromises.push(promise);
+                            }
+                        });
+
+                        await Promise.all(imagePromises);
+
+                        // 4. 处理水印
                         if (panel.querySelector('#export-attribution-toggle').checked) {
                             const attr = this.state.pageStyles.pageBgImageAttribution;
                             let attrHTML = attr && attr.user ? `Photo by ${this.escapeHTML(attr.user)} / ` : '';
                             attrHTML += `Made with Blokko`;
                             const attrDiv = document.createElement('div');
-                            attrDiv.style.cssText = `position: absolute; bottom: 10px; right: 15px; font-size: 10px; font-family: sans-serif; color: rgba(255,255,255,0.7); background: rgba(0,0,0,0.3); padding: 3px 6px; border-radius: 4px; z-index: 100;`;
+                            attrDiv.style.cssText = `position: absolute; bottom: 10px; right: 15px; font-size: 10px; font-family: sans-serif; color: rgba(255,255,255,0.7); background: rgba(0,0,0,0.3); padding: 3px 6px; border-radius: 4px; z-index: 100; pointer-events: none;`;
                             attrDiv.textContent = attrHTML;
                             clone.appendChild(attrDiv);
                         }
 
-                        document.body.appendChild(clone);
+                        this.showLoading('正在高保真渲染...');
 
+                        // 5. 高清生成配置
+                        const options = {
+                            width: targetWidth,
+                            height: targetHeight,
+                            style: {
+                                transform: `scale(${scaleFactor})`,
+                                transformOrigin: 'top left',
+                                width: `${osWidth}px`,
+                                height: `${osHeight}px`,
+                                margin: '0'
+                            },
+                            quality: 1.0,
+                            cacheBust: true,
+                        };
 
-                        this.showLoading('等待资源渲染...');
+                        // 6. 生成截图
+                        const dataUrl = await domtoimage.toPng(clone, options);
 
-                        const images = Array.from(clone.querySelectorAll('img'));
-                        if (images.length > 0) {
-                            await Promise.all(images.map(img => {
-                                if (img.complete && img.naturalHeight > 0) return Promise.resolve();
-                                return new Promise(resolve => {
-                                    img.onload = () => resolve();
-                                    img.onerror = () => resolve();
-                                    const s = img.src; img.src = s;
-                                    setTimeout(resolve, 2500);
-                                });
-                            }));
-                        }
-
-                        void clone.offsetWidth;
-                        await this.sleep(100);
-
-                        const masonryBlocks = this.state.blocks.filter(b => b.settings.masonryEnabled && ['dual', 'triple'].includes(b.settings.layout));
-                        if (masonryBlocks.length > 0) {
-                            this.showLoading('计算布局...');
-                            await this.loadScript('https://cdn.bootcdn.net/ajax/libs/masonry/4.2.2/masonry.pkgd.min.js');
-                            for (const block of masonryBlocks) {
-                                const wrapper = clone.querySelector(`.preview-block-wrapper[data-block-id="${block.id}"]`);
-                                const container = wrapper ? wrapper.querySelector('.preview-cards-container') : null;
-                                if (container) {
-                                    container.classList.add('masonry-active');
-                                    new Masonry(container, {
-                                        itemSelector: block.type === 'text' ? '.preview-card' : 'figure',
-                                        gutter: 15,
-                                        percentPosition: true,
-                                        initLayout: true
-                                    }).layout();
-                                }
-                            }
-                            await this.sleep(400);
-                        }
-
-                        this.showLoading('生成像素...');
-                        await safeBakeOverlays(clone);
-
-                        const canvas = await html2canvas(clone, {
-                            scale: scale,
-                            useCORS: true,
-                            backgroundColor: null,
-                            logging: false,
-                            windowWidth: document.documentElement.offsetWidth,
-                            windowHeight: document.documentElement.offsetHeight
-                        });
-
-                        let finalCanvas = canvas;
+                        let finalDataUrl = dataUrl;
                         const exportRounded = panel.querySelector('#export-rounded-corners-toggle').checked;
                         const cornerRadius = parseInt(panel.querySelector('#export-corner-radius-input').value, 10) || 20;
 
+                        // 7. 如果需要圆角
                         if (exportRounded && cornerRadius > 0) {
-                            const roundedCanvas = document.createElement('canvas');
-                            roundedCanvas.width = finalCanvas.width;
-                            roundedCanvas.height = finalCanvas.height;
-                            const ctx = roundedCanvas.getContext('2d');
-                            const r = cornerRadius * scale;
+                            this.showLoading('应用圆角...');
+                            const finalCanvas = document.createElement('canvas');
+                            finalCanvas.width = targetWidth;
+                            finalCanvas.height = targetHeight;
+                            const ctx = finalCanvas.getContext('2d');
+                            const img = new Image();
+
+                            await new Promise(resolve => { img.onload = resolve; img.src = dataUrl; });
+
+                            const r = cornerRadius * scaleFactor;
+
                             ctx.beginPath();
                             ctx.moveTo(r, 0);
-                            ctx.lineTo(roundedCanvas.width - r, 0);
-                            ctx.arcTo(roundedCanvas.width, 0, roundedCanvas.width, r, r);
-                            ctx.lineTo(roundedCanvas.width, roundedCanvas.height - r);
-                            ctx.arcTo(roundedCanvas.width, roundedCanvas.height, roundedCanvas.width - r, roundedCanvas.height, r);
-                            ctx.lineTo(r, roundedCanvas.height);
-                            ctx.arcTo(0, roundedCanvas.height, 0, roundedCanvas.height - r, r);
-                            ctx.lineTo(0, r);
-                            ctx.arcTo(0, 0, r, 0, r);
+                            ctx.lineTo(targetWidth - r, 0); ctx.arcTo(targetWidth, 0, targetWidth, r, r);
+                            ctx.lineTo(targetWidth, targetHeight - r); ctx.arcTo(targetWidth, targetHeight, targetWidth - r, targetHeight, r);
+                            ctx.lineTo(r, targetHeight); ctx.arcTo(0, targetHeight, 0, targetHeight - r, r);
+                            ctx.lineTo(0, r); ctx.arcTo(0, 0, r, 0, r);
                             ctx.closePath();
                             ctx.clip();
-                            ctx.drawImage(finalCanvas, 0, 0);
-                            finalCanvas = roundedCanvas;
+
+                            ctx.drawImage(img, 0, 0);
+                            finalDataUrl = finalCanvas.toDataURL('image/png');
                         }
 
-                        const dataUrl = finalCanvas.toDataURL('image/png');
+                        // 8. 显示下载
                         const filename = this.generateFilename('Image') + '.png';
-
                         this.hideLoading();
-
-                        this.showDownloadModal(dataUrl, filename, '图片已生成');
+                        this.showDownloadModal(finalDataUrl, filename, '图片已生成');
 
                     } catch (err) {
-                        console.error(err);
+                        console.error("Export PNG failed:", err);
                         this.hideLoading();
-                        this.showErrorModal('导出失败', err.message);
+                        this.showErrorModal('导出失败', `生成图片时发生错误：${err.message}.`);
                     } finally {
-                        try {
-                            if (clone && clone.parentNode) clone.parentNode.removeChild(clone);
-                            document.body.classList.remove('export-mode');
-                            if (wasLayerOpen) this.togglePanelDrawer('layer-panel');
-                            if (wasInspectorOpen) this.togglePanelDrawer('inspector-panel');
-                        } catch (cleanupErr) {
-                            console.warn('Cleanup warning:', cleanupErr);
-                        }
-
+                        if (clone && clone.parentNode) clone.parentNode.removeChild(clone);
+                        document.body.classList.remove('export-mode');
                     }
-                },
-
-                updateAttributionLink() {
+                }, updateAttributionLink() {
                     const wrapper = this.elements.inspectorPanel.querySelector('#attribution-link-wrapper');
                     if (!wrapper) return;
 
@@ -4726,7 +4651,6 @@
                         el.style.height = '';
                     }
                     this.updateExportSizePreview();
-                    setTimeout(() => this.relayoutAllMasonry(), 350);
                 },
 
                 updateExportSizePreview() {
@@ -4900,37 +4824,31 @@
                         // 移动端不触发
                         if ('ontouchstart' in window || navigator.maxTouchPoints > 0) return;
 
-                        const cardEl = e.target.closest('.preview-card');
-                        const blockEl = e.target.closest('.preview-block-wrapper');
+                        const itemEl = e.target.closest('.preview-item-wrapper');
 
-                        if (blockEl) {
-                            e.preventDefault(); // 关键：拦截浏览器默认菜单
+                        if (itemEl) {
+                            e.preventDefault();
                         } else {
                             menu.style.display = 'none';
-                            return; // 点击空白处显示系统菜单
+                            return;
                         }
 
-                        const blockId = blockEl.dataset.blockId;
-                        const cardId = cardEl ? cardEl.dataset.cardId : null;
-                        const block = this.findBlock(blockId);
-                        if (!block) return;
+                        const itemId = itemEl.dataset.itemId;
+                        const item = this.findItem(itemId);
+                        if (!item) return;
 
-                        const isHidden = block.isVisible === false;
+                        const isHidden = item.isVisible === false;
 
                         let menuHTML = `<ul style="list-style:none; margin:0; padding:0;">`;
 
-                        // 1. 卡片操作
-                        if (cardId && block.type === 'text') {
-                            const card = block.cards.find(c => c.id === cardId);
-                            const isVertical = card.writingMode === 'vertical-rl';
+                        if (item.type === 'card') {
+                            const isVertical = item.writingMode === 'vertical-rl';
                             menuHTML += `<li data-action="toggle-vertical" style="border-bottom:1px solid var(--border-color)">${isVertical ? '<span class="iconify" data-icon="mdi:format-text-variant"></span> 横排文字' : '<span class="iconify" data-icon="mdi:format-text-direction-vertical"></span> 竖排文字（实验性功能）'}</li>`;
-                            menuHTML += `<li data-action="delete-card" style="color:var(--color-danger); border-bottom:1px solid var(--border-color)"><span class="iconify" data-icon="mdi:delete-outline"></span> 删除此卡片</li>`;
                         }
 
-                        // 2. 区块操作
-                        menuHTML += `<li data-action="copy-block"><span class="iconify" data-icon="mdi:content-copy"></span> 复制区块</li>`;
-                        menuHTML += `<li data-action="toggle-block">${isHidden ? '<span class="iconify" data-icon="mdi:eye"></span> 显示区块' : '<span class="iconify" data-icon="mdi:eye-off"></span> 隐藏区块'}</li>`;
-                        menuHTML += `<li data-action="delete-block" style="color:var(--color-danger); border-top:1px solid var(--border-color)"><span class="iconify" data-icon="mdi:trash-can-outline"></span> 删除整个区块</li>`;
+                        menuHTML += `<li data-action="copy-item"><span class="iconify" data-icon="mdi:content-copy"></span> 复制模块</li>`;
+                        menuHTML += `<li data-action="toggle-item">${isHidden ? '<span class="iconify" data-icon="mdi:eye"></span> 显示模块' : '<span class="iconify" data-icon="mdi:eye-off"></span> 隐藏模块'}</li>`;
+                        menuHTML += `<li data-action="delete-item" style="color:var(--color-danger); border-top:1px solid var(--border-color)"><span class="iconify" data-icon="mdi:trash-can-outline"></span> 删除模块</li>`;
                         menuHTML += `</ul>`;
 
                         menu.innerHTML = menuHTML;
@@ -4951,18 +4869,13 @@
                             if (!li) return;
                             const action = li.dataset.action;
 
-                            if (action === 'toggle-block') this.toggleBlockVisibility(blockId);
-                            if (action === 'copy-block') this.duplicateBlock(blockId);
-                            if (action === 'delete-block') this.deleteBlock(blockId);
-                            if (action === 'delete-card') this.deleteCard(blockId, cardId);
+                            if (action === 'toggle-item') this.toggleItemVisibility(itemId);
+                            if (action === 'copy-item') this.duplicateItem(itemId);
+                            if (action === 'delete-item') this.deleteItem(itemId);
                             if (action === 'toggle-vertical') {
-                                const card = block.cards.find(c => c.id === cardId);
-                                const newMode = card.writingMode === 'vertical-rl' ? 'horizontal-tb' : 'vertical-rl';
-                                this.updateCard(blockId, cardId, 'writingMode', newMode, true, '切换文字排列方向');
-                                // 强制重绘预览卡片
-                                this.renderPreviewCardById(blockId, cardId);
-                                // 如果是瀑布流，需要重排
-                                if (block.settings.masonryEnabled) this.initMasonryForBlock(blockId);
+                                const newMode = item.writingMode === 'vertical-rl' ? 'horizontal-tb' : 'vertical-rl';
+                                this.updateItem(itemId, 'writingMode', newMode, true, '切换文字排列方向');
+                                this.renderPreviewItemById(itemId);
                             }
                             menu.style.display = 'none';
                         };
@@ -5028,15 +4941,22 @@
                             importView.style.display = isExport ? 'none' : 'block';
                             statusText.textContent = '';
                             if (isExport) {
-                                // 异步调用，增加 loading 提示
                                 container.innerHTML = '<div class="spinner" style="margin: 20px auto;"></div>';
                                 await this.generateQRCode(container);
+                            } else {
+                                // 【性能优化】用户一点这个 Tab，我们就立刻静默预加载 ZXing 库
+                                // 这样等用户找完文件时，库已经加载好了，无需等待。
+                                this.loadScript('https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js').catch(()=>{});
                             }
                         };
                     });
 
-                    // 2. 绑定上传按钮
+                    // 2. 绑定按钮
                     document.getElementById('upload-qr-btn').onclick = () => fileInput.click();
+                    
+                    // 新增：绑定保存精美图片按钮
+                    const saveBtn = document.getElementById('save-aesthetic-qr-btn');
+                    if(saveBtn) saveBtn.onclick = () => this.saveAestheticQRCode();
 
                     // 3. 绑定文件读取与解析 
                     fileInput.onchange = async (e) => {
@@ -5047,9 +4967,9 @@
                         statusText.style.color = 'var(--text-primary)';
 
                         try {
-                            // 异步加载 ZXing
+                            // 确保 ZXing 已加载 (如果Tab切换时没加载完，这里会等待)
                             await this.loadScript('https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js');
-                            
+
                             const imageUrl = URL.createObjectURL(file);
                             const codeReader = new ZXing.BrowserQRCodeReader();
 
@@ -5079,6 +4999,127 @@
                     };
                 },
 
+                async saveAestheticQRCode() {
+                    const qrImg = document.querySelector('#qrcode-container img');
+                    if (!qrImg) {
+                        this.showToast('二维码尚未生成，请稍后', 'error');
+                        return;
+                    }
+
+                    this.showLoading('正在设计卡片...');
+                    
+                    // 1. 获取当前主题色，让卡片风格与你的设计保持一致
+                    const theme = this.state.globalTheme;
+                    const primaryColor = theme.primary || '#007AFF';
+                    const accentColor = theme.accent || '#007AFF';
+                    
+                    // 2. 创建高清画布 (1080x1440，竖版更适合手机阅读)
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    const w = 1080;
+                    const h = 1440;
+                    canvas.width = w;
+                    canvas.height = h;
+
+                    // 辅助函数：绘制圆角矩形
+                    const roundRect = (x, y, w, h, r) => {
+                        ctx.beginPath();
+                        ctx.moveTo(x + r, y);
+                        ctx.arcTo(x + w, y, x + w, y + h, r);
+                        ctx.arcTo(x + w, y + h, x, y + h, r);
+                        ctx.arcTo(x, y + h, x, y, r);
+                        ctx.arcTo(x, y, x + w, y, r);
+                        ctx.closePath();
+                    };
+
+                    // 3. 绘制背景 (使用主色调生成的优雅渐变)
+                    const bgGradient = ctx.createLinearGradient(0, 0, w, h);
+                    bgGradient.addColorStop(0, '#ffffff');
+                    bgGradient.addColorStop(1, '#f2f2f7');
+                    ctx.fillStyle = bgGradient;
+                    ctx.fillRect(0, 0, w, h);
+
+                    // 3.1 绘制顶部的装饰色块 (增加氛围感)
+                    const decorGradient = ctx.createLinearGradient(0, 0, w, h/2);
+                    decorGradient.addColorStop(0, primaryColor);
+                    decorGradient.addColorStop(1, accentColor);
+                    
+                    ctx.save();
+                    ctx.globalAlpha = 0.15; // 淡淡的色彩
+                    ctx.beginPath();
+                    ctx.arc(w/2, -200, 900, 0, Math.PI * 2);
+                    ctx.fillStyle = decorGradient;
+                    ctx.fill();
+                    ctx.restore();
+
+                    // 4. 绘制中心卡片 (类似 iOS 通知卡片风格)
+                    const cardW = 880;
+                    const cardH = 1000;
+                    const cardX = (w - cardW) / 2;
+                    const cardY = (h - cardH) / 2 - 50;
+
+                    // 卡片阴影
+                    ctx.shadowColor = "rgba(0, 0, 0, 0.15)";
+                    ctx.shadowBlur = 60;
+                    ctx.shadowOffsetY = 30;
+
+                    // 卡片本体
+                    ctx.fillStyle = '#ffffff';
+                    roundRect(cardX, cardY, cardW, cardH, 60);
+                    ctx.fill();
+                    
+                    // 重置阴影
+                    ctx.shadowColor = 'transparent';
+                    ctx.shadowBlur = 0;
+                    ctx.shadowOffsetY = 0;
+
+                    // 5. 绘制卡片内的文字
+                    ctx.textAlign = 'center';
+                    
+                    // 标题
+                    ctx.fillStyle = '#1a1a1a';
+                    ctx.font = 'bold 70px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                    ctx.fillText('Blokko 样式分享', w / 2, cardY + 140);
+
+                    // 副标题 (强调色)
+                    ctx.fillStyle = primaryColor;
+                    ctx.font = '600 40px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                    ctx.fillText('By ' + (this.state.personalInfo.nickname || '设计师'), w / 2, cardY + 210);
+
+                    // 6. 绘制二维码 (放在纯白背景上，确保识别率)
+                    const qrBoxSize = 600;
+                    const qrX = (w - qrBoxSize) / 2;
+                    const qrY = cardY + 280;
+
+                    // 绘制二维码图片
+                    // 为了提高识别率，我们在二维码周围留出足够的白边
+                    ctx.drawImage(qrImg, qrX, qrY, qrBoxSize, qrBoxSize);
+
+                    // 7. 底部提示文字
+                    ctx.fillStyle = '#888888';
+                    ctx.font = '40px sans-serif';
+                    ctx.fillText('扫描二维码 / 导入配色方案', w / 2, qrY + qrBoxSize + 80);
+
+                    // 8. 底部 Logo 水印
+                    ctx.fillStyle = '#cccccc';
+                    ctx.font = '30px sans-serif';
+                    ctx.fillText('Created with Blokko', w / 2, h - 60);
+
+                    // 9. 导出
+                    canvas.toBlob(blob => {
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = `Blokko-Share-${Date.now()}.png`;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        URL.revokeObjectURL(url);
+                        this.hideLoading();
+                        this.showToast('分享卡片已生成！', 'success');
+                    }, 'image/png');
+                },
+
 
                 async generateQRCode(container) {
                     try {
@@ -5091,8 +5132,7 @@
                         const styleData = {
                             gt: this.state.globalTheme,
                             ps: this.deepClone(this.state.pageStyles),
-                            gcs: this.state.globalCardStyles,
-                            gbs: this.state.globalButtonStyles,
+                            gcs: this.state.globalComponentStyles,
                             gbr: this.state.globalBorderSettings
                         };
                         styleData.ps.pageBgImageDataUrl = null;
@@ -5100,16 +5140,17 @@
 
                         const jsonString = JSON.stringify(styleData);
                         const compressed = LZString.compressToEncodedURIComponent(jsonString);
-                        const payload = `BLOKKO_STYLE_V1:${compressed}`;
+                        const payload = `BLOKKO_STYLE_V2:${compressed}`;
 
                         container.innerHTML = '';
                         new QRCode(container, {
                             text: payload,
-                            width: 360,
-                            height: 360,
+                            width: 400,
+                            height: 400,
                             colorDark: "#000000",
                             colorLight: "#ffffff",
-                            correctLevel: QRCode.CorrectLevel.L
+                            correctLevel: QRCode.CorrectLevel.M,
+                            margin: 2
                         });
                     } catch (e) {
                         console.error("QR Generation failed:", e);
@@ -5122,8 +5163,8 @@
                     const statusText = document.getElementById('qr-scan-status');
 
                     // 1. 安全围栏第一道：检查 Magic Header
-                    if (!rawData.startsWith('BLOKKO_STYLE_V1:')) {
-                        statusText.textContent = '⚠️ 这是一个未知的二维码，为了安全已被拦截。';
+                    if (!rawData.startsWith('BLOKKO_STYLE_V2:')) {
+                        statusText.textContent = '⚠️ 这是一个未知的或过时的二维码，为了安全已被拦截。';
                         statusText.style.color = 'var(--color-danger)';
                         return;
                     }
@@ -5136,7 +5177,7 @@
                         ]);
 
                         // 2. 解压数据
-                        const compressed = rawData.split('BLOKKO_STYLE_V1:')[1];
+                        const compressed = rawData.split('BLOKKO_STYLE_V2:')[1];
                         const jsonStr = LZString.decompressFromEncodedURIComponent(compressed);
                         if (!jsonStr) throw new Error("数据损坏");
 
@@ -5167,8 +5208,7 @@
                             this.pushHistory('应用分享样式');
                             if (styleData.gt) this.state.globalTheme = styleData.gt;
                             if (styleData.ps) this.state.pageStyles = styleData.ps;
-                            if (styleData.gcs) this.state.globalCardStyles = styleData.gcs;
-                            if (styleData.gbs) this.state.globalButtonStyles = styleData.gbs;
+                            if (styleData.gcs) this.state.globalComponentStyles = styleData.gcs;
                             if (styleData.gbr) this.state.globalBorderSettings = styleData.gbr;
 
                             this.debouncedSaveToLocal();
@@ -5191,68 +5231,153 @@
                 openShareModal() {
                     const modal = document.getElementById('share-style-modal');
                     modal.classList.add('visible');
-                    
-                    // 确保事件已绑定
+
                     const exportBtn = modal.querySelector('.tab-btn[data-qr-tab="export"]');
-                    if (!exportBtn.onclick) { 
+                    if (!exportBtn.onclick) {
                         this.initShareSystem();
                     }
-                    
-                    // 触发点击以生成二维码
+
                     if (exportBtn) exportBtn.click();
                 },
 
-                updateGlobalThemeVars() {
-                    const t = this.state.globalTheme;
-                    const r = document.documentElement.style;
-                    r.setProperty('--g-theme-primary', t.primary);
-                    r.setProperty('--g-theme-accent', t.accent);
-                    r.setProperty('--g-theme-background', t.background);
-                    r.setProperty('--g-theme-text', t.text);
-                },
-
-                updateGlobalCardStyleVars() {
-                    const g = this.state.globalCardStyles;
-                    const gBtn = this.state.globalButtonStyles;
+                updateGlobalComponentStyleVars() {
+                    const g = this.state.globalComponentStyles;
                     const r = document.documentElement.style;
 
-                    r.setProperty('--g-card-bg-color', g.bgColor);
-                    r.setProperty('--g-card-text-color', g.textColor);
-                    r.setProperty('--g-card-opacity', g.opacity);
-                    r.setProperty('--g-card-border-radius', `${g.radius}px`);
-                    r.setProperty('--g-card-text-align', g.textAlign);
-                    r.setProperty('--g-card-line-height', g.lineHeight);
+                    r.setProperty('--g-comp-bg-color', g.bgColor);
+                    r.setProperty('--g-comp-text-color', g.textColor);
+                    r.setProperty('--g-comp-opacity', g.opacity);
+                    r.setProperty('--g-comp-border-radius', `${g.radius}px`);
+                    r.setProperty('--g-comp-text-align', g.textAlign);
+                    r.setProperty('--g-comp-line-height', g.lineHeight);
                     r.setProperty('--active-card-font-family', g.fontFamily ? `'${g.fontFamily}', sans-serif` : '');
-                    r.setProperty('--g-card-title-font-size', g.titleFontSize);
-                    r.setProperty('--g-card-content-font-size', g.contentFontSize);
-                    r.setProperty('--g-card-text-stroke', g.textStrokeWidth > 0 ? `${g.textStrokeWidth}px ${g.textStrokeColor}` : '0px transparent');
-                    r.setProperty('--g-card-padding', `${g.padding}px`);
+                    r.setProperty('--g-comp-title-font-size', g.titleFontSize);
+                    r.setProperty('--g-comp-content-font-size', g.contentFontSize);
+                    r.setProperty('--g-comp-text-stroke', g.textStrokeWidth > 0 ? `${g.textStrokeWidth}px ${g.textStrokeColor}` : '0px transparent');
+                    r.setProperty('--g-comp-padding', `${g.padding}px`);
 
-                    r.setProperty('--g-button-bg-color', gBtn.bgColor);
-                    r.setProperty('--g-button-text-color', gBtn.textColor);
-                    r.setProperty('--g-button-border-radius', `${gBtn.radius}px`);
-                    r.setProperty('--g-button-text-align', gBtn.textAlign);
+                    
+                    // 如果不透明度为0，直接设为 none 以提升性能
+                    if (parseFloat(g.shadowOpacity) > 0) {
+                        const shadowColorRgba = this.hexToRgba(g.shadowColor, g.shadowOpacity);
+                        const shadowVal = `${g.shadowOffsetX}px ${g.shadowOffsetY}px ${g.shadowBlur}px ${shadowColorRgba}`;
+                        r.setProperty('--active-card-shadow', shadowVal);
+                    } else {
+                        r.setProperty('--active-card-shadow', 'none');
+                    }
+
+                    // 更新按钮的默认值，如果未被覆盖
+                    r.setProperty('--g-button-bg-color', g.buttonBgColor || g.bgColor);
+                    r.setProperty('--g-button-text-color', g.buttonTextColor || g.textColor);
                 },
 
                 updateGlobalBorderVars() {
                     const b = this.state.globalBorderSettings;
                     const r = document.documentElement.style;
+
+                    // 边框变量
                     r.setProperty('--g-border-width', `${b.width}px`);
                     r.setProperty('--g-border-style', b.style === 'none' ? 'none' : b.style);
                     r.setProperty('--g-border-color', b.color);
                     r.setProperty('--g-border-shadow-offset', `${b.shadowOffset}px`);
                     r.setProperty('--g-border-shadow-color', b.shadowColor);
 
-                    document.querySelectorAll('.preview-block-wrapper, .preview-header, .preview-card, .preview-button, figure').forEach(el => {
-                        el.dataset.borderStyle = b.style;
-                        if (b.style === 'double-offset') el.style.zIndex = '1';
-                    });
+                    
+                    const s = b.globalShadowSettings;
+                    if (s && parseFloat(s.opacity) > 0) {
+                        const rgba = this.hexToRgba(s.color, s.opacity);
+                        r.setProperty('--g-shadow-value', `${s.offsetX}px ${s.offsetY}px ${s.blur}px ${rgba}`);
+                    } else {
+                        r.setProperty('--g-shadow-value', 'none');
+                    }
                 },
 
                 initAllSortables() {
                     this.initLayerSortables();
-                    this.initSortablePreviewBlocks();
+                    this.initSortablePreviewItems();
                     this.initSortablePreviewTags();
+                    this.applyLayout();
+
+                },
+
+
+                applyLayout() {
+                    const s = this.state.systemSettings;
+                    const container = this.elements.previewItemsContainer;
+                    const r = document.documentElement.style;
+
+                    r.setProperty('--preview-gap', `${s.previewGap || 20}px`);
+
+                    // 重新渲染DOM结构，这是应用新布局前必须的步骤
+                    this.renderPreviewItems();
+
+                    // 根据是否启用紧凑模式，切换class并调用相应的布局函数
+                    if (s.masonryEnabled) {
+                        container.classList.add('compact-mode');
+                        // 使用 requestAnimationFrame 确保在浏览器下一次绘制前执行，比setTimeout更精确
+                        requestAnimationFrame(() => {
+                            this.applyGridCompactLayout();
+                        });
+                    } else {
+                        container.classList.remove('compact-mode');
+                        // 清理所有可能残留的Grid样式
+                        container.querySelectorAll('.preview-item-wrapper').forEach(itemEl => {
+                            itemEl.style.gridRowEnd = '';
+                            itemEl.style.gridColumnEnd = '';
+                        });
+                    }
+                },
+
+                applyGridCompactLayout() {
+                    const container = this.elements.previewItemsContainer;
+                    if (!container || !this.state.systemSettings.masonryEnabled) {
+                        return; // 如果模式未开启，则直接退出
+                    }
+
+                    const gridRowHeight = 10; // 必须与 CSS 中的 grid-auto-rows 一致
+                    const gap = parseInt(this.state.systemSettings.previewGap || 20);
+
+                    const items = container.querySelectorAll('.preview-item-wrapper:not(.is-hidden)');
+
+                    items.forEach(itemEl => {
+                        const itemId = itemEl.dataset.itemId;
+                        const itemData = this.findItem(itemId);
+                        if (!itemData) return;
+
+                        // --- 核心修正 ---
+                        // 1. 立即设置列宽（grid-column），不再等待图片加载
+                        const width = parseInt(itemData.layout.width, 10);
+                        let colSpan = 6; // 默认100% (6/6)
+                        if (width === 67) colSpan = 4;
+                        else if (width === 50) colSpan = 3;
+                        else if (width === 33) colSpan = 2;
+                        itemEl.style.gridColumnEnd = `span ${colSpan}`;
+
+                        // 2. 计算并设置行高（grid-row）
+                        // 为了确保高度计算准确，我们仍然可以等待图片加载，但这不再阻塞宽度的设置
+                        const images = Array.from(itemEl.querySelectorAll('img'));
+                        const imagePromises = images.map(img => {
+                            if (img.complete && img.naturalHeight !== 0) return Promise.resolve();
+                            return new Promise(resolve => { img.onload = img.onerror = resolve; });
+                        });
+
+                        const calculateAndSetHeight = () => {
+                            // 使用 getBoundingClientRect 获取渲染后的精确高度
+                            const contentHeight = itemEl.getBoundingClientRect().height;
+                            // 计算需要跨越的行数
+                            const rowSpan = Math.ceil((contentHeight + gap) / (gridRowHeight + gap));
+                            itemEl.style.gridRowEnd = `span ${rowSpan}`;
+                        };
+
+                        // 无论图片是否加载完成，都先进行一次初步的高度计算
+                        calculateAndSetHeight();
+
+                        // 当所有图片加载完成后，再进行一次精确的高度计算，以防布局跳动
+                        Promise.all(imagePromises).then(() => {
+                            // 延迟一帧，确保浏览器完成图片渲染
+                            requestAnimationFrame(calculateAndSetHeight);
+                        });
+                    });
                 },
 
                 initLayerSortables() {
@@ -5262,55 +5387,46 @@
                         animation: 150,
                         handle: '.layer-item',
                         ghostClass: 'sortable-ghost',
-                        filter: 'hr, .layer-item[data-type="personalInfo"], .layer-actions, .layer-toggle, .card-layer-list',
+                        filter: 'hr, .layer-item[data-type="personalInfo"], .layer-actions',
                         onEnd: e => {
+                            this.vibrate(30);
                             const oldIndex = e.oldIndex - 2;
                             const newIndex = e.newIndex - 2;
                             if (oldIndex === newIndex) return;
-                            this.pushHistory('排序区块');
-                            const [moved] = this.state.blocks.splice(oldIndex, 1);
-                            this.state.blocks.splice(newIndex, 0, moved);
+                            this.pushHistory('排序模块');
+                            const [moved] = this.state.items.splice(oldIndex, 1);
+                            this.state.items.splice(newIndex, 0, moved);
                             this.debouncedSaveToLocal();
                             this.renderLayerPanel();
-                            this.renderPreviewBlocks();
+                            this.renderPreviewItems();
                         }
                     });
                 },
 
-                initNestedSortables() {
-                    Object.values(this.cardLayerSortables).forEach(s => s.destroy());
-                    this.cardLayerSortables = {};
-                    this.elements.layerList.querySelectorAll('.card-layer-list').forEach(list => {
-                        const blockId = list.dataset.blockId;
-                        this.cardLayerSortables[blockId] = new Sortable(list, {
-                            group: `cards-${blockId}`,
-                            animation: 150,
-                            ghostClass: 'sortable-ghost',
-                            onEnd: e => {
-                                const block = this.findBlock(blockId);
-                                if (!block) return;
-                                this.pushHistory('排序卡片');
-                                const [movedCard] = block.cards.splice(e.oldIndex, 1);
-                                block.cards.splice(e.newIndex, 0, movedCard);
-                                this.debouncedSaveToLocal();
-                                this.renderPreviewBlockById(blockId);
-                            }
-                        });
-                    });
-                },
-
-                initSortablePreviewBlocks() {
+                initSortablePreviewItems() {
                     if (this.sortablePreview) this.sortablePreview.destroy();
-                    this.sortablePreview = new Sortable(this.elements.previewBlocksContainer, {
+                    this.sortablePreview = new Sortable(this.elements.previewItemsContainer, {
                         animation: 150,
                         ghostClass: 'sortable-ghost',
+                        // 关键修复：防止 Masonry 的绝对定位干扰拖拽占位符的生成
+                        onStart: () => {
+                            if (this.state.systemSettings.masonryEnabled) {
+                                // 拖拽开始时，暂时保留 Masonry 布局，但允许 Sortable 运作
+                                this.elements.previewItemsContainer.classList.add('is-dragging');
+                            }
+                        },
                         onEnd: e => {
+                            this.vibrate(30);
                             if (e.oldIndex === e.newIndex) return;
-                            this.pushHistory('排序区块');
-                            const [movedBlock] = this.state.blocks.splice(e.oldIndex, 1);
-                            this.state.blocks.splice(e.newIndex, 0, movedBlock);
+
+                            this.pushHistory('排序模块');
+                            const [movedItem] = this.state.items.splice(e.oldIndex, 1);
+                            this.state.items.splice(e.newIndex, 0, movedItem);
                             this.debouncedSaveToLocal();
-                            this.renderLayerPanel();
+
+                            // 拖拽结束后，DOM顺序已经改变，只需重新应用布局
+                            this.renderLayerPanel(); // 更新左侧列表顺序
+                            this.applyLayout(); // 重新计算并应用布局
                         }
                     });
                 },
@@ -5354,110 +5470,24 @@
                     }
                 },
 
-                initSortableCards(blockId) {
-                    const list = this.elements.inspectorPanel.querySelector(`.editor-block[data-block-id="${blockId}"] .card-editors-list`);
-                    if (list) { if (this.cardSortables[blockId]) this.cardSortables[blockId].destroy(); this.cardSortables[blockId] = new Sortable(list, { handle: '.card-drag-handle', animation: 150, ghostClass: 'sortable-ghost', onEnd: e => { const b = this.findBlock(blockId); if (b) { this.pushHistory('排序卡片'); const [m] = b.cards.splice(e.oldIndex, 1); b.cards.splice(e.newIndex, 0, m); this.debouncedSaveToLocal(); this.renderPreviewBlockById(blockId); this.renderLayerPanel(); } } }); }
-                },
-                initSortableImageCards(blockId) {
-                    const container = this.elements.inspectorPanel.querySelector(`.editor-block[data-block-id="${blockId}"] .image-card-editors-list`);
-                    if (container) { if (this.imageCardSortables[blockId]) this.imageCardSortables[blockId].destroy(); this.imageCardSortables[blockId] = new Sortable(container, { handle: '.card-drag-handle', animation: 150, ghostClass: 'sortable-ghost', onEnd: e => { const block = this.findBlock(blockId); if (block) { this.pushHistory('排序图片'); const [moved] = block.cards.splice(e.oldIndex, 1); block.cards.splice(e.newIndex, 0, moved); this.debouncedSaveToLocal(); this.renderPreviewBlockById(blockId); this.renderLayerPanel(); } } }); }
-                },
-                initSortableButtonCards(blockId) {
-                    const container = this.elements.inspectorPanel.querySelector(`.editor-block[data-block-id="${blockId}"] .button-card-editors-list`);
+                initSortableTimelineEvents(itemId) {
+                    const container = this.elements.inspectorPanel.querySelector(`.editor-item[data-item-id="${itemId}"] .timeline-editors-list`);
                     if (container) {
-                        if (this.buttonCardSortables[blockId]) this.buttonCardSortables[blockId].destroy();
-                        this.buttonCardSortables[blockId] = new Sortable(container, {
-                            handle: '.card-drag-handle',
-                            animation: 150,
-                            ghostClass: 'sortable-ghost',
-                            onEnd: e => {
-                                const block = this.findBlock(blockId);
-                                if (block) {
-                                    this.pushHistory('排序按钮');
-                                    const [moved] = block.cards.splice(e.oldIndex, 1);
-                                    block.cards.splice(e.newIndex, 0, moved);
-                                    this.debouncedSaveToLocal();
-                                    this.renderPreviewBlockById(blockId);
-                                    this.renderLayerPanel();
-                                }
-                            }
-                        });
-                    }
-                },
-                initSortableTimelineEvents(blockId) {
-                    const container = this.elements.inspectorPanel.querySelector(`.editor-block[data-block-id="${blockId}"] .timeline-editors-list`);
-                    if (container) {
-                        const sortableKey = `timeline_${blockId}`;
+                        const sortableKey = `timeline_${itemId}`;
                         if (this.cardSortables[sortableKey]) this.cardSortables[sortableKey].destroy();
                         this.cardSortables[sortableKey] = new Sortable(container, {
                             handle: '.card-drag-handle', animation: 150, ghostClass: 'sortable-ghost',
                             onEnd: e => {
-                                const block = this.findBlock(blockId);
-                                if (block) {
+                                const item = this.findItem(itemId);
+                                if (item) {
                                     this.pushHistory('排序时间轴事件');
-                                    const [moved] = block.cards.splice(e.oldIndex, 1);
-                                    block.cards.splice(e.newIndex, 0, moved);
+                                    const [moved] = item.cards.splice(e.oldIndex, 1);
+                                    item.cards.splice(e.newIndex, 0, moved);
                                     this.debouncedSaveToLocal();
-                                    this.renderPreviewBlockById(blockId);
-                                    this.renderLayerPanel();
+                                    this.renderPreviewItemById(itemId);
                                 }
                             }
                         });
-                    }
-                },
-
-
-                async initMasonryForBlock(blockId) {
-                    this.destroyMasonryForBlock(blockId);
-                    const block = this.findBlock(blockId);
-                    if (block && (block.type === 'text' || block.type === 'image') && ['dual', 'triple'].includes(block.settings.layout) && block.settings.masonryEnabled) {
-                        const previewEl = this.elements.previewBlocksContainer.querySelector(`[data-block-id="${blockId}"] .preview-cards-container`);
-                        if (previewEl) {
-                            try {
-                                await this.loadScript('https://cdn.bootcdn.net/ajax/libs/masonry/4.2.2/masonry.pkgd.min.js');
-                            } catch (e) {
-                                console.error("Masonry.js load failed.", e);
-                                this.showToast("瀑布流组件加载失败，请检查网络。", "error");
-                                return;
-                            }
-                            const images = Array.from(previewEl.querySelectorAll('img'));
-                            const imageLoadPromises = images.map(img => {
-                                if (img.complete && img.naturalHeight !== 0) {
-                                    return Promise.resolve();
-                                }
-                                return new Promise(resolve => {
-                                    img.addEventListener('load', resolve, { once: true });
-                                    img.addEventListener('error', resolve, { once: true });
-                                });
-                            });
-
-                            await Promise.all(imageLoadPromises);
-
-                            previewEl.classList.add('masonry-active');
-                            const itemSelector = block.type === 'image' ? 'figure' : '.preview-card';
-                            this.masonryInstances[blockId] = new Masonry(previewEl, {
-                                itemSelector: itemSelector,
-                                gutter: 15,
-                                fitWidth: false,
-                                percentPosition: true
-                            });
-                        }
-                    }
-                },
-                destroyMasonryForBlock(blockId) {
-                    if (this.masonryInstances[blockId]) {
-                        this.masonryInstances[blockId].destroy();
-                        delete this.masonryInstances[blockId];
-                        const previewEl = this.elements.previewBlocksContainer.querySelector(`[data-block-id="${blockId}"] .preview-cards-container`);
-                        if (previewEl) {
-                            previewEl.classList.remove('masonry-active');
-                            Array.from(previewEl.children).forEach(child => {
-                                child.style.position = '';
-                                child.style.left = '';
-                                child.style.top = '';
-                                child.style.width = '';
-                            });
-                        }
                     }
                 },
 
@@ -5493,7 +5523,7 @@
                 },
 
                 toggleLockMode() {
-                    const isLocked = this.elements.previewBlocksContainer.classList.toggle('locked-mode');
+                    const isLocked = this.elements.previewItemsContainer.classList.toggle('locked-mode');
                     const button = this.elements.lockModeToggle;
 
                     button.textContent = isLocked ? '预览中' : '编辑中';
@@ -5506,9 +5536,6 @@
                     if (this.sortablePreview) this.sortablePreview.option('disabled', shouldDisable);
                     if (this.sortableTags) this.sortableTags.option('disabled', shouldDisable);
                     if (this.sortablePreviewTags) this.sortablePreviewTags.option('disabled', shouldDisable);
-                    Object.values(this.cardLayerSortables).forEach(s => { if (s) s.option('disabled', shouldDisable); });
-                    Object.values(this.cardSortables).forEach(s => { if (s) s.option('disabled', shouldDisable); });
-                    Object.values(this.imageCardSortables).forEach(s => { if (s) s.option('disabled', shouldDisable); });
                 },
 
                 renderTagManager() {
@@ -5606,8 +5633,8 @@
                         this.elements.iconGrid.innerHTML = customIconsHTML + '<p style="text-align: center; color: var(--color-danger);">搜索失败，请检查网络。</p>';
                     }
                 },
-                showIconPicker(type, id, cardId = null) {
-                    this.currentIconTarget = { type, id, cardId };
+                showIconPicker(type, id) {
+                    this.currentIconTarget = { type, id };
                     this.elements.iconPickerModal.classList.add('visible');
                     this.renderIconGrid(this.elements.iconSearch.value);
                     this.elements.iconSearch.focus();
@@ -5620,13 +5647,11 @@
                 },
                 selectIcon(iconClass) {
                     if (this.currentIconTarget) {
-                        const { type, id, cardId } = this.currentIconTarget;
-                        if (type === 'card' || type === 'button') {
-                            this.updateCard(id, cardId, 'icon', iconClass, true, '更改卡片图标');
+                        const { type, id } = this.currentIconTarget;
+                        if (type === 'item') {
+                            this.updateItem(id, 'icon', iconClass, true, '更改图标');
                         } else if (type === 'tag') {
                             this.updateTag(id, 'icon', iconClass, true, '更改标签图标');
-                        } else if (type === 'separator') {
-                            this.updateBlockSettings(id, 'icon', iconClass, true, '更改分隔线图标');
                         }
                     }
                     this.hideIconPicker();
@@ -5695,20 +5720,16 @@
                     this.renderInspector();
                 },
                 updateHighlights() {
-                    document.querySelectorAll('.layer-item.selected, .card-layer-item.selected, .preview-block-wrapper.selected, .preview-header.selected, .editor-card.is-active').forEach(el => el.classList.remove('selected', 'is-active'));
+                    document.querySelectorAll('.layer-item.selected, .preview-item-wrapper.selected, .preview-header.selected').forEach(el => el.classList.remove('selected'));
 
-                    const { type, id, cardId } = this.selection;
+                    const { type, id } = this.selection;
 
                     if (type === 'personalInfo') {
                         document.querySelector('.layer-item[data-type="personalInfo"]')?.classList.add('selected');
                         this.elements.previewHeader.classList.add('selected');
-                    } else if (type === 'block' && id) {
+                    } else if (type === 'item' && id) {
                         document.querySelector(`.layer-item[data-id="${id}"]`)?.classList.add('selected');
-                        document.querySelector(`.preview-block-wrapper[data-block-id="${id}"]`)?.classList.add('selected');
-                        if (cardId) {
-                            document.querySelector(`.card-layer-item[data-card-id="${cardId}"]`)?.classList.add('selected');
-                            document.querySelector(`[data-card-id="${cardId}"]`)?.classList.add('is-active');
-                        }
+                        document.querySelector(`.preview-item-wrapper[data-item-id="${id}"]`)?.classList.add('selected');
                     }
                 },
 
@@ -5837,16 +5858,87 @@
                     this.updateState('pageStyles.headerBgColor', '#ffffff', false);
                     this.updateState('pageStyles.headerTextColor', palette[4], false);
 
-                    this.updateState('globalCardStyles.bgColor', '#ffffff', false);
-                    this.updateState('globalCardStyles.textColor', palette[4], false);
-                    this.updateState('globalButtonStyles.bgColor', palette[2], false);
-                    this.updateState('globalButtonStyles.textColor', '#ffffff', false);
+                    this.updateState('globalComponentStyles.bgColor', palette[2], false);
+                    this.updateState('globalComponentStyles.textColor', '#ffffff', false);
 
                     this.renderAll();
                     this.syncAllControls();
                     this.showToast('随机配色已应用！', 'success');
                 },
 
+                async applySmartPalette(baseHex) {
+                    try {
+                        await this.loadScript('https://cdn.bootcdn.net/ajax/libs/chroma-js/2.4.2/chroma.min.js');
+                    } catch (e) {
+                        this.showErrorModal('加载失败', '颜色库 chroma.js 加载失败，请检查网络。');
+                        return;
+                    }
+
+                    this.pushHistory(`应用配色: ${baseHex}`);
+
+                    const base = chroma(baseHex);
+
+                    
+                    const pageBg = base.set('hsl.s', 0.25).set('hsl.l', 0.91).hex();
+
+                   
+                    const cardBg = chroma.mix(base, 'white', 0.96).hex();
+                    const headerBg = cardBg; // 头部和卡片保持一致
+
+                    
+                    const headerGradientEnd = chroma(headerBg).darken(0.05).hex();
+
+                   
+                    const textBase = base.set('hsl.s', 0.4).set('hsl.l', 0.15).hex();
+
+                    let accent = base.hex();
+                    if (base.luminance() < 0.1) accent = base.brighten(1.5).hex();
+                    if (base.luminance() > 0.6) accent = base.darken(1.2).hex();
+
+                    const compColor = base.set('hsl.h', base.get('hsl.h') + 180);
+                    const tagBg = compColor.set('hsl.s', 0.5).set('hsl.l', 0.9).hex(); 
+                    const tagText = compColor.darken(2.5).hex();
+
+
+                   
+                    this.updateState('pageStyles.pageBgSolidColor', pageBg, false);
+                    this.updateState('pageStyles.pageBgMode', 'solid', false);
+
+               
+                    this.updateState('pageStyles.headerBgColor', headerBg, false);
+                    this.updateState('pageStyles.headerBgMode', 'solid', false);
+                    this.updateState('pageStyles.headerTextColor', textBase, false);
+                    this.updateState('pageStyles.headerBorderRadius', 16, false);
+
+  
+                    this.updateState('pageStyles.headerBgGradientStart', headerBg, false);
+                    this.updateState('pageStyles.headerBgGradientEnd', headerGradientEnd, false);
+
+                    this.updateState('globalComponentStyles.bgColor', cardBg, false);
+                    this.updateState('globalComponentStyles.bgMode', 'solid', false); 
+                    this.updateState('globalComponentStyles.textColor', textBase, false);
+                    this.updateState('globalComponentStyles.titleColor', accent, false);
+                    this.updateState('globalComponentStyles.radius', 16, false);
+
+                    this.updateState('personalInfo.nicknameColor', accent, false);
+                    this.updateState('personalInfo.subtitleColor', chroma(textBase).brighten(1.5).hex(), false);
+                    this.updateState('personalInfo.bioColor', textBase, false);
+
+                    this.updateState('personalInfo.tagBgColor', tagBg, false);
+                    this.updateState('personalInfo.tagTextColor', tagText, false);
+
+                    this.updateState('personalInfo.avatarBorderColor', accent, false);
+                    this.updateState('personalInfo.avatarBorderSize', 3, false);
+
+                    this.state.globalTheme.primary = accent;
+                    this.state.globalTheme.accent = accent;
+                    this.triggerRender('globalTheme.primary');
+                    this.triggerRender('globalTheme.accent');
+
+                    this.renderAll();
+                    this.syncAllControls();
+                    this.showToast('已应用配色方案', 'success');
+                },
                 applyQuickColor(action, color) {
                     const actionMap = {
                         'apply-page-bg-solid': 'pageStyles.pageBgSolidColor',
@@ -5856,11 +5948,11 @@
                         'apply-header-bg-gradient-start': 'pageStyles.headerBgGradientStart',
                         'apply-header-bg-gradient-end': 'pageStyles.headerBgGradientEnd',
                         'apply-header-text': 'pageStyles.headerTextColor',
-                        'apply-gcard-bg': 'globalCardStyles.bgColor',
-                        'apply-gcard-bg-gradient-start': 'globalCardStyles.bgGradientStart',
-                        'apply-gcard-bg-gradient-end': 'globalCardStyles.bgGradientEnd',
-                        'apply-gcard-text': 'globalCardStyles.textColor',
-                        'apply-gcard-title-text': 'globalCardStyles.titleColor',
+                        'apply-gcomp-bg': 'globalComponentStyles.bgColor',
+                        'apply-gcomp-bg-gradient-start': 'globalComponentStyles.bgGradientStart',
+                        'apply-gcomp-bg-gradient-end': 'globalComponentStyles.bgGradientEnd',
+                        'apply-gcomp-text': 'globalComponentStyles.textColor',
+                        'apply-gcomp-title-text': 'globalComponentStyles.titleColor',
                     };
 
                     if (actionMap[action]) {
@@ -5874,9 +5966,9 @@
                             } else if (action.startsWith('apply-header-bg')) {
                                 this.updateState('pageStyles.headerBgMode', 'gradient', false);
                                 this.switchTab('#page-styles-section .tab-group-wrapper:last-child', 'header-bg-gradient');
-                            } else if (action.startsWith('apply-gcard-bg')) {
-                                this.updateState('globalCardStyles.bgMode', 'gradient', false);
-                                this.switchTab('#global-card-styles-section', 'card-bg-gradient');
+                            } else if (action.startsWith('apply-gcomp-bg')) {
+                                this.updateState('globalComponentStyles.bgMode', 'gradient', false);
+                                this.switchTab('#global-component-styles-section', 'comp-bg-gradient');
                             }
                         } else if (action.includes('solid')) {
                             if (action.startsWith('apply-page-bg')) {
@@ -5885,9 +5977,9 @@
                             } else if (action.startsWith('apply-header-bg')) {
                                 this.updateState('pageStyles.headerBgMode', 'solid', false);
                                 this.switchTab('#page-styles-section .tab-group-wrapper:last-child', 'header-bg-solid');
-                            } else if (action.startsWith('apply-gcard-bg')) {
-                                this.updateState('globalCardStyles.bgMode', 'solid', false);
-                                this.switchTab('#global-card-styles-section', 'card-bg-solid');
+                            } else if (action.startsWith('apply-gcomp-bg')) {
+                                this.updateState('globalComponentStyles.bgMode', 'solid', false);
+                                this.switchTab('#global-component-styles-section', 'comp-bg-solid');
                             }
                         }
                     }
@@ -5904,38 +5996,47 @@
                     return `rgba(${r},${g},${b},${alpha})`;
                 },
 
+                parseTimeToSeconds(timeStr) {
+                    if (!timeStr) return 0;
+                    const parts = timeStr.toString().split(':');
+                    if (parts.length === 2) {
+                        return parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+                    }
+                    return parseFloat(timeStr) || 0;
+                },
+
                 debounce(func, wait) {
                     let timeout;
                     return (...args) => { clearTimeout(timeout); timeout = setTimeout(() => func.apply(this, args), wait); };
                 },
                 generateId(p) { return `${p}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}` },
+                vibrate(pattern = 50) {
+                    if ('vibrate' in navigator) {
+                        try {
+                            navigator.vibrate(pattern);
+                        } catch (e) {
+                            console.warn("Vibration failed", e);
+                        }
+                    }
+                },
                 postRenderAsyncUpdates(container) {
                     const imageLoadPromises = [];
-                    container.querySelectorAll('figure[data-card-id] img, .music-cover').forEach(img => {
-                        const blockEl = img.closest('.preview-block-wrapper');
-                        if (!blockEl) return;
+                    container.querySelectorAll('figure img, .music-cover').forEach(img => {
+                        const itemEl = img.closest('.preview-item-wrapper');
+                        if (!itemEl) return;
 
-                        const blockId = blockEl.dataset.blockId;
-                        const block = this.findBlock(blockId);
-                        if (!block) return;
+                        const itemId = itemEl.dataset.itemId;
+                        const item = this.findItem(itemId);
+                        if (!item) return;
 
-                        let dataObject, urlKey;
+                        let urlKey = (item.type === 'music') ? 'coverArt' : 'url';
 
-                        if (img.matches('.music-cover')) {
-                            dataObject = block.settings;
-                            urlKey = 'coverArt';
-                        } else {
-                            const cardId = img.closest('figure').dataset.cardId;
-                            dataObject = block.cards.find(c => c.id === cardId);
-                            urlKey = 'url';
-                        }
-
-                        if (dataObject && dataObject[urlKey]) {
+                        if (item && item[urlKey]) {
                             const promise = new Promise(async (resolve) => {
                                 img.addEventListener('load', resolve, { once: true });
                                 img.addEventListener('error', resolve, { once: true });
 
-                                let srcToSet = dataObject[urlKey];
+                                let srcToSet = item[urlKey];
                                 if (srcToSet.startsWith('idb://')) {
                                     try {
                                         const record = await this.getImageFromDB(srcToSet.substring(6));
@@ -5953,21 +6054,12 @@
                         }
                     });
 
-                    container.querySelectorAll('.preview-card[data-card-id]').forEach(cardEl => {
-                        const cardId = cardEl.dataset.cardId;
-                        const blockId = cardEl.closest('.preview-block-wrapper').dataset.blockId;
-                        const cardData = this.findBlock(blockId)?.cards.find(c => c.id === cardId);
-                        if (cardData) {
-                            this.applyCardStyles(cardEl, cardData);
+                    container.querySelectorAll('.preview-card').forEach(cardEl => {
+                        const itemId = cardEl.closest('.preview-item-wrapper').dataset.itemId;
+                        const itemData = this.findItem(itemId);
+                        if (itemData) {
+                            this.applyCardStyles(cardEl, itemData);
                         }
-                    });
-
-                    Promise.all(imageLoadPromises).then(() => {
-                        this.state.blocks.forEach(block => {
-                            if (block.settings.masonryEnabled) {
-                                this.initMasonryForBlock(block.id);
-                            }
-                        });
                     });
                 },
                 deepClone(obj) { return JSON.parse(JSON.stringify(obj)) },
@@ -5987,104 +6079,115 @@
                     });
                 },
 
-                async addBlock(type, sourceBlock = null) {
-                    this.pushHistory(sourceBlock ? '复制区块' : '添加新区块');
-                    let newBlock;
+                addItem(type, sourceItem = null, newItemData = null) {
+                    this.pushHistory(sourceItem ? '复制模块' : '添加新模块');
+                    let newItem;
 
-                    if (sourceBlock) {
-                        newBlock = this.deepClone(sourceBlock);
-                        newBlock.title = `${sourceBlock.title} (副本)`;
-                        if (newBlock.cards) {
-                            newBlock.cards.forEach(card => {
-                                card.title = ""; card.content = ""; card.description = ""; card.text = "";
-                            });
-                        }
+                    if (newItemData) {
+                        newItem = newItemData;
+                    }
+                    else if (sourceItem) {
+                        newItem = this.deepClone(sourceItem);
+                        newItem.id = this.generateId(sourceItem.type.charAt(0));
+                        newItem.title = `${sourceItem.title || '模块'} (副本)`;
+                        if (newItem.content) newItem.content = "";
+                        if (newItem.text) newItem.text = "";
+                        if (newItem.description) newItem.description = "";
                     } else {
-                        // 强制从默认状态获取完整模板，确保settings字段完整
-                        const defaultState = this.getDefaultState();
-                        const blockTemplate = defaultState.blocks.find(b => b.type === type);
-
-                        if (!blockTemplate) {
-                            // 紧急后备：如果默认状态里也没找到（极少见），手动构建基础结构
-                            newBlock = { type: type, title: '新区块', isVisible: true, isExpanded: true, settings: {}, cards: [] };
-                            if (type === 'music') newBlock.settings = { songTitle: '歌名', artist: '歌手', progress: 50 };
-                            if (type === 'progress') newBlock.settings = { label: '进度', percentage: 50, color: '#007AFF' };
+                        const defaultItem = this.getDefaultState().items.find(i => i.type === type);
+                        if (defaultItem) {
+                            newItem = this.deepClone(defaultItem);
+                            newItem.id = this.generateId(type.charAt(0));
                         } else {
-                            newBlock = this.deepClone(blockTemplate);
+                            return; // Should not happen
                         }
                     }
 
-                    newBlock.id = this.generateId('b');
-                    if (newBlock.cards) {
-                        newBlock.cards.forEach(c => c.id = this.generateId('c'));
-                    }
-
-                    const insertIndex = sourceBlock ? this.findBlockIndex(sourceBlock.id) + 1 : this.state.blocks.length;
-                    this.state.blocks.splice(insertIndex, 0, newBlock);
+                    const insertIndex = sourceItem ? this.findItemIndex(sourceItem.id) + 1 : this.state.items.length;
+                    this.state.items.splice(insertIndex, 0, newItem);
 
                     this.debouncedSaveToLocal();
                     this.renderLayerPanel();
-                    this.renderPreviewBlocks();
-                    await this.sleep(10);
-                    this.setSelection({ type: 'block', id: newBlock.id });
+                    this.applyLayout();
 
-                    if (sourceBlock) this.showToast('样式已复制', 'success');
+                    setTimeout(() => {
+                        this.setSelection({ type: 'item', id: newItem.id });
+                    }, 10);
+
+                    if (sourceItem) this.showToast('模块已复制', 'success');
                 },
-                async deleteBlock(blockId) {
-                    const block = this.findBlock(blockId);
-                    if (!block) return;
+                async deleteItem(itemId) {
+                    const item = this.findItem(itemId);
+                    if (!item) return;
 
-                    if (await this.showConfirm('删除区块', `确定要删除区块 "${block.title}" 吗？`)) {
-                        this.pushHistory(`删除区块 "${block.title}"`);
+                    const title = item.title || item.text || item.label || '该模块';
 
-                        if (block.cards) {
-                            for (const card of block.cards) {
-                                await this.deleteImageByUrl(card.url);
-                                await this.deleteImageByUrl(card.bgImageDataUrl);
-                            }
-                        }
-                        if (block.type === 'music' && block.settings.coverArt) {
-                            await this.deleteImageByUrl(block.settings.coverArt);
-                        }
+                    if (await this.showConfirm('删除模块', `确定要删除 "${title}" 吗？`)) {
+                        this.pushHistory(`删除模块 "${title}"`);
 
-                        this.destroyMasonryForBlock(blockId);
-                        this.state.blocks = this.state.blocks.filter(b => b.id !== blockId);
+                        await this.deleteImageByUrl(item.url);
+                        await this.deleteImageByUrl(item.bgImageDataUrl);
+                        await this.deleteImageByUrl(item.coverArt);
+
+                        this.state.items = this.state.items.filter(i => i.id !== itemId);
                         this.debouncedSaveToLocal();
 
-                        if (this.selection.type === 'block' && this.selection.id === blockId) {
+                        if (this.selection.type === 'item' && this.selection.id === itemId) {
                             this.setSelection({ type: 'global' });
                         }
 
                         this.renderLayerPanel();
-                        this.renderPreviewBlocks();
-                        this.showToast('区块已删除', 'info');
+                        this.renderPreviewItems();
+                        this.showToast('模块已删除', 'info');
                     }
                 },
 
-                toggleBlockVisibility(blockId) {
-                    const blockIndex = this.findBlockIndex(blockId);
-                    if (blockIndex > -1) {
-                        const currentVisibility = this.state.blocks[blockIndex].isVisible;
-                        this.updateState(`blocks.${blockIndex}.isVisible`, currentVisibility === false ? true : false, true, '切换区块可见性');
+                addTimelineEvent(itemId) {
+                    const item = this.findItem(itemId);
+                    if (!item || item.type !== 'timeline') return;
+                    this.pushHistory('添加时间轴事件');
+                    if (!item.cards) item.cards = [];
+                    const newEvent = { id: this.generateId('tlc'), time: '新时间点', content: '新事件内容' };
+                    item.cards.push(newEvent);
+                    this.debouncedSaveToLocal();
+                    this.renderInspectorContent();
+                    this.renderPreviewItemById(itemId);
+                },
+
+                async deleteTimelineCard(itemId, cardId) {
+                    const item = this.findItem(itemId);
+                    if (!item) return;
+
+                    if (await this.showConfirm('删除事件', '确定要删除这个时间点吗？')) {
+                        this.pushHistory('删除时间轴事件');
+                        item.cards = item.cards.filter(c => c.id !== cardId);
+                        this.debouncedSaveToLocal();
+                        this.renderInspectorContent();
+                        this.renderPreviewItemById(itemId);
+                        this.showToast('事件已删除', 'info');
                     }
                 },
 
-                toggleLayerExpansion(blockId, forceOpen = null) {
-                    const blockIndex = this.findBlockIndex(blockId);
-                    if (blockIndex > -1) {
-                        const currentExpansion = this.state.blocks[blockIndex].isExpanded;
-                        const newExpansion = forceOpen === null ? !currentExpansion : forceOpen;
-                        if (currentExpansion !== newExpansion) {
-                            this.state.blocks[blockIndex].isExpanded = newExpansion;
-                            this.renderLayerPanel();
-                        }
+                updateTimelineCard(itemId, cardId, key, value, pushHistory, historyDescription) {
+                    const itemIndex = this.findItemIndex(itemId);
+                    if (itemIndex > -1) {
+                        const cardIndex = this.state.items[itemIndex].cards.findIndex(c => c.id === cardId);
+                        if (cardIndex > -1) this.updateState(`items.${itemIndex}.cards.${cardIndex}.${key}`, value, pushHistory, historyDescription);
                     }
                 },
 
-                duplicateBlock(blockId) {
-                    const block = this.findBlock(blockId);
-                    if (block) {
-                        this.addBlock(block.type, block);
+                toggleItemVisibility(itemId) {
+                    const itemIndex = this.findItemIndex(itemId);
+                    if (itemIndex > -1) {
+                        const currentVisibility = this.state.items[itemIndex].isVisible;
+                        this.updateState(`items.${itemIndex}.isVisible`, currentVisibility === false ? true : false, true, '切换模块可见性');
+                    }
+                },
+
+                duplicateItem(itemId) {
+                    const item = this.findItem(itemId);
+                    if (item) {
+                        this.addItem(item.type, item);
                     }
                 },
 
@@ -6126,24 +6229,74 @@
                     randomState.personalInfo.tagTextColor = randColor();
                     randomState.pageStyles.pageBgMode = randChoice(['solid', 'gradient']);
                     randomState.pageStyles.pageBgSolidColor = randColor();
-                    randomState.globalCardStyles.bgColor = randColor();
-                    randomState.globalCardStyles.textColor = randColor();
+                    randomState.globalComponentStyles.bgColor = randColor();
+                    randomState.globalComponentStyles.textColor = randColor();
 
-                    randomState.blocks = [];
-                    const blockTypes = ['text', 'image', 'button', 'separator', 'spacer', 'music', 'progress', 'timeline'];
+                    randomState.items = [];
+                    const itemTypes = ['card', 'image', 'button', 'separator', 'spacer', 'music', 'progress', 'timeline'];
                     for (let i = 0; i < rand(5, 8); i++) {
-                        const type = randChoice(blockTypes);
-                        let newBlock = this.deepClone(this.getDefaultState().blocks.find(b => b.type === type));
-                        newBlock.id = this.generateId('b');
-                        newBlock.title = `随机区块 ${i + 1}`;
-                        if (newBlock.cards) {
-                            newBlock.cards.forEach(c => c.id = this.generateId('c'));
+                        const type = randChoice(itemTypes);
+                        let newItem = this.deepClone(this.getDefaultState().items.find(it => it.type === type));
+                        newItem.id = this.generateId(type.charAt(0));
+                        newItem.title = `随机模块 ${i + 1}`;
+                        if (newItem.cards) {
+                            newItem.cards.forEach(c => c.id = this.generateId('c'));
                         }
-                        randomState.blocks.push(newBlock);
+                        randomState.items.push(newItem);
                     }
                     return randomState;
                 },
 
+                updateBorderRadiusControls() {
+                    const borderStyle = this.state.globalBorderSettings.style;
+                    const sharpEdgeStyles = ['pixel', 'neo-brutalism', 'double-offset'];
+                    const shouldDisable = sharpEdgeStyles.includes(borderStyle);
+
+                    
+                    const radiusKeys = [
+                        'globalComponentStyles.radius',
+                        'pageStyles.headerBorderRadius'
+                    ];
+
+                    if (!this.stashedBorderRadiusMap) this.stashedBorderRadiusMap = {};
+
+                    radiusKeys.forEach(key => {
+                        const input = this.elements.inspectorPanel.querySelector(`[data-state-key="${key}"]`);
+                        if (!input) return;
+
+                        const formGroup = input.closest('.form-group');
+                        if (!formGroup) return;
+
+                        formGroup.style.opacity = shouldDisable ? '0.5' : '1';
+                        formGroup.style.pointerEvents = shouldDisable ? 'none' : 'auto';
+
+                        const existingTooltip = formGroup.querySelector('.disable-reason-tooltip');
+                        if (existingTooltip) existingTooltip.remove();
+                        if (shouldDisable) {
+                            const tooltip = document.createElement('span');
+                            tooltip.className = 'disable-reason-tooltip';
+                            tooltip.textContent = ' (此风格不支持圆角)';
+                            tooltip.style.fontSize = '0.8rem';
+                            tooltip.style.color = 'var(--text-secondary)';
+                            formGroup.querySelector('label').appendChild(tooltip);
+                        }
+
+                        if (shouldDisable) {
+                            const currentVal = key.split('.').reduce((o, k) => o && o[k], this.state);
+                            if (currentVal > 0) {
+                                this.stashedBorderRadiusMap[key] = currentVal;
+                                this.updateState(key, 0, false);
+                                this.syncControl(key);
+                            }
+                        } else {
+                            if (this.stashedBorderRadiusMap[key] !== undefined) {
+                                this.updateState(key, this.stashedBorderRadiusMap[key], false);
+                                this.syncControl(key);
+                                delete this.stashedBorderRadiusMap[key];
+                            }
+                        }
+                    });
+                },
                 initDB() {
                     return new Promise((resolve, reject) => {
                         const request = indexedDB.open('BlokkoDB', 2);
@@ -6324,8 +6477,8 @@
                             this.pushHistory(`删除字体 ${fontFamily}`);
                             await this.deleteFontFromDB(fontFamily);
                             this.uploadedFonts = this.uploadedFonts.filter(f => f.family !== fontFamily);
-                            if (this.state.globalCardStyles.fontFamily === fontFamily) {
-                                this.updateState('globalCardStyles.fontFamily', '', false);
+                            if (this.state.globalComponentStyles.fontFamily === fontFamily) {
+                                this.updateState('globalComponentStyles.fontFamily', '', false);
                             }
                             this.populateFontList();
                             this.showFontManager();
@@ -6409,10 +6562,10 @@
                 renderMobileEditPencils() {
                     this.elements.previewWrapper.querySelectorAll('.mobile-edit-pencil').forEach(p => p.remove());
 
-                    const isLocked = this.elements.previewBlocksContainer.classList.contains('locked-mode');
+                    const isLocked = this.elements.previewItemsContainer.classList.contains('locked-mode');
                     if (isLocked) return;
 
-                    this.elements.previewWrapper.querySelectorAll('[data-state-key], [data-card-key], [data-separator-text-key], .tag-pill span[data-tag-id]').forEach(el => {
+                    this.elements.previewWrapper.querySelectorAll('[data-state-key], [data-item-key], [data-separator-text-key], .tag-pill span[data-tag-id]').forEach(el => {
                         const pencil = document.createElement('div');
                         pencil.className = 'mobile-edit-pencil';
                         pencil.innerHTML = '<span class="iconify" data-icon="mdi:pencil"></span>';

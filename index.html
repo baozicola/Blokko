@@ -4,17 +4,17 @@
   <meta charset="utf-8"/>
   <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
   <title>
-   Blokko-个人简介生成器！ (v1.8.1)-时之歌十周年快乐！！
+   Blokko-个人简介生成器！ (v2.0.0)
   </title>
-  <!-- 性能优化: 预连接到关键域名，减少后续请求的连接建立时间 -->
+  <!-- 性能优化: 预连接到关键域名 -->
   <link crossorigin="" href="https://fontsapi.zeoseven.com" rel="preconnect"/>
   <link crossorigin="" href="https://cdn.bootcdn.net" rel="preconnect"/>
   <link crossorigin="" href="https://code.iconify.design" rel="preconnect"/>
-  <!-- CDN 优化: 更换为对中国大陆友好的 BootCDN -->
+  <!-- CDN 资源 -->
   <link href="https://cdn.bootcdn.net/ajax/libs/cropperjs/1.6.1/cropper.min.css" rel="stylesheet">
    <link href="https://cdn.bootcdn.net/ajax/libs/quill/2.0.2/quill.snow.min.css" rel="stylesheet"/>
    <link href="https://cdn.bootcdn.net/ajax/libs/quill/2.0.2/quill.bubble.min.css" rel="stylesheet"/>
-   <!-- 性能优化: 将阻塞渲染的字体CSS改为异步加载，消除白屏 -->
+   <!-- 异步加载字体 -->
    <link as="style" href="https://fontsapi.zeoseven.com/69/main/result.css" onload="this.onload=null;this.rel='stylesheet'" rel="preload"/>
    <link as="style" href="https://fontsapi.zeoseven.com/285/main/result.css" onload="this.onload=null;this.rel='stylesheet'" rel="preload"/>
    <link as="style" href="https://fontsapi.zeoseven.com/47/main/result.css" onload="this.onload=null;this.rel='stylesheet'" rel="preload"/>
@@ -45,7 +45,7 @@
     内容
    </button>
    <div class="app-header-title">
-    Blokko (v1.8.1)
+    Blokko (v2.0.0)
    </div>
    <div class="header-actions-wrapper">
     <button class="btn btn-default" id="lock-mode-toggle" style="width: auto; padding: 6px 12px;" title="切换编辑/预览模式">
@@ -71,37 +71,38 @@
   <div class="app-container">
    <aside class="layer-panel" id="layer-panel">
     <h3 class="panel-header">
-     内容图层
+     内容模块
     </h3>
     <div class="layer-list" id="layer-list">
      <!-- Layer items will be dynamically inserted here -->
     </div>
     <hr/>
     <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-     <button class="btn btn-default" id="add-text-block-btn">
-      ➕ 文本
+     <button class="btn btn-default" id="add-card-item-btn">
+      ➕ 卡片
      </button>
-     <button class="btn btn-default" id="add-image-block-btn">
+     <button class="btn btn-default" id="add-image-item-btn">
       🖼️ 图片
      </button>
-     <button class="btn btn-default" id="add-button-block-btn">
+     <button class="btn btn-default" id="add-button-item-btn">
       🔘 按钮
      </button>
-     <button class="btn btn-default" id="add-music-block-btn">
+     <button class="btn btn-default" id="add-music-item-btn">
       🎵 音乐
      </button>
-     <button class="btn btn-default" id="add-progress-block-btn">
+     <button class="btn btn-default" id="add-progress-item-btn">
       📊 进度条
      </button>
-     <button class="btn btn-default" id="add-timeline-block-btn">
+     <button class="btn btn-default" id="add-timeline-item-btn">
       ⏳ 时间轴
      </button>
-     <button class="btn btn-default" id="add-separator-block-btn">
+     <button class="btn btn-default" id="add-separator-item-btn">
       〰️ 分隔
      </button>
-     <button class="btn btn-default" id="add-spacer-block-btn">
+     <button class="btn btn-default" id="add-spacer-item-btn">
       ⎵ 留白
      </button>
+     <input accept="image/*" id="add-image-file-input" multiple="" style="display: none;" type="file"/>
     </div>
    </aside>
    <main class="preview-panel" id="preview-panel">
@@ -111,7 +112,7 @@
      <header class="preview-header" id="preview-header">
       <!-- Personal info content will be dynamically rendered here -->
      </header>
-     <main class="preview-blocks-container" id="preview-blocks-container">
+     <main class="preview-items-container" id="preview-items-container">
      </main>
     </div>
    </main>
@@ -429,10 +430,10 @@
     </div>
     <div class="tab-content active" id="help-tutorial">
      <h4>
-      欢迎来到 Blokko！✨
+      欢迎来到 Blokko 2.0！✨
      </h4>
      <p>
-      别担心，这个小教程将带你快速上手，整个过程只需一分钟！如果你有类似工具的使用经验，或是已经非常熟悉，看完下方的“重要提示”就可以放心关闭啦！
+      新版本带来了全新的模块化布局系统！现在每个模块都可以自由拖拽和设置宽度，快来体验吧！
      </p>
      <h4>
       ⚠️ 关于版权的重要提示
@@ -444,57 +445,24 @@
       </strong>
       当您使用“上传字体”、“上传图片/图标”功能时，您需要对这些素材负责。请确保您上传和使用的任何文件都已获得了原版权方的合法授权，或使用无版权可商用素材。
      </p>
-     <p>
-      因使用未授权素材而产生的任何版权问题，将由您自行承担。换言之，自己上传的素材，一定要注意版权信息哦！
-     </p>
      <h4>
-      写在正式开始前
-     </h4>
-     <p>
-      Blokko 是一个免费的、为电脑端编辑而设计的工具。为了最佳体验，建议使用PC端的 Edge 或 Chrome
-                    浏览器（firefox火狐浏览器可能会出现问题，不要用）。移动端也做了基础适配，竖屏状态下建议使用 Via
-                    浏览器并开启全屏模式。在竖屏下，“内容”和“样式”面板会被折叠，需要手动点击左上角和右上角的按钮来唤出。（因精力有限，目前移动端只能做到“基础适配”，可能会存在奇怪BUG，比如上传图片黑屏等，可以反馈给作者但是大概率要很久才修，仍然建议使用PC端进行编辑。）
-     </p>
-     <p>
-      Blokko
-                    采用三栏式布局：
-      <b>
-       左侧“内容图层”
-      </b>
-      管理所有区块，
-      <b>
-       中间是“实时预览”
-      </b>
-      ，
-      <b>
-       右侧是“样式检查器”
-      </b>
-      。在左侧点击任意图层，右侧就会自动显示其相关设置。默认状态下（未选中任何图层）会显示全局设置。卡片的独立样式优先级高于全局样式哦！
-     </p>
-     <h4>
-      第一步：核心技巧 - 双击编辑！
+      核心技巧 - 双击编辑！
      </h4>
      <p>
       Blokko 最便捷的操作就是“双击”。在预览区域，你看到的所有文字（比如昵称、简介、卡片标题和内容），直接双击它们就可以立刻开始编辑，非常方便！在手机上，你也可以点击文字右上角出现的铅笔图标 ✏️
                     来编辑。（请确保页面顶部的按钮处于“编辑中”状态）
      </p>
      <h4>
-      第二步：调整你的个人信息
+      调整你的个人信息
      </h4>
      <p>
       在左侧的“内容图层”面板，点击 “👤 个人信息” 图层，右侧的“样式”面板就会显示出所有相关设置。你可以在那里上传头像（也可以直接点击预览区的头像）、修改昵称、添加标签等。
      </p>
      <h4>
-      第三步：添加和管理内容
+      添加和管理内容
      </h4>
      <p>
-      点击左下角的“➕”系列按钮可以添加不同类型的展示模块。在“内容图层”面板，你可以通过拖拽来排序所有区块。
-     </p>
-     <h4>
-      第四步：美化与导出
-     </h4>
-     <p>
-      当你对内容满意后，可以点击不同的图层来调整样式，或者在未选中任何图层时，在右侧面板调整全局样式。全部完成后，在右侧面板的“全局与导出”设置中，滑到最下方，点击“导出为图片”按钮，就可以保存啦，同时建议用“导出数据”的“强化导出”来保存你的数据！
+      点击左下角的“➕”系列按钮可以添加不同类型的模块。在“内容图层”面板或中间的预览区，你都可以通过拖拽来自由排序所有模块。
      </p>
     </div>
     <div class="tab-content" id="help-instructions">
@@ -524,15 +492,15 @@
        </span>
        拖拽排序：
       </strong>
-      在左侧“内容图层”面板，你可以拖动图层来进行排序。现在，预览区的个人信息标签也可以直接拖拽排序了！
+      在左侧“内容图层”面板或者中间的预览区域，你都可以直接拖动模块来进行自由排序。
      </p>
      <p>
       <strong>
-       <span class="iconify" data-icon="mdi:view-dashboard-variant-outline" style="vertical-align: -0.2em;">
+       <span class="iconify" data-icon:="mdi:view-grid-plus-outline" style="vertical-align: -0.2em;">
        </span>
-       瀑布流布局：
+       自由布局：
       </strong>
-      对于多列区块（双排/三排），可以在右侧检查器中勾选“启用瀑布流”，使卡片/图片高度自适应，布局更紧凑。
+      点击预览区的任何一个模块，在右侧检查器的“选中”面板中可以为它设置独立的宽度，实现多样化的混排布局。
      </p>
      <p>
       <strong>
@@ -543,51 +511,16 @@
       点击右上角的 "编辑中" 按钮可切换到
                     "预览中"，此模式下禁用所有编辑功能，方便在手机上顺畅滑动浏览。
      </p>
-     <p>
-      <strong>
-       <span class="iconify" data-icon="mdi:import" style="vertical-align: -0.2em;">
-       </span>
-       导入/导出：
-      </strong>
-      在右侧检查器的“全局与导出”设置中，可以导入/导出 .json 配置文件，方便备份和分享。
-     </p>
-     <p>
-      <strong>
-       <span class="iconify" data-icon="mdi:database" style="vertical-align: -0.2em;">
-       </span>
-       浏览器存储：
-      </strong>
-      您的所有修改都会自动保存在当前浏览器中（非无痕模式），刷新页面不会丢失进度。字体和图片等大文件将使用IndexedDB存储，容量更大更可靠。
-     </p>
      <hr class="separator"/>
      <h4>
       🔒 隐私与数据安全
      </h4>
-     <p>
-      Blokko 被设计为一个纯客户端工具。
-     </p>
      <p>
       <strong>
        您的创作100%在本地：
       </strong>
       您的所有创作数据，包括您上传的头像、背景图、字体文件、卡片内容等，永远不会离开您的电脑。所有处理都在您的浏览器中完成，云端不会存储您的任何信息。
      </p>
-     <p>
-      <strong>
-       第三方服务（图标与图片搜索）：
-      </strong>
-     </p>
-     <ul>
-      <li>
-       为了提供“在线图标搜索”功能，本工具调用了 Iconify.design 的公共API。当您在图标搜索框中输入关键词时，这个关键词会被发送到 Iconify 的服务器以获取搜索结果。
-      </li>
-      <li>
-       为了提供“在线图片搜索”功能，本工具调用了 Pixabay.com 的公共API。当您在图片搜索框中输入关键词时，这个关键词会被发送到 Pixabay 的服务器以获取搜索结果。
-      </li>
-      <li>
-       以上过程是匿名的，不包含您的任何个人信息或创作内容。
-      </li>
-     </ul>
     </div>
     <div class="tab-content" id="help-thanks">
      <p>
@@ -611,9 +544,9 @@
                             提供了从图片提取主色调和调色板的功能。
        </li>
        <li>
-        <a href="https://html2canvas.hertzen.com/" rel="noopener noreferrer" target="_blank">
+        <a href="https://github.com/1904labs/dom-to-image-more" rel="noopener noreferrer" target="_blank">
          <strong>
-          html2canvas
+          dom-to-image-more
          </strong>
         </a>
         - (MIT License)
@@ -634,15 +567,6 @@
          </strong>
         </a>
         - (MIT License) 提供了流畅的拖拽排序体验。
-       </li>
-       <li>
-        <a href="https://masonry.desandro.com/" rel="noopener noreferrer" target="_blank">
-         <strong>
-          Masonry.js
-         </strong>
-        </a>
-        - (MIT License)
-                            提供了强大的瀑布流/砌体布局功能。
        </li>
        <li>
         <a href="https://quilljs.com/" rel="noopener noreferrer" target="_blank">
@@ -721,7 +645,7 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-                        </pre>
+            </pre>
       </details>
       <details>
        <summary>
@@ -756,7 +680,7 @@ INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
 CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
-                        </pre>
+            </pre>
       </details>
      </div>
      <div class="thanks-item">
@@ -912,7 +836,7 @@ INCLUDING ANY GENERAL, SPECIAL, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL
 DAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM
 OTHER DEALINGS IN THE FONT SOFTWARE.
-                        </pre>
+            </pre>
       </details>
      </div>
      <div class="thanks-item">
@@ -1195,70 +1119,154 @@ Monitor of this License or out of the use or inability to use the
     </div>
     <div class="tab-content" id="help-changelog">
      <h4>
-      v1.8.1 更新日志 (2025-11-19)
+      v2.0.0 更新日志 (2025-11-21)
      </h4>
      <ul>
       <li>
        <strong>
-        【重构】
+        【⭐重大重构】全新的模块化布局系统！
        </strong>
-       二维码分享！现在你可以在系统-二维码分享里，通过二维码来快速的分享自己的配色方案给朋友了！比起传统的JSON，很显然截张图的办法会比json导入更快嘛~，为了安全考虑，如果在外部扫描二维码，只会显示乱码，而进入Blokko扫描，就会自动识别数据并导入，并且屏蔽了其他链接的功能，别的二维码在Blokko是无法扫描的！
+       <ul>
+        <li>
+         移除了旧的“文本区块”、“图片区块”等容器概念。现在，
+         <strong>
+          每一个卡片、图片、按钮、分隔线都是独立的模块
+         </strong>
+         ，可以在预览区内自由拖拽排序。
+        </li>
+        <li>
+         为大部分模块增加了独立的
+         <strong>
+          宽度设置（100%, 67%, 50%, 33%）
+         </strong>
+         ，可以在选中模块后于右侧检查器中调整。
+        </li>
+        <li>
+         现在可以实现完全自由的混排布局，例如开启紧凑布局后，将两个 33% 宽度的卡片和一个 67% 宽度的图片放在同一行。
+        </li>
+       </ul>
       </li>
       <li>
        <strong>
-        【新增】
+        【⭐新增】智能配色！
        </strong>
-       预览区右键！现在在预览区右键，可以快速复制/删除/隐藏区块或卡片了！
+       <ul>
+        <li>
+         现在配色系统除了原有的随机色，新增了“自选主色”功能，由系统为您计算出一套和谐的配色方案。
+        </li>
+       </ul>
       </li>
       <li>
        <strong>
-        【新增】
+        【⭐新增】全局阴影！
        </strong>
-       竖排文字！现在在PC端右键文本区块，可以切换为竖排了！但因为竖排目前不稳定，所以是实验性功能，也没做手机端交互，在确认能用以后会开放。
+       <ul>
+        <li>
+         得益于全新的导出库，现在可以正确渲染阴影样式了！在“全局边框样式”面板中，新增了强大的阴影调节功能。
+        </li>
+       </ul>
       </li>
       <li>
        <strong>
-        【新增】
+        【重构】全局样式系统简化！
        </strong>
-       操作历史回溯！现在在操作历史里可以通过PC端右键，手机端长按操作历史栏可以快速回溯！不用狂点撤回啦！
+       <ul>
+        <li>
+         合并了原有的“全局卡片样式”和“全局按钮样式”，统一为
+         <strong>
+          “全局组件样式”
+         </strong>
+         。
+        </li>
+        <li>
+         简化了全局设置面板，使其更加直观和易于管理。
+        </li>
+       </ul>
       </li>
       <li>
        <strong>
-        【新增】
+        【新增】音乐区块“黑胶”样式！
        </strong>
-       独立装饰！其实是上个版本但是我忘写日志里了在这里补上，现在在文本区块的高级设置里有了“图钉”和“胶带”的样式，稍微让页面看起来不那么死板一点点。
+       <ul>
+        <li>
+         为音乐模块新增了精致的“黑胶”样式，“黑胶”样式在 33%、50% 宽度下有最好表现，原有的默认样式推荐在 67%、100% 下启用。
+        </li>
+       </ul>
       </li>
       <li>
        <strong>
-        【优化】
+        【新增】竖排文本正式支持！
        </strong>
-       微调了歌曲卡片的样式。
+       <ul>
+        <li>
+         随着渲染库升级，竖排文本现在可以被正确渲染并导出，该功能已转为正式功能。
+        </li>
+       </ul>
+      </li>
+      <li>
+       <strong>
+        【无损迁移】
+       </strong>
+       内置了版本升级脚本，旧版本（v1.8.1及以前）的数据将在首次加载时
+       <strong>
+        自动、无损地迁移
+       </strong>
+       到新的模块化结构。
+      </li>
+      <li>
+       <strong>
+        【优化】导出引擎升级！
+       </strong>
+       <ul>
+        <li>
+         核心导出库从 html2canvas 更换至 dom-to-image-more，导出速度更快、效果更好，并且现在完美支持阴影和更复杂的CSS效果。
+        </li>
+       </ul>
+      </li>
+      <li>
+       <strong>
+        【优化】留白区块！
+       </strong>
+       <ul>
+        <li>
+         现在留白区块会显示一个虚线框（蚂蚁线），方便您在编辑时识别和布局，导出时会自动隐藏。
+        </li>
+       </ul>
+      </li>
+      <li>
+       <strong>
+        【优化】二维码功能！
+       </strong>
+       <ul>
+        <li>
+         现在二维码分享功能内置了“保存精美二维码卡片”按钮，可以生成一张带有您设计风格的分享图，同时优化了二维码本身的识别率。
+        </li>
+       </ul>
+      </li>
+      <li>
+       <strong>
+        【优化】UI与性能！
+       </strong>
+       <ul>
+        <li>
+         左侧图层面板现在直接显示所有独立的模块列表，操作更直接。
+        </li>
+        <li>
+         对核心状态管理、渲染逻辑和拖拽排序功能进行了大规模重构和简化，为未来扩展打下了坚实的基础。
+        </li>
+       </ul>
       </li>
       <li>
        <strong>
         【修复】
        </strong>
-       修复了文字卡片启用圆角，样式边框不会跟随圆角变动的BUG（其中后三种样式不会跟随圆角，因为测试后发现这三种样式只适合直角）。
+       修复了手机端二维码图片因过大导致溢出显示不全的BUG。
       </li>
       <li>
        <strong>
-        【修复】
+        【移除】
        </strong>
-       修复了时间轴进度条区块的不透明度不会独立计算而是乘算的BUG。
-      </li>
-      <li>
-       <strong>
-        【修复】
-       </strong>
-       修复了长图导出偶发的异常图片区块重叠BUG（我终于修好了，被懒加载坑了一刀啊）。
-      </li>
-      <li>
-       <strong>
-        【修复】
-       </strong>
-       增加了本次为了二维码所引入的库的详细致谢
-
-                        。
+       随着版本更新为2.0，区块系统已经废弃转而采用混排，所以移除了Masonry的支持。
       </li>
      </ul>
     </div>
@@ -1380,11 +1388,15 @@ Monitor of this License or out of the use or inability to use the
        (微信/QQ扫描将显示乱码，属于正常现象，旨在防止诈骗链接。)
       </span>
      </p>
-     <div id="qrcode-container" style="padding: 15px; border: 1px dashed var(--border-color); border-radius: 8px; display: inline-block; margin-bottom: 10px;">
+     <div id="qrcode-container" style="padding: 15px; border: 1px dashed var(--border-color); border-radius: 8px; display: inline-block; margin-bottom: 10px; max-width: 100%;">
      </div>
-     <p style="font-size: 0.8rem; color: var(--text-secondary);">
-      请长按或右键保存上方的二维码图片分享
-     </p>
+     <div style="margin-top: 5px;">
+      <button class="btn btn-primary btn-small" id="save-aesthetic-qr-btn" style="width: auto;">
+       <span class="iconify" data-icon="mdi:download-box-outline">
+       </span>
+       保存二维码卡片
+      </button>
+     </div>
     </div>
     <!-- 导入视图 -->
     <div id="qr-import-view" style="display: none; padding: 20px 0;">
@@ -1406,8 +1418,6 @@ Monitor of this License or out of the use or inability to use the
      </button>
     </div>
    </div>
-  </div>
-  <div id="preview-context-menu">
   </div>
   <div id="preview-context-menu">
   </div>
@@ -1436,20 +1446,20 @@ Monitor of this License or out of the use or inability to use the
       应用到头部文字颜色
      </li>
      <hr>
-      <li data-action="apply-gcard-bg">
-       应用到全局卡片背景色
+      <li data-action="apply-gcomp-bg">
+       应用到全局组件背景色
       </li>
-      <li data-action="apply-gcard-bg-gradient-start">
-       → 全局卡片渐变 (起始色)
+      <li data-action="apply-gcomp-bg-gradient-start">
+       → 全局组件渐变 (起始色)
       </li>
-      <li data-action="apply-gcard-bg-gradient-end">
-       → 全局卡片渐变 (结束色)
+      <li data-action="apply-gcomp-bg-gradient-end">
+       → 全局组件渐变 (结束色)
       </li>
-      <li data-action="apply-gcard-text">
-       应用到全局卡片文字色
+      <li data-action="apply-gcomp-text">
+       应用到全局组件文字色
       </li>
-      <li data-action="apply-gcard-title-text">
-       应用到全局卡片标题色
+      <li data-action="apply-gcomp-title-text">
+       应用到全局组件标题色
       </li>
      </hr>
     </hr>
@@ -1461,14 +1471,6 @@ Monitor of this License or out of the use or inability to use the
   <script src="https://code.iconify.design/3/3.1.1/iconify.min.js">
   </script>
   <script src="https://cdn.bootcdn.net/ajax/libs/quill/2.0.2/quill.min.js">
-  </script>
-  <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js">
-  </script>
-  <script src="https://cdn.bootcdn.net/ajax/libs/lz-string/1.5.0/lz-string.min.js">
-  </script>
-  <script src="https://cdn.bootcdn.net/ajax/libs/dompurify/3.0.6/purify.min.js">
-  </script>
-  <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js">
   </script>
   <!-- 其他库将按需加载 -->
   <script src="script.js">
