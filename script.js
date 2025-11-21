@@ -169,7 +169,7 @@
              * @type {object}
              */
             const App = {
-                version: '2.0.0',
+                version: '2.0.1',
                 pixabayApiKey: '53274475-6295c67fa26c85aa8b2331ee7',
                 db: null, // 数据库实例
                 isStorageFull: false, // 标记浏览器存储空间是否已满
@@ -214,7 +214,7 @@
                     this.presets = this.getPresets();
                     this.state = this.getDefaultState();
                     this.debouncedSaveToLocal = this.debounce(this.saveToLocal, 500);
-                    
+
                     this.debouncedApplySmartPalette = this.debounce(this.applySmartPalette, 200);
 
                     this.initDB().then(async () => {
@@ -337,18 +337,19 @@
                                 music: false,
                                 progress: false,
                                 timeline: false,
+                                showcase: false,
                             },
-                            
+
                             globalShadowSettings: {
                                 color: "#000000", opacity: 0, // 默认关闭
                                 offsetX: 0, offsetY: 4, blur: 10,
                                 applyTo: {
                                     personalInfo: true, card: true, image: true,
-                                    button: false, music: true, progress: false, timeline: false
+                                    button: false, music: true, progress: false, timeline: false,showcase: false,
                                 }
                             }
                         },
-                        items: [ 
+                        items: [
                             { id: this.generateId('c'), type: 'card', isVisible: true, title: "这是卡片模块", content: "双击这里或手机端点击铅笔进行编辑，现在支持<b>富文本</b>了哦！", sticker: 'none', imageFillMode: 'cover', layout: { width: 100 } },
                             { id: this.generateId('c'), type: 'button', isVisible: true, title: "按钮模块", icon: 'mdi:github', text: "访问我的主页", layout: { width: 100 } },
                             { id: this.generateId('c'), type: 'music', isVisible: true, title: "音乐模块", style: 'default', coverArt: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23cccccc'%3E%3Cpath d='M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z'/%3E%3C/svg%3E", songTitle: '歌曲名称', artist: '歌手', lyrics: '上一句歌词\n当前播放的高亮歌词\n下一句歌词', currentTime: '01:30', totalTime: '03:45', accentColor: lightTheme.accent, bgColor: '#ffffff', opacity: 1, radius: 12, layout: { width: 100 } },
@@ -356,8 +357,9 @@
                             { id: this.generateId('c'), type: 'timeline', isVisible: true, title: "时间轴模块", timeColor: '#888888', accentColor: lightTheme.accent, cards: [{ id: this.generateId('c'), time: '2025-11-21', content: '《时之歌Project》十周年快乐！' }], layout: { width: 100 } },
                             { id: this.generateId('c'), type: 'separator', isVisible: true, title: "分隔线", style: 'solid', color: '#dddddd', thickness: 1, margin: 20, text: '', icon: null, textColor: '#555555', layout: { width: 100 } },
                             { id: this.generateId('c'), type: 'spacer', isVisible: true, title: "留白占位", height: 20, layout: { width: 100 } },
+                            { id: this.generateId('s'), type: 'showcase', isVisible: true, title: "千与千寻", styleVariant: 'magazine', showcaseType: 'movie', layoutStyle: 'vertical', coverArt: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23cccccc'%3E%3Cpath d='M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 10l-2.5-3.01L14 12l-1.5-2.01L11 14h6z'/%3E%3C/svg%3E", subtitle: "宫崎骏 / 2001", rating: 5, comment: "“不要忘记自己的名字，不然就找不到回家的路了。”", tags: ["动画", "奇幻", "必看"], layout: { width: 50 } },
                         ],
-                        globalComponentStyles: { 
+                        globalComponentStyles: {
                             bgMode: 'solid',
                             bgColor: lightTheme.gCardBgColor, textColor: lightTheme.gCardTextColor, opacity: 1.0,
                             bgGradientStart: lightTheme.gCardBgGradientStart, bgGradientEnd: lightTheme.gCardBgGradientEnd,
@@ -368,9 +370,6 @@
                             titleFontSize: "1.1em",
                             contentFontSize: "0.95em",
                             textStrokeWidth: 0, textStrokeColor: "#000000",
-                            
-                            shadowOffsetX: 0, shadowOffsetY: 4, shadowBlur: 10,
-                            shadowColor: "#000000", shadowOpacity: 0,
                         },
                         exportSettings: {
                             lockAspectRatio: true,
@@ -453,6 +452,7 @@
                         addTimelineItemBtn: q('#add-timeline-item-btn'),
                         addSeparatorItemBtn: q('#add-separator-item-btn'),
                         addSpacerItemBtn: q('#add-spacer-item-btn'),
+                        addShowcaseItemBtn: q('#add-showcase-item-btn'),
                         cropperModal: q('#cropper-modal'), cropperImage: q('#cropper-image'),
                         cropperCancelBtn: q('#cropper-cancel-btn'), cropperSaveBtn: q('#cropper-save-btn'),
                         downloadModal: q('#download-modal'), downloadModalTitle: q('#download-modal-title'),
@@ -503,6 +503,7 @@
                     this.elements.addTimelineItemBtn.addEventListener('click', () => this.addItem('timeline'));
                     this.elements.addSeparatorItemBtn.addEventListener('click', () => this.addItem('separator'));
                     this.elements.addSpacerItemBtn.addEventListener('click', () => this.addItem('spacer'));
+                    this.elements.addShowcaseItemBtn.addEventListener('click', () => this.addItem('showcase'));
 
                     this.elements.downloadModalCloseBtn.addEventListener('click', () => this.hideDownloadModal());
                     this.elements.cropperCancelBtn.addEventListener('click', () => this.hideCropper());
@@ -796,8 +797,15 @@
                         if (this.isRestoringState) return;
                         const target = e.target;
 
+                        if (target.matches('.showcase-tag-input')) {
+                            const itemEl = target.closest('.editor-item');
+                            if (itemEl) {
+                                this.updateShowcaseTag(itemEl.dataset.itemId, parseInt(target.dataset.tagIndex, 10), target.value);
+                            }
+                            return;
+                        }
+
                         if (target.id === 'smart-palette-input') {
-                            // [修改] 调用防抖后的函数，防止拖动时卡顿
                             this.debouncedApplySmartPalette(target.value);
                             return;
                         }
@@ -950,6 +958,11 @@
                         if (target.matches('#music-cover-upload')) {
                             const itemEl = target.closest('.editor-item');
                             if (itemEl) this.handleMusicCoverUpload(e, itemEl.dataset.itemId);
+                        }
+
+                        if (target.matches('.showcase-cover-upload')) {
+                            const itemEl = target.closest('.editor-item');
+                            if (itemEl) this.handleShowcaseCoverUpload(e, itemEl.dataset.itemId);
                         }
 
                         if (target.matches('#lock-aspect-ratio-toggle, #custom-width-input, #custom-height-input')) {
@@ -1167,6 +1180,12 @@
                                 this.updateItem(itemId, 'bgImageDataUrl', null, true, '清除卡片背景图');
                                 this.deleteImageByUrl(oldImageUrl);
                                 this.showToast('卡片背景图已清除', 'info');
+                            }
+                            else if (target.closest('.add-showcase-tag-btn')) {
+                                this.addShowcaseTag(itemId);
+                            }
+                            else if (target.closest('.delete-showcase-tag-btn')) {
+                                this.deleteShowcaseTag(itemId, parseInt(target.dataset.tagIndex, 10));
                             }
                             else if (target.closest('.crop-image-btn')) this.cropImage(itemId);
                             else if (target.closest('.select-icon-btn')) {
@@ -1494,7 +1513,7 @@
 
                     const borderSettings = this.state.globalBorderSettings;
                     header.classList.toggle('apply-global-border', borderSettings.applyTo.personalInfo);
-                    
+
                     header.classList.toggle('apply-global-shadow', borderSettings.globalShadowSettings?.applyTo?.personalInfo);
                     header.dataset.borderStyle = borderSettings.style;
 
@@ -1700,8 +1719,8 @@
                                </div><hr>`;
 
                     html += this.state.items.map(item => {
-                        const iconMap = { card: 'mdi:format-text-variant-outline', image: 'mdi:image-multiple-outline', button: 'mdi:button-pointer', separator: 'mdi:minus', spacer: 'mdi:arrow-expand-vertical', music: 'mdi:music-box-outline', progress: 'mdi:progress-check', timeline: 'mdi:timeline-text-outline' };
-                        const isHidden = item.isVisible === false;
+                        const iconMap = { card: 'mdi:format-text-variant-outline', image: 'mdi:image-multiple-outline', button: 'mdi:button-pointer', separator: 'mdi:minus', spacer: 'mdi:arrow-expand-vertical', music: 'mdi:music-box-outline', progress: 'mdi:progress-check', timeline: 'mdi:timeline-text-outline', game: 'mdi:controller-classic-outline' };
+                        const isHidden = item.isVisible === false; showcase: 'mdi:creation-outline'
 
                         const title = item.title || item.text || item.label || `${item.type}模块`;
 
@@ -1812,7 +1831,7 @@
                                 const item = this.findItem(itemId);
                                 if (!item) return;
 
-                                let urlKey = (item.type === 'music') ? 'coverArt' : 'url';
+                                                                let urlKey = (item.type === 'music' || item.type === 'showcase') ? 'coverArt' : 'url';
                                 if (item && item[urlKey]) {
                                     const setSrc = async (url) => {
                                         if (url && url.startsWith('idb://')) {
@@ -1919,7 +1938,7 @@
     </div>
 </fieldset>
                         <fieldset class="editor-section" id="global-border-section">
-                            <legend>🖼️ 全局边框样式</legend>
+                            <legend>🖼️ 全局边框&影音样式</legend>
                             <div class="section-content">
                                 <h4>1. 定义边框风格</h4>
                                 <div class="form-group"><label>样式:</label><select data-state-key="globalBorderSettings.style"><option value="none">无</option><option value="solid">实线</option><option value="dashed">虚线</option><option value="dotted">点状</option><option value="pixel">像素</option><option value="neo-brutalism">新丑</option><option value="double-offset">双层</option></select></div>
@@ -1938,6 +1957,8 @@
                                     <label class="checkbox-group is-parent"><input type="checkbox" data-state-key="globalBorderSettings.applyTo.button">按钮模块</label>
                                     <label class="checkbox-group is-parent"><input type="checkbox" data-state-key="globalBorderSettings.applyTo.music">音乐模块</label>
                                     <label class="checkbox-group is-parent"><input type="checkbox" data-state-key="globalBorderSettings.applyTo.timeline">时间轴模块</label>
+                                                                    <label class="checkbox-group is-parent"><input type="checkbox" data-state-key="globalBorderSettings.applyTo.showcase">书影音模块</label>
+
                                 </div>
                                 <hr class="separator">
                                 <!-- [新增] 位于边框面板内的阴影设置 -->
@@ -1960,6 +1981,8 @@
                                     <label class="checkbox-group is-parent"><input type="checkbox" data-state-key="globalBorderSettings.globalShadowSettings.applyTo.button">按钮</label>
                                     <label class="checkbox-group is-parent"><input type="checkbox" data-state-key="globalBorderSettings.globalShadowSettings.applyTo.music">音乐</label>
                                     <label class="checkbox-group is-parent"><input type="checkbox" data-state-key="globalBorderSettings.globalShadowSettings.applyTo.timeline">时间轴</label>
+                                                                    <label class="checkbox-group is-parent"><input type="checkbox" data-state-key="globalBorderSettings.globalShadowSettings.applyTo.showcase">书影音</label>
+
                                 </div>
                             </div>
                         </fieldset>
@@ -2066,7 +2089,7 @@
                      `;
                 },
 
-                
+
                 createEditorItemHTML(item) {
                     let content = '';
 
@@ -2080,6 +2103,7 @@
                         case 'timeline': content = this.createTimelineEditorHTML(item); break;
                         case 'separator': content = this.createSeparatorEditorHTML(item); break;
                         case 'spacer': content = this.createSpacerEditorHTML(item); break;
+                        case 'showcase': content = this.createEditorShowcaseHTML(item); break;
                         default: content = '<p>未知模块类型</p>';
                     }
 
@@ -2115,7 +2139,7 @@
                             </div>`;
                 },
 
-                
+
                 createCardEditorHTML(item) {
                     const iconHTML = item.icon ? `<span class="iconify" data-icon="${item.icon}" style="font-size: 1.2em; vertical-align: middle; margin-right: 5px;"></span>` : '选择图标';
                     const g = this.state.globalComponentStyles;
@@ -2158,7 +2182,7 @@
                     </div>`;
                 },
 
-                
+
                 createImageEditorHTML(item) {
                     return `<div class="image-card-editor-content">
                                 <div class="image-card-editor-thumb">
@@ -2183,7 +2207,7 @@
                             </div>`;
                 },
 
-                
+
                 createButtonEditorHTML(item) {
                     const iconHTML = item.icon ? `<span class="iconify" data-icon="${item.icon}"></span>` : '图标';
                     return `
@@ -2213,7 +2237,7 @@
                          <button class="btn btn-default btn-small" data-reset-item-key="radius" style="margin-left: 10px;">重置</button>`;
                 },
 
-                
+
                 createMusicEditorHTML(item) {
                     const g = this.state.globalComponentStyles;
                     const gTheme = this.state.globalTheme;
@@ -2250,7 +2274,7 @@
                         </div>`;
                 },
 
-                
+
                 createProgressEditorHTML(item) {
                     return `
                         <div class="form-group"><label>标签:</label><input type="text" data-item-key="label" value="${this.escapeHTML(item.label)}"></div>
@@ -2263,7 +2287,7 @@
                     `;
                 },
 
-                
+
                 createTimelineEditorHTML(item) {
                     const g = this.state.globalComponentStyles;
                     const advClass = item.isAdvancedOpen ? 'show-advanced' : '';
@@ -2308,7 +2332,7 @@
         </div>`;
                 },
 
-                
+
                 createSeparatorEditorHTML(item) {
                     const iconHTML = item.icon ? `<span class="iconify" data-icon="${item.icon}"></span>` : '选择图标';
                     return `
@@ -2323,9 +2347,178 @@
                         <div class="form-group"><label>文本颜色:</label><div class="input-group"><input type="color" data-item-key="textColor" value="${item.textColor}"><input type="text" class="color-hex-input" data-item-key="textColor" value="${item.textColor}"></div></div>`;
                 },
 
-                
+
                 createSpacerEditorHTML(item) {
                     return `<div class="form-group"><label>高度 (px): <span class="spacer-height-value">${item.height}</span></label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus" aria-label="减少">-</button><input type="range" data-item-key="height" min="1" max="200" value="${item.height}"><button class="btn btn-default btn-stepper plus" aria-label="增加">+</button></div></div>`;
+                },
+
+                createEditorShowcaseHTML(item) {
+                    const g = this.state.globalComponentStyles;
+                    const advClass = item.isAdvancedOpen ? 'show-advanced' : '';
+                    
+                    const tagsHTML = (item.tags || []).map((tag, index) => `
+                        <div class="input-group" style="margin-bottom: 5px;">
+                            <input type="text" class="showcase-tag-input" data-tag-index="${index}" value="${this.escapeHTML(tag)}">
+                            <button class="btn btn-danger btn-small delete-showcase-tag-btn" data-tag-index="${index}" style="width: 40px; flex-shrink: 0;">×</button>
+                        </div>
+                    `).join('');
+
+                    return `
+                        <div class="form-group"><label>设计风格:</label>
+                            <div class="radio-group">
+                                <label><input type="radio" name="showcase-style-${item.id}" value="magazine" data-item-key="styleVariant" ${item.styleVariant === 'magazine' || !item.styleVariant ? 'checked' : ''}> 📖杂志</label>
+                                <label><input type="radio" name="showcase-style-${item.id}" value="poster" data-item-key="styleVariant" ${item.styleVariant === 'poster' ? 'checked' : ''}> 🌌海报</label>
+                                <label><input type="radio" name="showcase-style-${item.id}" value="ticket" data-item-key="styleVariant" ${item.styleVariant === 'ticket' ? 'checked' : ''}> 🎫票根</label>
+                            </div>
+                        </div>
+                        <div class="form-group"><label>布局模式 (仅杂志风格):</label><div class="radio-group"><label><input type="radio" name="showcase-layout-${item.id}" value="vertical" data-item-key="layoutStyle" ${item.layoutStyle !== 'horizontal' ? 'checked' : ''}> 垂直</label><label><input type="radio" name="showcase-layout-${item.id}" value="horizontal" data-item-key="layoutStyle" ${item.layoutStyle === 'horizontal' ? 'checked' : ''}> 水平</label></div></div>
+                        <hr class="separator">
+                        
+                        <div class="form-group"><label>封面:</label>
+                             <div class="image-card-editor-content">
+                                <div class="music-cover-thumb" style="width: 60px; flex-shrink: 0;"><div class="thumbnail-wrapper"><img src="" loading="lazy"></div></div>
+                                <div class="image-card-editor-fields">
+                                    <input type="file" class="showcase-cover-upload" data-item-id="${item.id}" accept="image/*">
+                                    <div style="font-size:0.8rem; color:var(--text-secondary); margin-top:4px;">支持 jpg/png/webp，建议比例 2:3</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group"><label>标题:</label><input type="text" data-item-key="title" value="${this.escapeHTML(item.title || '')}"></div>
+                        <div class="form-group"><label>副标题 (作者/导演/艺术家):</label><input type="text" data-item-key="subtitle" value="${this.escapeHTML(item.subtitle || '')}"></div>
+                        <div class="form-group"><label>评分: <span class="rating-value">${item.rating}</span></label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-item-key="rating" min="0" max="5" step="0.5" value="${item.rating || 0}"><button class="btn btn-default btn-stepper plus">+</button></div></div>
+                        <div class="form-group"><label>推荐语/引言:</label><textarea data-item-key="comment" rows="3">${this.escapeHTML(item.comment || '')}</textarea></div>
+                        
+                        <div class="form-group">
+                            <label>标签:</label>
+                            <div class="showcase-tags-editor">${tagsHTML}</div>
+                            <div class="input-group" style="margin-top: 10px;">
+                                <input type="text" class="new-showcase-tag-input" placeholder="添加新标签...">
+                                <button class="btn btn-default btn-small add-showcase-tag-btn" style="width: auto; flex-shrink: 0;">添加</button>
+                            </div>
+                        </div>
+
+                        <hr class="separator">
+                        <div class="advanced-settings-wrapper ${advClass}">
+                            <div style="text-align: right; margin-bottom: 10px;">
+                                <label class="checkbox-group advanced-toggle-label"><input type="checkbox" class="advanced-toggle" ${item.isAdvancedOpen ? 'checked' : ''}> 🎨 独立外观设置</label>
+                            </div>
+                            <div class="advanced-setting">
+                                <div class="color-control-row">
+                                    <div class="color-control-group"><label>背景色:</label><div class="input-group"><input type="color" data-item-key="bgColor" value="${item.bgColor || ''}"><input type="text" class="color-hex-input" data-item-key="bgColor" value="${item.bgColor || ''}" placeholder="${g.bgColor} (全局)"><button class="btn btn-default btn-small" data-reset-item-key="bgColor">重置</button></div></div>
+                                    <div class="color-control-group"><label>文字色:</label><div class="input-group"><input type="color" data-item-key="textColor" value="${item.textColor || ''}"><input type="text" class="color-hex-input" data-item-key="textColor" value="${item.textColor || ''}" placeholder="${g.textColor} (全局)"><button class="btn btn-default btn-small" data-reset-item-key="textColor">重置</button></div></div>
+                                </div>
+                                <div class="color-control-row" style="margin-top:10px;">
+                                    <div class="color-control-group"><label>不透明度:</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-item-key="opacity" min="0" max="1" step="0.05" value="${item.opacity ?? g.opacity}"><button class="btn btn-default btn-stepper plus">+</button></div><button class="btn btn-default btn-small" data-reset-item-key="opacity" style="margin-top:5px; width:100%;">重置</button></div>
+                                    <div class="color-control-group"><label>圆角(px):</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-item-key="radius" min="0" max="40" step="1" value="${item.radius ?? g.radius}"><button class="btn btn-default btn-stepper plus">+</button></div><button class="btn btn-default btn-small" data-reset-item-key="radius" style="margin-top:5px; width:100%;">重置</button></div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                },
+
+                // --- 重构：书影音模块的预览UI (v2.0) ---
+                createPreviewShowcaseHTML(item) {
+                const g = this.state.globalComponentStyles;
+                const layout = item.layoutStyle || 'vertical';
+                const style = item.styleVariant || 'magazine';
+                
+                const tagsHTML = (item.tags || []).map(tag => `<span class="showcase-tag">${this.escapeHTML(tag)}</span>`).join('');
+                const stars = this.renderStarRating(item.rating);
+
+                // [修复] 准备应用独立样式
+                const styleVars = [];
+                
+                // 1. 处理背景色和不透明度
+                const rawBg = item.bgColor || g.bgColor;
+                const finalOpacity = (item.opacity !== undefined && item.opacity !== null && item.opacity !== '') ? item.opacity : g.opacity;
+                const finalBg = this.hexToRgba(rawBg, finalOpacity);
+                styleVars.push(`--card-bg-color: ${finalBg}`);
+
+                // 2. 处理文字颜色
+                if (item.textColor) {
+                    styleVars.push(`--card-text-color: ${item.textColor}`);
+                }
+
+                // 3. 处理圆角
+                const finalRadius = (item.radius !== undefined && item.radius !== null && item.radius !== '') ? `${item.radius}px` : '';
+                if (finalRadius) {
+                    styleVars.push(`border-radius: ${finalRadius}`);
+                }
+                
+                return `
+                <div class="showcase-card" data-style="${style}" data-layout="${layout}" style="${styleVars.join(';')}">
+                    <img src="" class="showcase-cover" alt="Cover" style="display:${item.coverArt ? 'block' : 'none'}">
+                    <div class="showcase-info">
+                        <h3 style="margin:0 0 5px 0; font-size:1.1em;"><span data-item-key="title">${this.escapeHTML(item.title || '')}</span></h3>
+                        <div class="showcase-meta" data-item-key="subtitle">${this.escapeHTML(item.subtitle || '')}</div>
+                        <div class="showcase-rating">${stars} <span style="font-size:0.8em; opacity:0.6;">(${item.rating || 0})</span></div>
+                        <div class="showcase-comment" data-item-key="comment">${this.escapeHTML(item.comment || '')}</div>
+                        <div class="showcase-tags">${tagsHTML}</div>
+                    </div>
+                </div>
+                `;
+            },
+
+                renderStarRating(rating) {
+                    let stars = '';
+                    const r = rating || 0;
+                    for (let i = 1; i <= 5; i++) {
+                        if (r >= i) stars += '⭐';
+                        else if (r >= i - 0.5) stars += '🌗';
+                        else stars += '<span style="opacity: 0.3;">⭐</span>';
+                    }
+                    return stars;
+                },
+
+                handleShowcaseCoverUpload(event, itemId) {
+                    const item = this.findItem(itemId);
+                    if (item) {
+                        this.handleImageUpload(event, 'cardBg', { itemId, oldImageUrl: item.coverArt, newKey: 'coverArt' });
+                    }
+                },
+
+                addShowcaseTag(itemId) {
+                    const itemEditor = document.querySelector(`.editor-item[data-item-id="${itemId}"]`);
+                    if (!itemEditor) return;
+                    const input = itemEditor.querySelector('.new-showcase-tag-input');
+                    if (!input || !input.value.trim()) return;
+
+                    const item = this.findItem(itemId);
+                    if (!item) return;
+
+                    this.pushHistory('添加书影音标签');
+                    if (!item.tags) item.tags = [];
+                    item.tags.push(input.value.trim());
+                    input.value = '';
+
+                    this.debouncedSaveToLocal();
+                    this.renderInspectorContent();
+                    this.renderPreviewItemById(itemId);
+                },
+
+                deleteShowcaseTag(itemId, tagIndex) {
+                    const item = this.findItem(itemId);
+                    if (!item || !item.tags || tagIndex < 0) return;
+
+                    this.pushHistory('删除书影音标签');
+                    item.tags.splice(tagIndex, 1);
+
+                    this.debouncedSaveToLocal();
+                    this.renderInspectorContent();
+                    this.renderPreviewItemById(itemId);
+                },
+
+                updateShowcaseTag(itemId, tagIndex, value) {
+                    const item = this.findItem(itemId);
+                    if (!item || !item.tags || tagIndex < 0) return;
+                    
+                    if (item.tags[tagIndex] !== value) {
+                         this.debounce(() => this.pushHistory('修改书影音标签'), 1000)();
+                         item.tags[tagIndex] = value;
+                         this.debouncedSaveToLocal();
+                         this.renderPreviewItemById(itemId);
+                    }
                 },
 
                 createPersonalInfoInspectorHTML() {
@@ -2390,6 +2583,11 @@
                     this.postRenderAsyncUpdates(container);
                     this.updateHighlights();
                     this.renderMobileEditPencils();
+                     if (this.state.systemSettings.masonryEnabled) {
+                        requestAnimationFrame(() => {
+                            this.applyGridCompactLayout();
+                        });
+                    }
                 },
 
                 createPreviewItemHTML(item) {
@@ -2399,7 +2597,7 @@
                     const shouldApplyBorder = borderSettings.applyTo[applyToKey];
                     const borderClass = shouldApplyBorder ? 'apply-global-border' : '';
 
-                    
+
                     const shadowSettings = borderSettings.globalShadowSettings;
                     const shouldApplyShadow = shadowSettings && shadowSettings.applyTo && shadowSettings.applyTo[applyToKey];
                     const shadowClass = shouldApplyShadow ? 'apply-global-shadow' : '';
@@ -2422,6 +2620,14 @@
                         styleAttribute = `style="${widthStyle}"`;
                     }
 
+                    // [动画修复] 注入唯一 view-transition-name，让浏览器能追踪元素位置
+                    const transitionStyle = `view-transition-name: item-${item.id};`;
+                    if (styleAttribute) {
+                        styleAttribute = styleAttribute.replace('style="', `style="${transitionStyle} `);
+                    } else {
+                        styleAttribute = `style="${transitionStyle}"`;
+                    }
+
                     let innerHTML = '';
                     switch (item.type) {
                         case 'card': innerHTML = this.createPreviewCardHTML(item); break;
@@ -2432,6 +2638,7 @@
                         case 'timeline': innerHTML = this.createPreviewTimelineHTML(item); break;
                         case 'separator': innerHTML = this.createPreviewSeparatorHTML(item); break;
                         case 'spacer': innerHTML = this.createPreviewSpacerHTML(item); break;
+                        case 'showcase': innerHTML = this.createPreviewShowcaseHTML(item); break;
                     }
 
                     return `<div class="preview-item-wrapper ${isHiddenClass} ${borderClass} ${shadowClass}" 
@@ -2812,20 +3019,13 @@
                         'globalComponentStyles.titleColor': () => { this.renderPreviewItems(); },
                         'globalComponentStyles.titleFontSize': () => { r.setProperty('--g-comp-title-font-size', gComp.titleFontSize); },
                         'globalComponentStyles.contentFontSize': () => { r.setProperty('--g-comp-content-font-size', gComp.contentFontSize); },
-                        'globalComponentStyles.padding': () => { r.setProperty('--g-comp-padding', `${gComp.padding}px`); },
-
-                        
-                        'globalComponentStyles.shadowColor': () => this.updateGlobalComponentStyleVars(),
-                        'globalComponentStyles.shadowOpacity': () => this.updateGlobalComponentStyleVars(),
-                        'globalComponentStyles.shadowOffsetX': () => this.updateGlobalComponentStyleVars(),
-                        'globalComponentStyles.shadowOffsetY': () => this.updateGlobalComponentStyleVars(),
-                        'globalComponentStyles.shadowBlur': () => this.updateGlobalComponentStyleVars(),
+                        'globalComponentStyles.padding': () => { r.setProperty('--g-comp-padding', `${g.padding}px`); },
 
                         // 全局边框
                         'globalBorderSettings.style': () => {
                             this.updateGlobalBorderVars();
                             this.renderPreviewItems();
-                            this.renderPersonalInfo(); 
+                            this.renderPersonalInfo();
                         },
                         'globalBorderSettings.width': () => this.updateGlobalBorderVars(),
                         'globalBorderSettings.color': () => this.updateGlobalBorderVars(),
@@ -2837,7 +3037,7 @@
                         'globalBorderSettings.applyTo.music': () => this.renderPreviewItems(),
                         'globalBorderSettings.applyTo.timeline': () => this.renderPreviewItems(),
 
-                        
+
                         'globalBorderSettings.globalShadowSettings.color': () => this.updateGlobalBorderVars(),
                         'globalBorderSettings.globalShadowSettings.opacity': () => this.updateGlobalBorderVars(),
                         'globalBorderSettings.globalShadowSettings.offsetX': () => this.updateGlobalBorderVars(),
@@ -3038,7 +3238,7 @@
                     try {
                         let saved = JSON.parse(json);
 
-                        
+
                         if (saved.blocks) {
                             saved = this.migrateV1DataToV2(saved);
                             this.showToast('检测到旧版本数据，已自动升级到 v2.0 模块化布局！', 'success');
@@ -3687,7 +3887,8 @@
                             } else if (type === 'image') {
                                 this.updateItem(itemId, 'url', idbUrl, false);
                             } else if (type === 'cardBg') {
-                                this.updateItem(itemId, 'bgImageDataUrl', idbUrl, false);
+                                const propertyToUpdate = this.currentCropTarget.newKey || 'bgImageDataUrl';
+                                this.updateItem(itemId, propertyToUpdate, idbUrl, false);
                             } else if (type === 'musicCover') {
                                 this.updateItem(itemId, 'coverArt', idbUrl, false);
                             }
@@ -4203,7 +4404,7 @@
                         await processObject(stateClone);
 
                         zip.file("config.json", JSON.stringify(stateClone, null, 2));
-                        zip.file("readme.txt", `Blokko 强化导出备份\n版本: 2.0.0\n导出时间: ${new Date().toLocaleString()}\n\n此 .zip 文件包含了您的配置文件 (config.json) 和所有图片资源 (images/ 文件夹)。`);
+                        zip.file("readme.txt", `Blokko 强化导出备份\n版本: 2.0.1\n导出时间: ${new Date().toLocaleString()}\n\n此 .zip 文件包含了您的配置文件 (config.json) 和所有图片资源 (images/ 文件夹)。`);
 
                         const blob = await zip.generateAsync({ type: "blob" });
                         const filename = this.generateFilename('Enhanced-Backup') + '.zip';
@@ -4298,7 +4499,7 @@
                         this.showLoading('正在导入图片资源...');
                         await processObject(importedState);
 
-                        
+
                         if (importedState.blocks) {
                             importedState = this.migrateV1DataToV2(importedState);
                             this.showToast('旧版ZIP包已自动升级为新版布局！', 'info');
@@ -4350,7 +4551,7 @@
                             let importedState = JSON.parse(re.target.result);
                             if (!importedState || !importedState.personalInfo) throw new Error('无效的文件格式');
 
-                            
+
                             if (importedState.blocks) {
                                 importedState = this.migrateV1DataToV2(importedState);
                                 this.showToast('旧版JSON配置已自动升级为新版布局！', 'info');
@@ -4946,17 +5147,17 @@
                             } else {
                                 // 【性能优化】用户一点这个 Tab，我们就立刻静默预加载 ZXing 库
                                 // 这样等用户找完文件时，库已经加载好了，无需等待。
-                                this.loadScript('https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js').catch(()=>{});
+                                this.loadScript('https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js').catch(() => { });
                             }
                         };
                     });
 
                     // 2. 绑定按钮
                     document.getElementById('upload-qr-btn').onclick = () => fileInput.click();
-                    
+
                     // 新增：绑定保存精美图片按钮
                     const saveBtn = document.getElementById('save-aesthetic-qr-btn');
-                    if(saveBtn) saveBtn.onclick = () => this.saveAestheticQRCode();
+                    if (saveBtn) saveBtn.onclick = () => this.saveAestheticQRCode();
 
                     // 3. 绑定文件读取与解析 
                     fileInput.onchange = async (e) => {
@@ -5000,19 +5201,25 @@
                 },
 
                 async saveAestheticQRCode() {
-                    const qrImg = document.querySelector('#qrcode-container img');
-                    if (!qrImg) {
+                    const container = document.getElementById('qrcode-container');
+                    const qrCanvas = container.querySelector('canvas');
+                    const qrImg = container.querySelector('img');
+
+                    // 【BUG修复】优先使用 canvas，因为它总是最先准备好。如果找不到，再降级使用 img。
+                    const qrElement = qrCanvas || qrImg;
+
+                    if (!qrElement) {
                         this.showToast('二维码尚未生成，请稍后', 'error');
                         return;
                     }
 
                     this.showLoading('正在设计卡片...');
-                    
+
                     // 1. 获取当前主题色，让卡片风格与你的设计保持一致
                     const theme = this.state.globalTheme;
                     const primaryColor = theme.primary || '#007AFF';
                     const accentColor = theme.accent || '#007AFF';
-                    
+
                     // 2. 创建高清画布 (1080x1440，竖版更适合手机阅读)
                     const canvas = document.createElement('canvas');
                     const ctx = canvas.getContext('2d');
@@ -5040,14 +5247,14 @@
                     ctx.fillRect(0, 0, w, h);
 
                     // 3.1 绘制顶部的装饰色块 (增加氛围感)
-                    const decorGradient = ctx.createLinearGradient(0, 0, w, h/2);
+                    const decorGradient = ctx.createLinearGradient(0, 0, w, h / 2);
                     decorGradient.addColorStop(0, primaryColor);
                     decorGradient.addColorStop(1, accentColor);
-                    
+
                     ctx.save();
                     ctx.globalAlpha = 0.15; // 淡淡的色彩
                     ctx.beginPath();
-                    ctx.arc(w/2, -200, 900, 0, Math.PI * 2);
+                    ctx.arc(w / 2, -200, 900, 0, Math.PI * 2);
                     ctx.fillStyle = decorGradient;
                     ctx.fill();
                     ctx.restore();
@@ -5067,7 +5274,7 @@
                     ctx.fillStyle = '#ffffff';
                     roundRect(cardX, cardY, cardW, cardH, 60);
                     ctx.fill();
-                    
+
                     // 重置阴影
                     ctx.shadowColor = 'transparent';
                     ctx.shadowBlur = 0;
@@ -5075,7 +5282,7 @@
 
                     // 5. 绘制卡片内的文字
                     ctx.textAlign = 'center';
-                    
+
                     // 标题
                     ctx.fillStyle = '#1a1a1a';
                     ctx.font = 'bold 70px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
@@ -5093,7 +5300,7 @@
 
                     // 绘制二维码图片
                     // 为了提高识别率，我们在二维码周围留出足够的白边
-                    ctx.drawImage(qrImg, qrX, qrY, qrBoxSize, qrBoxSize);
+                    ctx.drawImage(qrElement, qrX, qrY, qrBoxSize, qrBoxSize);
 
                     // 7. 底部提示文字
                     ctx.fillStyle = '#888888';
@@ -5256,16 +5463,6 @@
                     r.setProperty('--g-comp-text-stroke', g.textStrokeWidth > 0 ? `${g.textStrokeWidth}px ${g.textStrokeColor}` : '0px transparent');
                     r.setProperty('--g-comp-padding', `${g.padding}px`);
 
-                    
-                    // 如果不透明度为0，直接设为 none 以提升性能
-                    if (parseFloat(g.shadowOpacity) > 0) {
-                        const shadowColorRgba = this.hexToRgba(g.shadowColor, g.shadowOpacity);
-                        const shadowVal = `${g.shadowOffsetX}px ${g.shadowOffsetY}px ${g.shadowBlur}px ${shadowColorRgba}`;
-                        r.setProperty('--active-card-shadow', shadowVal);
-                    } else {
-                        r.setProperty('--active-card-shadow', 'none');
-                    }
-
                     // 更新按钮的默认值，如果未被覆盖
                     r.setProperty('--g-button-bg-color', g.buttonBgColor || g.bgColor);
                     r.setProperty('--g-button-text-color', g.buttonTextColor || g.textColor);
@@ -5282,7 +5479,7 @@
                     r.setProperty('--g-border-shadow-offset', `${b.shadowOffset}px`);
                     r.setProperty('--g-border-shadow-color', b.shadowColor);
 
-                    
+
                     const s = b.globalShadowSettings;
                     if (s && parseFloat(s.opacity) > 0) {
                         const rgba = this.hexToRgba(s.color, s.opacity);
@@ -5419,14 +5616,29 @@
                             this.vibrate(30);
                             if (e.oldIndex === e.newIndex) return;
 
-                            this.pushHistory('排序模块');
-                            const [movedItem] = this.state.items.splice(e.oldIndex, 1);
-                            this.state.items.splice(e.newIndex, 0, movedItem);
-                            this.debouncedSaveToLocal();
+                            const updateLogic = () => {
+                                this.pushHistory('排序模块');
+                                const [movedItem] = this.state.items.splice(e.oldIndex, 1);
+                                this.state.items.splice(e.newIndex, 0, movedItem);
+                                this.debouncedSaveToLocal();
 
-                            // 拖拽结束后，DOM顺序已经改变，只需重新应用布局
-                            this.renderLayerPanel(); // 更新左侧列表顺序
-                            this.applyLayout(); // 重新计算并应用布局
+                                // 更新 DOM
+                                this.renderLayerPanel(); 
+                                this.applyLayout();
+                            };
+
+                            // [动画修复] 使用 View Transition API 实现平滑归位动画
+                            if (document.startViewTransition) {
+                                document.startViewTransition(() => {
+                                    updateLogic();
+                                    // 关键：在动画快照拍摄前，强制立即计算布局，防止动画目标位置错误
+                                    if (this.state.systemSettings.masonryEnabled) {
+                                        this.applyGridCompactLayout(); 
+                                    }
+                                });
+                            } else {
+                                updateLogic();
+                            }
                         }
                     });
                 },
@@ -5878,17 +6090,17 @@
 
                     const base = chroma(baseHex);
 
-                    
+
                     const pageBg = base.set('hsl.s', 0.25).set('hsl.l', 0.91).hex();
 
-                   
+
                     const cardBg = chroma.mix(base, 'white', 0.96).hex();
                     const headerBg = cardBg; // 头部和卡片保持一致
 
-                    
+
                     const headerGradientEnd = chroma(headerBg).darken(0.05).hex();
 
-                   
+
                     const textBase = base.set('hsl.s', 0.4).set('hsl.l', 0.15).hex();
 
                     let accent = base.hex();
@@ -5896,26 +6108,26 @@
                     if (base.luminance() > 0.6) accent = base.darken(1.2).hex();
 
                     const compColor = base.set('hsl.h', base.get('hsl.h') + 180);
-                    const tagBg = compColor.set('hsl.s', 0.5).set('hsl.l', 0.9).hex(); 
+                    const tagBg = compColor.set('hsl.s', 0.5).set('hsl.l', 0.9).hex();
                     const tagText = compColor.darken(2.5).hex();
 
 
-                   
+
                     this.updateState('pageStyles.pageBgSolidColor', pageBg, false);
                     this.updateState('pageStyles.pageBgMode', 'solid', false);
 
-               
+
                     this.updateState('pageStyles.headerBgColor', headerBg, false);
                     this.updateState('pageStyles.headerBgMode', 'solid', false);
                     this.updateState('pageStyles.headerTextColor', textBase, false);
                     this.updateState('pageStyles.headerBorderRadius', 16, false);
 
-  
+
                     this.updateState('pageStyles.headerBgGradientStart', headerBg, false);
                     this.updateState('pageStyles.headerBgGradientEnd', headerGradientEnd, false);
 
                     this.updateState('globalComponentStyles.bgColor', cardBg, false);
-                    this.updateState('globalComponentStyles.bgMode', 'solid', false); 
+                    this.updateState('globalComponentStyles.bgMode', 'solid', false);
                     this.updateState('globalComponentStyles.textColor', textBase, false);
                     this.updateState('globalComponentStyles.titleColor', accent, false);
                     this.updateState('globalComponentStyles.radius', 16, false);
@@ -6021,7 +6233,7 @@
                 },
                 postRenderAsyncUpdates(container) {
                     const imageLoadPromises = [];
-                    container.querySelectorAll('figure img, .music-cover').forEach(img => {
+                    container.querySelectorAll('figure img, .music-cover, .showcase-cover').forEach(img => {
                         const itemEl = img.closest('.preview-item-wrapper');
                         if (!itemEl) return;
 
@@ -6029,7 +6241,7 @@
                         const item = this.findItem(itemId);
                         if (!item) return;
 
-                        let urlKey = (item.type === 'music') ? 'coverArt' : 'url';
+                        let urlKey = (item.type === 'music' || item.type === 'showcase') ? 'coverArt' : 'url';
 
                         if (item && item[urlKey]) {
                             const promise = new Promise(async (resolve) => {
@@ -6049,6 +6261,14 @@
                                 if (img.src === srcToSet && img.complete) return resolve();
                                 if (!srcToSet) return resolve();
                                 img.src = srcToSet;
+
+                                // [新增] 如果是书影音模块，同时设置 CSS 变量以支持海报模式背景
+                                if (item.type === 'showcase') {
+                                    const card = itemEl.querySelector('.showcase-card');
+                                    if (card) {
+                                        card.style.setProperty('--cover-url', `url("${srcToSet}")`);
+                                    }
+                                }
                             });
                             imageLoadPromises.push(promise);
                         }
@@ -6148,10 +6368,16 @@
                     this.pushHistory('添加时间轴事件');
                     if (!item.cards) item.cards = [];
                     const newEvent = { id: this.generateId('tlc'), time: '新时间点', content: '新事件内容' };
-                    item.cards.push(newEvent);
-                    this.debouncedSaveToLocal();
-                    this.renderInspectorContent();
-                    this.renderPreviewItemById(itemId);
+
+                    // 直接调用 updateItem 来保证状态更新的原子性和正确的历史记录
+                    this.updateItem(itemId, 'cards', [...item.cards, newEvent], false); // pushHistory 设为 false，因为我们手动管理
+
+                    // 关键修复：使用 setTimeout 将DOM操作推迟到下一个事件循环
+                    // 这确保了在重新初始化 SortableJS 之前，Vue-like的DOM更新已经完成
+                    setTimeout(() => {
+                        this.renderInspectorContent(); // 重新渲染检查器，其中包含新的事件编辑器和SortableJS的初始化
+                        this.renderPreviewItemById(itemId); // 重新渲染预览区的模块
+                    }, 0);
                 },
 
                 async deleteTimelineCard(itemId, cardId) {
@@ -6252,7 +6478,7 @@
                     const sharpEdgeStyles = ['pixel', 'neo-brutalism', 'double-offset'];
                     const shouldDisable = sharpEdgeStyles.includes(borderStyle);
 
-                    
+
                     const radiusKeys = [
                         'globalComponentStyles.radius',
                         'pageStyles.headerBorderRadius'

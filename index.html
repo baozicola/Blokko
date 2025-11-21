@@ -4,7 +4,7 @@
   <meta charset="utf-8"/>
   <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
   <title>
-   Blokko-个人简介生成器！ (v2.0.0)
+   Blokko-个人简介生成器！ (v2.0.1)
   </title>
   <!-- 性能优化: 预连接到关键域名 -->
   <link crossorigin="" href="https://fontsapi.zeoseven.com" rel="preconnect"/>
@@ -45,7 +45,7 @@
     内容
    </button>
    <div class="app-header-title">
-    Blokko (v2.0.0)
+    Blokko (v2.0.1)
    </div>
    <div class="header-actions-wrapper">
     <button class="btn btn-default" id="lock-mode-toggle" style="width: auto; padding: 6px 12px;" title="切换编辑/预览模式">
@@ -95,6 +95,9 @@
      </button>
      <button class="btn btn-default" id="add-timeline-item-btn">
       ⏳ 时间轴
+     </button>
+     <button class="btn btn-default" id="add-showcase-item-btn">
+      🎬 书影音
      </button>
      <button class="btn btn-default" id="add-separator-item-btn">
       〰️ 分隔
@@ -207,6 +210,10 @@
      <label>
       <input name="crop-ratio" type="radio" value="1"/>
       1:1
+     </label>
+     <label>
+      <input name="crop-ratio" type="radio" value="0.6667"/>
+      2:3
      </label>
      <label>
       <input name="crop-ratio" type="radio" value="1.3333"/>
@@ -1119,12 +1126,79 @@ Monitor of this License or out of the use or inability to use the
     </div>
     <div class="tab-content" id="help-changelog">
      <h4>
+      v2.0.1 更新日志 (2025-11-24)
+     </h4>
+     <ul>
+      <li>
+       <strong>
+        【新增】书影音模块
+       </strong>
+       <ul>
+        <li>
+         新增了专属的“书影音”模块，支持评分、评论与标签。
+        </li>
+        <li>
+         内置了
+         <strong>
+          “杂志”、“海报”、“票根”
+         </strong>
+         三种精美样式，适应不同风格的排版需求。
+        </li>
+       </ul>
+      </li>
+      <li>
+       <strong>
+        【优化】体验提升
+       </strong>
+       <ul>
+        <li>
+         <strong>
+          丝滑动效：
+         </strong>
+         引入了 View Transition 技术，模块拖拽排序和布局变化不再生硬，拥有了原生级的过渡动画。
+        </li>
+        <li>
+         <strong>
+          性能优化：
+         </strong>
+         优化了手机端紧凑布局的重排计算逻辑，减少卡顿。
+        </li>
+        <li>
+         <strong>
+          触控手感：
+         </strong>
+         调整了手机端的长按判定阈值，有效避免了长按时误触原生“长按选字”菜单的问题。
+        </li>
+       </ul>
+      </li>
+      <li>
+       <strong>
+        【修复】
+       </strong>
+       <ul>
+        <li>
+         修复了开启紧凑布局后，删除卡片或调整边框导致所有卡片变形（变细长）错乱的严重 BUG。
+        </li>
+        <li>
+         修复了时间轴模块添加新事件后，预览区无法立即正常显示的 BUG。
+        </li>
+        <li>
+         修复了手机端保存“二维码分享图”时，生成的图片中丢失二维码的问题。
+        </li>
+        <li>
+         修复了“个人信息”图层在某些情况下可以被异常拖动排序的 BUG。
+        </li>
+       </ul>
+      </li>
+     </ul>
+     <hr class="separator"/>
+     <h4>
       v2.0.0 更新日志 (2025-11-21)
      </h4>
      <ul>
       <li>
        <strong>
-        【⭐重大重构】全新的模块化布局系统！
+        【重构】全新的模块化布局系统！
        </strong>
        <ul>
         <li>
@@ -1148,7 +1222,7 @@ Monitor of this License or out of the use or inability to use the
       </li>
       <li>
        <strong>
-        【⭐新增】智能配色！
+        【新增】智能配色！
        </strong>
        <ul>
         <li>
@@ -1158,7 +1232,7 @@ Monitor of this License or out of the use or inability to use the
       </li>
       <li>
        <strong>
-        【⭐新增】全局阴影！
+        【新增】全局阴影！
        </strong>
        <ul>
         <li>

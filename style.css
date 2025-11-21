@@ -36,7 +36,7 @@
             --layer-panel-width: 280px;
             --inspector-panel-width: 380px;
             --preview-gap: 20px;
-            
+
 
 
             /* 全局主题色板变量 */
@@ -45,7 +45,7 @@
             --g-theme-background: var(--bg-preview-page);
             --g-theme-text: var(--text-primary);
 
-            
+
             --g-comp-bg-color: var(--bg-card);
             --g-comp-text-color: var(--text-primary);
             --g-comp-opacity: 1;
@@ -98,7 +98,7 @@
             --g-theme-background: var(--bg-preview-page);
             --g-theme-text: var(--text-primary);
 
-            
+
             --g-comp-bg-color: var(--bg-card);
             --g-comp-text-color: var(--text-primary);
         }
@@ -1061,7 +1061,7 @@
             cursor: grab;
         }
 
-        
+
         .editor-item {
             background: var(--bg-editor);
             border: 1px solid var(--border-color);
@@ -1072,10 +1072,12 @@
         }
 
         .sortable-ghost {
-            background: var(--bg-image-upload-hover) !important;
+            background: rgba(0, 122, 255, 0.1) !important;
             border: 2px dashed var(--color-primary);
             box-shadow: none !important;
-            opacity: 0.8 !important;
+            opacity: 0.5 !important;
+            transform: scale(0.95);
+            border-radius: 12px;
         }
 
         .editor-item.sortable-chosen {
@@ -1209,7 +1211,7 @@
             padding: 15px;
         }
 
-        
+
         .preview-items-container {
             margin-top: var(--preview-gap);
             display: flex;
@@ -1221,15 +1223,17 @@
         }
 
         /* 紧凑模式 (CSS Grid) 的专属样式 */
-        .preview-items-container.compact-mode {
-            display: grid;
-            /* 定义6列，方便33%, 50%, 67%的布局 */
-            grid-template-columns: repeat(6, 1fr);
-            /* 定义一个非常小的行高作为计算基础 */
-            grid-auto-rows: 10px;
-            align-items: start;
-            /* 替代 align-items: flex-start */
-        }
+    .preview-items-container.compact-mode {
+        display: grid;
+        /* 定义6列，方便33%, 50%, 67%的布局 */
+        grid-template-columns: repeat(6, 1fr);
+        /* 定义1px的基准行高，让JS计算更直接 */
+        grid-auto-rows: 1px;
+        /* 使用原生的gap属性控制间距 */
+        gap: var(--preview-gap);
+        align-items: start;
+        /* 替代 align-items: flex-start */
+    }
 
         .preview-items-container.compact-mode .preview-item-wrapper {
             /* 在紧凑模式下，宽度由grid-column控制，而非width */
@@ -1251,6 +1255,14 @@
         .preview-item-wrapper {
             cursor: pointer;
             position: relative;
+            /* 动画核心：允许属性平滑过渡 */
+            transition: transform 0.3s cubic-bezier(0.2, 0, 0.2, 1), width 0.3s cubic-bezier(0.2, 0, 0.2, 1), opacity 0.2s;
+            contain: layout paint;
+        }
+        /* 全局视图过渡配置 */
+        ::view-transition-group(*) {
+            animation-duration: 0.4s;
+            animation-timing-function: cubic-bezier(0.2, 0, 0.2, 1);
         }
 
         .preview-item-wrapper.sortable-drag {
@@ -1550,13 +1562,13 @@
             background-clip: padding-box;
             z-index: 1;
             border-radius: var(--g-comp-border-radius);
-            
+
         }
 
         /* 3. 针对“个人信息”区域的图层修复 */
         .preview-header.apply-global-border {
             transform-style: flat;
-            
+
         }
 
         /* 4. 像素风格 (Pixel) */
@@ -1606,7 +1618,7 @@
             opacity: 0.6;
         }
 
-        
+
         .apply-global-shadow {
             box-shadow: var(--g-shadow-value) !important;
             /* 修复遮挡：默认 z-index 较低，hover 时提高 */
@@ -3085,5 +3097,208 @@
             #filter-sliders-grid {
                 grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
             }
+        }
+
+        /* --- 书影音模块高级样式 (v2.0) --- */
+        .showcase-card {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            /* 继承全局变量，但允许内部覆盖 */
+            background-color: var(--card-bg-color, var(--g-comp-bg-color));
+            color: var(--card-text-color, var(--g-comp-text-color));
+            border-radius: var(--g-comp-border-radius);
+            padding: var(--g-comp-padding);
+            transition: all 0.3s ease;
+            z-index: 1;
+        }
+
+        .showcase-cover {
+            object-fit: cover;
+            flex-shrink: 0;
+            position: relative;
+            z-index: 2;
+            transition: transform 0.3s ease;
+        }
+
+        .showcase-info {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            z-index: 2;
+            min-width: 0; /* 防止文字溢出 */
+        }
+
+        .showcase-meta {
+            font-size: 0.85em;
+            opacity: 0.7;
+            margin-bottom: 5px;
+        }
+
+        .showcase-rating {
+            color: #ffb400; /* 金色星星 */
+            font-size: 0.9em;
+            margin: 5px 0;
+            letter-spacing: 1px;
+        }
+
+        .showcase-comment {
+            font-size: 0.95em;
+            line-height: 1.6;
+            margin: 10px 0;
+            white-space: pre-wrap;
+        }
+
+        .showcase-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: auto;
+        }
+
+        .showcase-tag {
+            font-size: 0.75em;
+            padding: 3px 8px;
+            border-radius: 4px;
+            background-color: rgba(127, 127, 127, 0.1);
+            border: 1px solid rgba(127, 127, 127, 0.1);
+        }
+
+        /* --- 风格 1: 杂志 (Magazine) --- */
+        .showcase-card[data-style="magazine"] {
+            overflow: visible; /* 允许封面破格 */
+        }
+        
+        .showcase-card[data-style="magazine"][data-layout="horizontal"] {
+            flex-direction: row;
+            align-items: flex-start;
+            gap: 20px;
+        }
+
+        .showcase-card[data-style="magazine"] .showcase-cover {
+            border-radius: 4px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+
+        /* 杂志风：垂直布局时的封面处理 */
+        .showcase-card[data-style="magazine"][data-layout="vertical"] .showcase-cover {
+            width: calc(100% - 40px);
+            height: 200px;
+            margin: -30px auto 15px auto; /* 破格向上 */
+            border-radius: 8px;
+        }
+
+        /* 杂志风：水平布局时的封面处理 */
+        .showcase-card[data-style="magazine"][data-layout="horizontal"] .showcase-cover {
+            width: 100px;
+            height: 140px;
+            margin-top: -10px; /* 微微破格 */
+            border-radius: 6px;
+        }
+
+        .showcase-card[data-style="magazine"] .showcase-comment {
+            border-left: 3px solid var(--g-theme-accent, #007AFF);
+            padding-left: 12px;
+            font-family: "Songti SC", "Noto Serif SC", serif; /* 衬线体 */
+            font-style: italic;
+            background: linear-gradient(90deg, rgba(127,127,127,0.05) 0%, rgba(127,127,127,0) 100%);
+            padding: 10px 12px;
+            border-radius: 0 8px 8px 0;
+        }
+
+        /* --- 风格 2: 海报 (Poster) --- */
+        .showcase-card[data-style="poster"] {
+            color: #ffffff !important;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            border: none !important; /* 海报模式不需要边框 */
+            justify-content: flex-end;
+            overflow: hidden;
+            border-radius: var(--g-comp-border-radius);
+        }
+
+        /* 背景模糊层 */
+        .showcase-card[data-style="poster"]::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: var(--cover-url);
+            background-size: cover;
+            background-position: center;
+            filter: blur(15px) brightness(0.6);
+            transform: scale(1.1); /* 消除模糊白边 */
+            z-index: 0;
+        }
+
+        .showcase-card[data-style="poster"] .showcase-cover {
+            width: 80px;
+            height: 80px;
+            border-radius: 4px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            margin-bottom: 15px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        /* 海报模式强制改为底部布局，忽略水平设置，除非很宽 */
+        .showcase-card[data-style="poster"] {
+            padding: 25px;
+        }
+
+        .showcase-card[data-style="poster"] .showcase-meta { opacity: 0.8; color: #eee; }
+        .showcase-card[data-style="poster"] .showcase-tag { 
+            background-color: rgba(255,255,255,0.2); 
+            border-color: rgba(255,255,255,0.3);
+            color: white;
+        }
+
+        /* --- 风格 3: 票根 (Ticket) --- */
+        .showcase-card[data-style="ticket"] {
+            background-image: radial-gradient(circle at 0 50%, transparent 10px, var(--card-bg-color, var(--g-comp-bg-color)) 11px),
+                              radial-gradient(circle at 100% 50%, transparent 10px, var(--card-bg-color, var(--g-comp-bg-color)) 11px);
+            background-size: 51% 100%;
+            background-position: 0 0, 100% 0;
+            background-repeat: no-repeat;
+            padding: 20px 25px; /* 避开缺口 */
+            mask-image: none; /* 防止冲突 */
+            border-radius: 8px; /* 票根圆角一般较小 */
+        }
+        
+        /* 票根虚线分割 */
+        .showcase-card[data-style="ticket"]::after {
+            content: '';
+            position: absolute;
+            top: 15px; bottom: 15px;
+            left: 50%;
+            width: 1px;
+            border-left: 2px dashed rgba(127,127,127,0.3);
+            z-index: 1;
+        }
+
+        .showcase-card[data-style="ticket"] .showcase-info {
+            font-family: "Courier New", monospace; /* 等宽字体 */
+        }
+        
+        .showcase-card[data-style="ticket"] .showcase-cover {
+            width: 100%;
+            height: 150px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+            filter: grayscale(0.2); /* 复古感 */
+        }
+        
+        /* 票根布局调整：垂直 */
+        .showcase-card[data-style="ticket"] {
+            display: flex;
+            flex-direction: column;
+        }
+        .showcase-card[data-style="ticket"]::after {
+            /* 垂直模式改为横向虚线 */
+            top: auto; left: 15px; right: 15px; bottom: 90px;
+            width: auto; height: 1px;
+            border-left: none;
+            border-top: 2px dashed rgba(127,127,127,0.3);
         }
     
