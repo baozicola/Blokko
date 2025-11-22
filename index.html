@@ -4,7 +4,7 @@
   <meta charset="utf-8"/>
   <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
   <title>
-   Blokko-个人简介生成器！ (v2.0.2)
+   Blokko-个人简介生成器！ (v2.0.3)————时之歌十周年快乐！
   </title>
   <!-- 性能优化: 预连接到关键域名 -->
   <link crossorigin="" href="https://fontsapi.zeoseven.com" rel="preconnect"/>
@@ -45,7 +45,7 @@
     内容
    </button>
    <div class="app-header-title">
-    Blokko (v2.0.2)
+    Blokko (v2.0.3)
    </div>
    <div class="header-actions-wrapper">
     <button class="btn btn-default" id="lock-mode-toggle" style="width: auto; padding: 6px 12px;" title="切换编辑/预览模式">
@@ -122,25 +122,43 @@
    <div class="resizer" id="resizer">
    </div>
    <aside class="inspector-panel" id="inspector-panel">
+    <!-- 顶部一级导航 -->
     <div class="inspector-tabs">
      <button class="inspector-tab-btn active" data-tab="global">
-      🎨 全局
+      🎨 全局设计
      </button>
      <button class="inspector-tab-btn" data-tab="selected">
-      📝 选中
+      📝 当前选中
      </button>
      <button class="inspector-tab-btn" data-tab="system">
-      ⚙️ 系统
+      ⚙️ 系统/导出
      </button>
     </div>
-    <div class="inspector-tab-content active" id="inspector-tab-content-global">
-     <!-- 全局样式设置 -->
+    <!-- 中间滚动区域 -->
+    <div class="inspector-scroll-container">
+     <div class="inspector-tab-content active" id="inspector-tab-content-global" style="padding-top: 0;">
+      <!-- 全局样式设置 (内容由JS动态生成) -->
+     </div>
+     <div class="inspector-tab-content" id="inspector-tab-content-selected">
+      <!-- 选中项设置 -->
+     </div>
+     <div class="inspector-tab-content" id="inspector-tab-content-system">
+      <!-- 系统与导出设置 -->
+     </div>
     </div>
-    <div class="inspector-tab-content" id="inspector-tab-content-selected">
-     <!-- 选中项设置 -->
-    </div>
-    <div class="inspector-tab-content" id="inspector-tab-content-system">
-     <!-- 系统与导出设置 -->
+    <!-- 底部固定栏：全局高级开关 -->
+    <div class="inspector-footer">
+     <span>
+      <span class="iconify" data-icon="mdi:magic-staff">
+      </span>
+      设计模式
+     </span>
+     <div class="form-group" style="margin:0; display:flex; align-items:center;">
+      <label class="checkbox-group" style="font-size: 0.85rem;">
+       <input id="global-advanced-mode-toggle" type="checkbox"/>
+       高级/专家模式
+      </label>
+     </div>
     </div>
    </aside>
   </div>
@@ -1126,62 +1144,44 @@ Monitor of this License or out of the use or inability to use the
     </div>
     <div class="tab-content" id="help-changelog">
      <h4>
-      v2.0.2 更新日志 (2025-11-24)
+      v2.0.3 更新日志
      </h4>
      <ul>
       <li>
        <strong>
-        【新增】
+        【新增/重做】
        </strong>
-       为进度条新增了“环形”样式。
+       重做了全局页面，现在全局页面下被划分为页面/组件/排版三个子Tab，并且增加了全局的“高级模式”，点击后可以展开原有的全部功能，以此优化新人体验。
       </li>
       <li>
        <strong>
         【优化】
        </strong>
-       尝试性优化了手机端紧凑模式下的重叠/卡顿问题。
-      </li>
-      <li>
-       <strong>
-        【优化】
-       </strong>
-       手机端原有的导出/预览优化，现在手机端导出图片/预览会和PC端完全一致而不是被压窄。同时开放了手机端的“手机端导出预览/窄体预览”。
-      </li>
-      <li>
-       <strong>
-        【优化】
-       </strong>
-       手机端导出预览功能改名为“手机端导出预览/窄体预览”，并且加大宽度到500PX。
-      </li>
-      <li>
-       <strong>
-        【优化】
-       </strong>
-       解除了手机端导出和超清导出的互斥，现在启用手机端导出也可以选择超清导出了，会基于500Px去渲染1800Px的超清大图。
-      </li>
-      <li>
-       <strong>
-        【优化】
-       </strong>
-       随着竖排文字的正式实装，为手机端的文字卡片编辑页面也新增了“文字方向”的调节按钮。
-      </li>
-      <li>
-       <strong>
-        【优化】
-       </strong>
-       删除了部分重构过程中的冗余代码。
+       微调了暗黑模式预览区域的背景色。
       </li>
       <li>
        <strong>
         【修复】
        </strong>
-       修复了手机端时间轴缺少编辑铅笔的问题。
+       修复了双层边框只作用于个人信息，而双层/新丑这种带有图层偏移调节的，有些时候会不显示，必须刷新才会显示的BUG。
       </li>
       <li>
        <strong>
         【修复】
        </strong>
-       修复了影音区块的图片溢出问题。
+       书影音模块杂志样式下，下面会留出一块空白的BUG。
+      </li>
+      <li>
+       <strong>
+        【修复】
+       </strong>
+       操作历史失效的BUG。
+      </li>
+      <li>
+       <strong>
+        【修复】
+       </strong>
+       修复全局的对齐方式功能失效的BUG。
       </li>
      </ul>
     </div>

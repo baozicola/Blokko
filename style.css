@@ -74,7 +74,7 @@
         html.dark-mode {
             /* 基础颜色 (暗黑) */
             --bg-editor: #1f2229;
-            --bg-preview-pane: #121417;
+            --bg-preview-pane: #1c1c1c;
             --bg-preview-page: #1f2229;
             --bg-card: #2c303a;
             --bg-input: #2c303a;
@@ -231,7 +231,106 @@
             padding: 0;
             display: flex;
             flex-direction: column;
+            overflow: hidden;
+            /* 禁止整体滚动，交给内部容器 */
+        }
+
+        /* 检查器内容区域容器，负责滚动 */
+        .inspector-scroll-container {
+            flex-grow: 1;
+            overflow-y: auto;
             overflow-x: hidden;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .inspector-tab-content {
+            display: none;
+            padding: 20px;
+            /* 稍微减小内边距 */
+            padding-bottom: 80px;
+            /* 为底部固定栏留出空间 */
+        }
+
+        /* 底部固定高级开关栏 */
+        .inspector-footer {
+            flex-shrink: 0;
+            padding: 12px 20px;
+            background: var(--bg-section);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 50;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.03);
+        }
+
+        .inspector-footer span {
+            font-size: 0.9rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* 全局子 Tab 样式 (页面/组件/排版) */
+        .global-sub-tabs {
+            display: flex;
+            padding: 10px 15px 0;
+            gap: 10px;
+            background: var(--bg-editor);
+            position: static;
+            top: 0;
+            z-index: 20;
+        }
+
+        .sub-tab-btn {
+            flex: 1;
+            text-align: center;
+            padding: 8px;
+            font-size: 0.85rem;
+            border: 1px solid var(--border-input);
+            border-bottom: none;
+            border-radius: 8px 8px 0 0;
+            background: var(--bg-input);
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+
+        .sub-tab-btn.active {
+            background: var(--bg-editor);
+            color: var(--color-primary);
+            font-weight: bold;
+            border-top: 2px solid var(--color-primary);
+            margin-bottom: -1px;
+            z-index: 21;
+            box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.02);
+        }
+
+        .global-sub-content {
+            display: none;
+            border-top: 1px solid var(--border-input);
+            /* 配合子Tab的边框 */
+            padding-top: 20px;
+        }
+
+        .global-sub-content.active {
+            display: block;
+            animation: fadeIn 0.2s ease;
+        }
+
+        /* --- 核心逻辑：简洁模式下的显隐控制 --- */
+        /* 当检查器处于简洁模式时，隐藏所有带有 advanced-setting 类的元素 */
+        .inspector-panel.simple-mode .advanced-setting {
+            display: none !important;
+        }
+
+        /* 简洁模式下优化一些间距 */
+        .inspector-panel.simple-mode .editor-section {
+            padding-bottom: 10px;
         }
 
         .inspector-panel .input-group {
@@ -458,7 +557,7 @@
         }
 
         body.mobile-export-preview-mode .preview-wrapper {
-            width: 500px !important; 
+            width: 500px !important;
             margin: 0 auto;
             transform: scale(calc(100vw / 420));
             transform-origin: top center;
@@ -626,25 +725,27 @@
             color: var(--text-action);
         }
 
-        /* 默认隐藏所有高级设置 */
+        /* --- 新的高级设置显隐逻辑 --- */
+
+        /* 1. 默认情况下，高级设置是显示的（只是可能有动画） */
         .advanced-setting {
-            display: none;
-        }
-
-        /* 当勾选高级时，显示对应的设置 */
-        .show-advanced .advanced-setting {
             display: block;
-            animation: fadeIn 0.3s;
+            animation: fadeIn 0.3s ease;
         }
 
-        /* 特别处理 flex 布局中的 tab 按钮 */
-        .tabs.show-advanced .tab-btn.advanced-setting,
-        .show-advanced .tabs .tab-btn.advanced-setting {
+        /* 2. 特殊处理：如果是 Tab 按钮，默认是 inline-flex */
+        .tab-btn.advanced-setting {
             display: inline-flex;
         }
 
-        /* 确保非激活的标签页内容即使是高级选项，也保持隐藏 */
-        .tab-content.advanced-setting:not(.active) {
+        /* 3. 核心控制：当面板拥有 simple-mode 类时，强制隐藏所有高级设置 */
+        .inspector-panel.simple-mode .advanced-setting {
+            display: none !important;
+        }
+
+        /* 4. 保护逻辑：确保非激活的 Tab 内容永远隐藏，不受高级模式开关影响 */
+        .tab-content:not(.active),
+        .global-sub-content:not(.active) {
             display: none !important;
         }
 
@@ -1217,22 +1318,21 @@
             flex-wrap: wrap;
             gap: var(--preview-gap);
             width: 100%;
-            /* 新增：为紧凑模式下的子元素对齐 */
             align-items: flex-start;
         }
 
         /* 紧凑模式 (CSS Grid) 的专属样式 */
-    .preview-items-container.compact-mode {
-        display: grid;
-        /* 定义6列，方便33%, 50%, 67%的布局 */
-        grid-template-columns: repeat(6, 1fr);
-        /* 定义1px的基准行高，让JS计算更直接 */
-        grid-auto-rows: 1px;
-        /* 使用原生的gap属性控制间距 */
-        gap: var(--preview-gap);
-        align-items: start;
-        /* 替代 align-items: flex-start */
-    }
+        .preview-items-container.compact-mode {
+            display: grid;
+            /* 定义6列，方便33%, 50%, 67%的布局 */
+            grid-template-columns: repeat(6, 1fr);
+            /* 定义1px的基准行高，让JS计算更直接 */
+            grid-auto-rows: 1px;
+            /* 使用原生的gap属性控制间距 */
+            gap: var(--preview-gap);
+            align-items: start;
+            /* 替代 align-items: flex-start */
+        }
 
         .preview-items-container.compact-mode .preview-item-wrapper {
             /* 在紧凑模式下，宽度由grid-column控制，而非width */
@@ -1256,8 +1356,10 @@
             position: relative;
             /* 动画核心：允许属性平滑过渡 */
             transition: transform 0.3s cubic-bezier(0.2, 0, 0.2, 1), width 0.3s cubic-bezier(0.2, 0, 0.2, 1), opacity 0.2s;
-            contain: layout paint;
+            contain: layout;
+            overflow: visible !important;
         }
+
         /* 全局视图过渡配置 */
         ::view-transition-group(*) {
             animation-duration: 0.4s;
@@ -1524,22 +1626,16 @@
         .spacer-preview {
             transition: height 0.3s ease;
             width: 100%;
-            /* 新增：为留白区块添加一个虚线边框，方便在编辑器中识别和选中 */
             border: 1px dashed var(--border-dashed, #ccc);
             min-height: 20px;
-            /* 新增：确保即使高度很小也能被看见和点击 */
             box-sizing: border-box;
-            /* 新增：确保边框不会影响其布局高度 */
         }
 
-        /* 新增：当body有.export-mode类时，彻底隐藏留白区块的视觉辅助 */
         body.export-mode .spacer-preview {
             border: none;
             min-height: 0;
-            /* 恢复其原始行为 */
         }
 
-        /* 1. 基础重置：默认隐藏所有伪元素 */
         .apply-global-border::before,
         .apply-global-border::after {
             display: none;
@@ -1554,7 +1650,6 @@
             transition: all 0.3s ease;
         }
 
-        /* 2. 基础容器设置 */
         .apply-global-border {
             border: var(--g-border-width) var(--g-border-style, solid) var(--g-border-color);
             position: relative;
@@ -1564,7 +1659,6 @@
 
         }
 
-        /* 3. 针对“个人信息”区域的图层修复 */
         .preview-header.apply-global-border {
             transform-style: flat;
 
@@ -1580,10 +1674,18 @@
                 0 calc(-1 * var(--g-border-width)) 0 0 var(--g-border-color);
         }
 
+        .apply-global-border.apply-global-shadow[data-border-style="pixel"] {
+            box-shadow:
+                var(--g-border-width) 0 0 0 var(--g-border-color),
+                calc(-1 * var(--g-border-width)) 0 0 0 var(--g-border-color),
+                0 var(--g-border-width) 0 0 var(--g-border-color),
+                0 calc(-1 * var(--g-border-width)) 0 0 var(--g-border-color),
+                var(--g-shadow-value) !important;
+        }
+
         /* 5. 新丑风格 (Neo-Brutalism) */
         .apply-global-border[data-border-style="neo-brutalism"] {
             border: var(--g-border-width) solid var(--g-border-color);
-            /* 修复：改用 box-shadow 实现，CSS规范保证阴影永远在背景色下方 */
             /* 如果同时启用了全局阴影，这里利用 CSS 变量回退机制或层叠覆盖 */
             box-shadow: var(--g-border-shadow-offset) var(--g-border-shadow-offset) 0 0 var(--g-border-shadow-color);
         }
@@ -1620,7 +1722,6 @@
 
         .apply-global-shadow {
             box-shadow: var(--g-shadow-value) !important;
-            /* 修复遮挡：默认 z-index 较低，hover 时提高 */
             z-index: 1;
             transition: box-shadow 0.3s ease, transform 0.3s ease;
         }
@@ -1802,6 +1903,7 @@
             border-radius: 4px;
             transition: width 0.5s ease, background-color 0.3s;
         }
+
         /* 环形进度条的标签样式 */
         .progress-bar-preview.circular .progress-bar-label {
             font-size: 0.95em;
@@ -2954,7 +3056,7 @@
 
             .inspector-panel .editor-section>legend {
                 position: -webkit-sticky;
-                position: sticky;
+                position: static;
                 top: 0;
                 background-color: var(--bg-editor);
                 z-index: 10;
@@ -3016,7 +3118,6 @@
             background-color: #fff;
         }
 
-        /* 修复后的唱臂样式 (位置外移，固定角度) */
         .vinyl-tonearm {
             position: absolute;
             top: -10px;
@@ -3134,7 +3235,8 @@
             flex-direction: column;
             position: relative;
             z-index: 2;
-            min-width: 0; /* 防止文字溢出 */
+            min-width: 0;
+            /* 防止文字溢出 */
         }
 
         .showcase-meta {
@@ -3144,7 +3246,8 @@
         }
 
         .showcase-rating {
-            color: #ffb400; /* 金色星星 */
+            color: #ffb400;
+            /* 金色星星 */
             font-size: 0.9em;
             margin: 5px 0;
             letter-spacing: 1px;
@@ -3162,7 +3265,8 @@
             flex-wrap: wrap;
             gap: 6px;
             margin-top: auto;
-            width: 100%; /* 确保容器有明确宽度 */
+            width: 100%;
+            /* 确保容器有明确宽度 */
         }
 
         .showcase-tag {
@@ -3171,21 +3275,24 @@
             border-radius: 4px;
             background-color: rgba(127, 127, 127, 0.1);
             border: 1px solid rgba(127, 127, 127, 0.1);
-            
-            /* --- 核心修复 --- */
-            white-space: nowrap;   /* 强制文字不换行 */
-            flex-shrink: 0;        /* 禁止标签被压缩 */
-            display: inline-block; /* 增强稳定性 */
+            white-space: nowrap;
+            /* 强制文字不换行 */
+            flex-shrink: 0;
+            /* 禁止标签被压缩 */
+            display: inline-block;
+            /* 增强稳定性 */
         }
 
         /* --- 风格 1: 杂志 (Magazine) --- */
         .showcase-card[data-style="magazine"] {
-            overflow: visible; /* 允许封面破格 */
-            margin-bottom: 25px; /* 增加底部安全距离，防止遮挡下方内容 */
+            overflow: visible;
+            /* 允许封面破格 */
+            margin-bottom: 0px;
             position: relative;
-            z-index: 2; /* 确保破格部分在普通卡片之上 */
+            z-index: 2;
+            /* 确保破格部分在普通卡片之上 */
         }
-        
+
         .showcase-card[data-style="magazine"][data-layout="horizontal"] {
             flex-direction: row;
             align-items: flex-start;
@@ -3194,15 +3301,17 @@
 
         .showcase-card[data-style="magazine"] .showcase-cover {
             border-radius: 4px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
-            background-color: var(--card-bg-color, #fff); /* 防止透明背景导致穿帮 */
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+            background-color: var(--card-bg-color, #fff);
+            /* 防止透明背景导致穿帮 */
         }
 
         /* 杂志风：垂直布局时的封面处理 */
         .showcase-card[data-style="magazine"][data-layout="vertical"] .showcase-cover {
             width: calc(100% - 30px);
             height: 200px;
-            margin: -30px auto 15px auto; /* 破格向上 */
+            margin: -30px auto 15px auto;
+            /* 破格向上 */
             border-radius: 8px;
         }
 
@@ -3212,8 +3321,7 @@
             overflow-x: hidden;
             display: flex;
             flex-direction: column;
-            /* 关键修复：强制靠左，让元素从 x=0 开始渲染，防止 CSS 自动居中导致起始位置变成负数 */
-            align-items: flex-start !important; 
+            align-items: flex-start !important;
             justify-content: flex-start;
         }
 
@@ -3221,13 +3329,15 @@
             /* 强制锁定为 PC 端的标准宽度 */
             width: 600px !important;
             max-width: none !important;
-            
+
             /* 关键修改：基点设为左上角，位置完全由 JS 的 Translate 控制，防止 CSS 自动对齐造成的偏移 */
-            transform-origin: top left !important; 
-            
-            margin: 0 !important; /* 移除 auto margin，避免干扰计算 */
+            transform-origin: top left !important;
+
+            margin: 0 !important;
+            /* 移除 auto margin，避免干扰计算 */
             -webkit-font-smoothing: subpixel-antialiased;
-            position: relative; /* 确保定位准确 */
+            position: relative;
+            /* 确保定位准确 */
             left: 0;
         }
 
@@ -3237,27 +3347,30 @@
             height: 32px;
             font-size: 1.1rem;
         }
-        
+
         /* 确保预览容器允许内容溢出显示 (针对杂志风) */
         .preview-item-wrapper {
             overflow: visible !important;
-            isolation: isolate; /* 创建新的层叠上下文 */
+            isolation: isolate;
+            /* 创建新的层叠上下文 */
         }
 
         /* 杂志风：水平布局时的封面处理 */
         .showcase-card[data-style="magazine"][data-layout="horizontal"] .showcase-cover {
             width: 100px;
             height: 140px;
-            margin-top: -10px; /* 微微破格 */
+            margin-top: -10px;
+            /* 微微破格 */
             border-radius: 6px;
         }
 
         .showcase-card[data-style="magazine"] .showcase-comment {
             border-left: 3px solid var(--g-theme-accent, #007AFF);
             padding-left: 12px;
-            font-family: "Songti SC", "Noto Serif SC", serif; /* 衬线体 */
+            font-family: "Songti SC", "Noto Serif SC", serif;
+            /* 衬线体 */
             font-style: italic;
-            background: linear-gradient(90deg, rgba(127,127,127,0.05) 0%, rgba(127,127,127,0) 100%);
+            background: linear-gradient(90deg, rgba(127, 127, 127, 0.05) 0%, rgba(127, 127, 127, 0) 100%);
             padding: 10px 12px;
             border-radius: 0 8px 8px 0;
         }
@@ -3265,8 +3378,9 @@
         /* --- 风格 2: 海报 (Poster) --- */
         .showcase-card[data-style="poster"] {
             color: #ffffff !important;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
-            border: none !important; /* 海报模式不需要边框 */
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+            border: none !important;
+            /* 海报模式不需要边框 */
             justify-content: flex-end;
             overflow: hidden;
             border-radius: var(--g-comp-border-radius);
@@ -3276,12 +3390,16 @@
         .showcase-card[data-style="poster"]::before {
             content: '';
             position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
             background-image: var(--cover-url);
             background-size: cover;
             background-position: center;
             filter: blur(15px) brightness(0.6);
-            transform: scale(1.1); /* 消除模糊白边 */
+            transform: scale(1.1);
+            /* 消除模糊白边 */
             z-index: 0;
         }
 
@@ -3289,69 +3407,83 @@
             width: 80px;
             height: 80px;
             border-radius: 4px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
             margin-bottom: 15px;
-            border: 1px solid rgba(255,255,255,0.2);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
-        
+
         /* 海报模式强制改为底部布局，忽略水平设置，除非很宽 */
         .showcase-card[data-style="poster"] {
             padding: 25px;
         }
 
-        .showcase-card[data-style="poster"] .showcase-meta { opacity: 0.8; color: #eee; }
-        .showcase-card[data-style="poster"] .showcase-tag { 
-            background-color: rgba(255,255,255,0.2); 
-            border-color: rgba(255,255,255,0.3);
+        .showcase-card[data-style="poster"] .showcase-meta {
+            opacity: 0.8;
+            color: #eee;
+        }
+
+        .showcase-card[data-style="poster"] .showcase-tag {
+            background-color: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.3);
             color: white;
         }
 
         /* --- 风格 3: 票根 (Ticket) --- */
         .showcase-card[data-style="ticket"] {
             background-image: radial-gradient(circle at 0 50%, transparent 10px, var(--card-bg-color, var(--g-comp-bg-color)) 11px),
-                              radial-gradient(circle at 100% 50%, transparent 10px, var(--card-bg-color, var(--g-comp-bg-color)) 11px);
+                radial-gradient(circle at 100% 50%, transparent 10px, var(--card-bg-color, var(--g-comp-bg-color)) 11px);
             background-size: 51% 100%;
             background-position: 0 0, 100% 0;
             background-repeat: no-repeat;
-            padding: 20px 25px; /* 避开缺口 */
-            mask-image: none; /* 防止冲突 */
-            border-radius: 8px; /* 票根圆角一般较小 */
+            padding: 20px 25px;
+            /* 避开缺口 */
+            mask-image: none;
+            /* 防止冲突 */
+            border-radius: 8px;
+            /* 票根圆角一般较小 */
         }
-        
+
         /* 票根虚线分割 */
         .showcase-card[data-style="ticket"]::after {
             content: '';
             position: absolute;
-            top: 15px; bottom: 15px;
+            top: 15px;
+            bottom: 15px;
             left: 50%;
             width: 1px;
-            border-left: 2px dashed rgba(127,127,127,0.3);
+            border-left: 2px dashed rgba(127, 127, 127, 0.3);
             z-index: 1;
         }
 
         .showcase-card[data-style="ticket"] .showcase-info {
-            font-family: "Courier New", monospace; /* 等宽字体 */
+            font-family: "Courier New", monospace;
+            /* 等宽字体 */
         }
-        
+
         .showcase-card[data-style="ticket"] .showcase-cover {
             width: 100%;
             height: 150px;
             margin-bottom: 15px;
             border-radius: 4px;
-            filter: grayscale(0.2); /* 复古感 */
+            filter: grayscale(0.2);
+            /* 复古感 */
         }
-        
+
         /* 票根布局调整：垂直 */
         .showcase-card[data-style="ticket"] {
             display: flex;
             flex-direction: column;
         }
+
         .showcase-card[data-style="ticket"]::after {
             /* 垂直模式改为横向虚线 */
-            top: auto; left: 15px; right: 15px; bottom: 90px;
-            width: auto; height: 1px;
+            top: auto;
+            left: 15px;
+            right: 15px;
+            bottom: 90px;
+            width: auto;
+            height: 1px;
             border-left: none;
-            border-top: 2px dashed rgba(127,127,127,0.3);
+            border-top: 2px dashed rgba(127, 127, 127, 0.3);
         }
-        
     
