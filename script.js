@@ -169,7 +169,7 @@
              * @type {object}
              */
             const App = {
-                version: '2.0.1',
+                version: '2.0.2',
                 pixabayApiKey: '53274475-6295c67fa26c85aa8b2331ee7',
                 db: null, // 数据库实例
                 isStorageFull: false, // 标记浏览器存储空间是否已满
@@ -217,6 +217,15 @@
 
                     this.debouncedApplySmartPalette = this.debounce(this.applySmartPalette, 200);
 
+                    // 初始化 ResizeObserver 用于高性能布局监控
+                    this.resizeObserver = new ResizeObserver(this.debounce((entries) => {
+                        if (this.state.systemSettings.masonryEnabled) {
+                            this.applyGridCompactLayout();
+                        }
+                        // 无论是否紧凑模式，内容高度变化都需要重新计算手机端的缩放边距
+                        this.applyMobileFullView();
+                    }, 50));
+
                     this.initDB().then(async () => {
                         this.bindCoreEvents();
                         this.bindPreviewEvents();
@@ -240,6 +249,7 @@
                             this.bindEditorEvents();
                             this.initResizer();
                             this.initAllSortables();
+                            this.applyMobileFullView(); // 初始化时应用手机端缩放
                         }, 0);
 
                         const lastVisitedVersion = localStorage.getItem('blokkoLastVersion');
@@ -952,7 +962,7 @@
                         if (target.matches('.image-upload-input')) {
                             const itemEl = target.closest('.editor-item');
                             if (itemEl) {
-                                this.handleImageGalleryUpload(itemEl.dataset.itemId, e.target.files);
+                                this.handleImageGalleryUpload(e.target.files, itemEl.dataset.itemId);
                             }
                         }
                         if (target.matches('#music-cover-upload')) {
@@ -981,13 +991,9 @@
                                 this.elements.body.classList.toggle('mobile-export-preview-mode', target.checked);
                                 if (target.checked) {
                                     this.elements.body.classList.remove('mobile-wide-export-preview');
-                                    hdExportToggle.checked = false;
                                     customWidthToggle.checked = false;
                                     customWidthInput.disabled = true;
                                     customHeightInput.disabled = true;
-                                    lockRatioToggle.disabled = true;
-                                } else if (!customWidthToggle.checked) {
-                                    lockRatioToggle.disabled = false;
                                 }
                                 this.updatePreviewAspectRatio();
                             } else if (target.id === 'custom-width-toggle') {
@@ -1013,10 +1019,6 @@
                                     customWidthInput.disabled = true;
                                     customHeightInput.disabled = true;
                                     lockRatioToggle.disabled = true;
-                                    mobileExportToggle.checked = false;
-                                    this.elements.body.classList.remove('mobile-export-preview-mode');
-                                } else {
-                                    lockRatioToggle.disabled = !customWidthToggle.checked;
                                 }
                                 this.updatePreviewAspectRatio();
                             }
@@ -1262,10 +1264,18 @@
                             e.preventDefault();
                             e.stopPropagation();
                             const target = pencil.parentElement;
+                            // 支持卡片富文本编辑
                             if (target.matches('.preview-card-content[data-item-key="content"]')) {
                                 this.showRichTextEditor(target);
-                            } else if (target.closest('[data-state-key], [data-item-key], [data-tag-text-id], [data-separator-text-key]')) {
+                            } 
+                            // 核心修复：支持时间轴内容和其他普通文本的内联编辑
+                            else if (target.closest('[data-state-key], [data-item-key], [data-tag-text-id], [data-separator-text-key], [data-card-key]')) {
                                 this.triggerInlineEdit(target);
+                                // 顺便选中该模块，打开检查器
+                                const itemWrapper = target.closest('.preview-item-wrapper');
+                                if (itemWrapper && this.selection.id !== itemWrapper.dataset.itemId) {
+                                    this.setSelection({ type: 'item', id: itemWrapper.dataset.itemId });
+                                }
                             }
                             return;
                         }
@@ -1276,9 +1286,7 @@
                             }
                             setTimeout(() => {
                                 const avatarUploadInput = this.elements.inspectorPanel.querySelector('#avatar-upload');
-                                if (avatarUploadInput) {
-                                    avatarUploadInput.click();
-                                }
+                                if (avatarUploadInput) avatarUploadInput.click();
                             }, 50);
                             return;
                         }
@@ -1310,7 +1318,8 @@
                             return;
                         }
 
-                        const target = e.target.closest('[data-state-key], [data-item-key], [data-tag-text-id], [data-separator-text-key]');
+                        // 核心修复：双击也支持时间轴子元素 [data-card-key]
+                        const target = e.target.closest('[data-state-key], [data-item-key], [data-tag-text-id], [data-separator-text-key], [data-card-key]');
                         if (target) {
                             this.triggerInlineEdit(target);
                         }
@@ -1322,6 +1331,7 @@
                             const stateKey = target.dataset.stateKey;
                             const itemKey = target.dataset.itemKey;
                             const tagId = target.dataset.tagTextId;
+                            const cardKey = target.dataset.cardKey; // 获取时间轴子元素key
                             const value = target.innerText;
 
                             const updateStateObject = (path, val) => {
@@ -1339,7 +1349,7 @@
                                 if (itemEl) {
                                     const item = this.findItem(itemEl.dataset.itemId);
                                     if (item) item[itemKey] = value;
-
+                                    // 同步右侧输入框
                                     const editorInput = this.elements.inspectorPanel.querySelector(`[data-item-id="${itemEl.dataset.itemId}"] [data-item-key="${itemKey}"]`);
                                     if (editorInput) editorInput.value = value;
                                     this.renderLayerPanel();
@@ -1350,6 +1360,14 @@
                                     tag.text = value;
                                     const inspectorInput = this.elements.inspectorPanel.querySelector(`.tag-manager-item[data-tag-id="${tagId}"] .tag-text-input`);
                                     if (inspectorInput) inspectorInput.value = value;
+                                }
+                            } 
+                            // 核心修复：处理时间轴子元素的输入保存
+                            else if (cardKey) {
+                                const itemEl = target.closest('.preview-item-wrapper');
+                                const eventEl = target.closest('.timeline-event');
+                                if (itemEl && eventEl) {
+                                    this.updateTimelineCard(itemEl.dataset.itemId, eventEl.dataset.cardId, cardKey, value, false);
                                 }
                             }
                         }
@@ -1485,6 +1503,7 @@
                             this.applyGridCompactLayout();
                         }
                         this.updateExportSizePreview();
+                        this.applyMobileFullView(); // 窗口大小改变时重新计算缩放
                     }, 200));
                 },
 
@@ -1938,7 +1957,7 @@
     </div>
 </fieldset>
                         <fieldset class="editor-section" id="global-border-section">
-                            <legend>🖼️ 全局边框&影音样式</legend>
+                            <legend>🖼️ 全局边框&阴影样式</legend>
                             <div class="section-content">
                                 <h4>1. 定义边框风格</h4>
                                 <div class="form-group"><label>样式:</label><select data-state-key="globalBorderSettings.style"><option value="none">无</option><option value="solid">实线</option><option value="dashed">虚线</option><option value="dotted">点状</option><option value="pixel">像素</option><option value="neo-brutalism">新丑</option><option value="double-offset">双层</option></select></div>
@@ -2021,6 +2040,16 @@
                              <legend>⚙️ 核心操作</legend>
                              <div class="section-content">
                                  <div class="form-group">
+                                     <label>快速主题预设:</label>
+                                     <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;">
+                                         <button class="btn btn-default" data-preset="light" title="明亮">明亮</button>
+                                         <button class="btn btn-default" data-preset="dark" title="暗黑">暗黑</button>
+                                         <button class="btn btn-default" data-preset="mint" title="薄荷">薄荷</button>
+                                         <button class="btn btn-default" data-preset="coffee" title="咖啡">咖啡</button>
+                                     </div>
+                                 </div>
+                                 <hr class="separator">
+                                 <div class="form-group">
                                      <div class="input-group" style="display: flex; gap: 0;">
                                          <button id="random-palette-btn" class="btn btn-default" style="flex: 1; border-radius: 6px 0 0 6px; border-right: none;">🎲 随机</button>
                                          <button id="smart-palette-btn" class="btn btn-secondary" style="flex: 1.5; border-radius: 0 6px 6px 0;">🎨 自选生成</button>
@@ -2054,7 +2083,7 @@
                                     <input type="text" data-state-key="systemSettings.exportFilePrefix">
                                  </div>
                                  <div id="mobile-simulation-controls">
-                                     <div class="checkbox-group for-desktop-only" style="margin-bottom: 10px;"><label><input type="checkbox" id="mobile-export-toggle"> 手机端导出预览</label></div>
+                                     <div class="checkbox-group" style="margin-bottom: 10px;"><label><input type="checkbox" id="mobile-export-toggle"> 手机端导出预览/窄体预览</label></div>
                                  </div>
                                  <div class="checkbox-group" style="margin-bottom: 10px;"><label><input type="checkbox" id="hd-export-toggle"> 超清导出 (1800px)</label></div>
                                  <div class="checkbox-group" style="margin-bottom: 10px;"><label><input type="checkbox" id="custom-width-toggle"> 自定义尺寸</label></div>
@@ -2116,10 +2145,10 @@
                         <div class="form-group">
                             <label>布局宽度:</label>
                             <div class="radio-group">
-                                <label><input type="radio" data-item-key="layout.width" name="item-layout-${item.id}" value="100" ${item.layout.width === 100 ? 'checked' : ''}> 100%</label>
-                                <label><input type="radio" data-item-key="layout.width" name="item-layout-${item.id}" value="67" ${item.layout.width === 67 ? 'checked' : ''}> 67%</label>
-                                <label><input type="radio" data-item-key="layout.width" name="item-layout-${item.id}" value="50" ${item.layout.width === 50 ? 'checked' : ''}> 50%</label>
-                                <label><input type="radio" data-item-key="layout.width" name="item-layout-${item.id}" value="33" ${item.layout.width === 33 ? 'checked' : ''}> 33%</label>
+                                <label><input type="radio" data-item-key="layout.width" name="item-layout-${item.id}" value="100" ${item.layout.width == 100 ? 'checked' : ''}> 100%</label>
+                                <label><input type="radio" data-item-key="layout.width" name="item-layout-${item.id}" value="67" ${item.layout.width == 67 ? 'checked' : ''}> 67%</label>
+                                <label><input type="radio" data-item-key="layout.width" name="item-layout-${item.id}" value="50" ${item.layout.width == 50 ? 'checked' : ''}> 50%</label>
+                                <label><input type="radio" data-item-key="layout.width" name="item-layout-${item.id}" value="33" ${item.layout.width == 33 ? 'checked' : ''}> 33%</label>
                             </div>
                         </div>
                     `;
@@ -2156,6 +2185,11 @@
                             </div>
                             <div class="rich-text-editor-trigger"><div class="rich-text-preview">${contentPreview}</div></div>
                         </div>
+                        <div class="form-group"><label>文字方向:</label><div class="radio-group">
+                            <label><input type="radio" name="card-${item.id}-dir" value="horizontal-tb" data-item-key="writingMode" ${item.writingMode !== 'vertical-rl' ? 'checked' : ''}> 横排</label>
+                            <label><input type="radio" name="card-${item.id}-dir" value="vertical-rl" data-item-key="writingMode" ${item.writingMode === 'vertical-rl' ? 'checked' : ''}> 竖排</label>
+                        </div></div>
+
                         <div class="form-group"><label>对齐:</label><div class="radio-group">
                             <label><input type="radio" name="card-${item.id}-align" value="" data-item-key="textAlign" ${!['left', 'center', 'right'].includes(item.textAlign) ? 'checked' : ''}>默认</label>
                             <label><input type="radio" name="card-${item.id}-align" value="left" data-item-key="textAlign" ${item.textAlign === 'left' ? 'checked' : ''}>左</label>
@@ -2277,6 +2311,12 @@
 
                 createProgressEditorHTML(item) {
                     return `
+                        <div class="form-group"><label>样式:</label>
+                            <div class="radio-group">
+                                <label><input type="radio" name="prog-style-${item.id}" value="linear" data-item-key="style" ${item.style !== 'circular' ? 'checked' : ''}> 条形 (Linear)</label>
+                                <label><input type="radio" name="prog-style-${item.id}" value="circular" data-item-key="style" ${item.style === 'circular' ? 'checked' : ''}> 环形 (Circular)</label>
+                            </div>
+                        </div>
                         <div class="form-group"><label>标签:</label><input type="text" data-item-key="label" value="${this.escapeHTML(item.label)}"></div>
                         <div class="form-group"><label>百分比: <span class="progress-value">${item.percentage}</span>%</label><div class="input-group simple stepper-group"><button class="btn btn-default btn-stepper minus">-</button><input type="range" data-item-key="percentage" min="0" max="100" step="1" value="${item.percentage}"><button class="btn btn-default btn-stepper plus">+</button></div></div>
                         <div class="color-control-row">
@@ -2782,12 +2822,11 @@
                 },
 
                 createPreviewProgressHTML(item) {
-                    const h = item.thickness || 8;
                     const g = this.state.globalComponentStyles;
-
+                    
+                    // 背景色处理
                     const rawBg = item.bgColor || 'transparent';
                     let finalBgColor = 'transparent';
-
                     if (item.bgColor) {
                         const finalOpacity = (item.opacity !== undefined && item.opacity !== '') ? item.opacity : g.opacity;
                         finalBgColor = this.hexToRgba(rawBg, finalOpacity);
@@ -2796,12 +2835,39 @@
                     const textColor = item.textColor || g.textColor;
                     const radius = (item.radius !== undefined && item.radius !== '') ? item.radius : (item.bgColor ? g.radius : 0);
                     const padding = (item.padding !== undefined && item.padding !== '') ? item.padding : 0;
+                    const bgStyle = `background-color: ${finalBgColor}; padding: ${padding}px; border-radius: ${radius}px; color: ${textColor};`;
 
-                    const bgStyle = `background-color: ${finalBgColor}; padding: ${padding}px; border-radius: ${radius}px;`;
+                    // --- 环形样式 ---
+                    if (item.style === 'circular') {
+                        const size = 120; // 环形默认大小
+                        const strokeWidth = item.thickness || 8;
+                        const r = (size - strokeWidth) / 2;
+                        const circumference = 2 * Math.PI * r;
+                        const offset = circumference - (item.percentage / 100) * circumference;
+                        const trackColor = item.trackColor || '#eeeeee';
+                        const progressColor = item.color || g.primary;
 
+                        return `
+                        <div class="progress-bar-preview circular" style="${bgStyle} display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+                            <div style="position: relative; width: ${size}px; height: ${size}px;">
+                                <svg width="${size}" height="${size}" style="transform: rotate(-90deg);">
+                                    <circle cx="${size/2}" cy="${size/2}" r="${r}" stroke="${trackColor}" stroke-width="${strokeWidth}" fill="none"></circle>
+                                    <circle cx="${size/2}" cy="${size/2}" r="${r}" stroke="${progressColor}" stroke-width="${strokeWidth}" fill="none" 
+                                            style="stroke-dasharray: ${circumference}; stroke-dashoffset: ${offset}; transition: stroke-dashoffset 0.5s ease; stroke-linecap: round;"></circle>
+                                </svg>
+                                <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 1.2em; font-weight: bold;">
+                                    ${item.percentage}%
+                                </div>
+                            </div>
+                            <div class="progress-bar-label" data-item-key="label" style="margin-top: 10px; font-weight: 600;">${this.escapeHTML(item.label)}</div>
+                        </div>`;
+                    }
+
+                    // --- 默认条形样式 ---
+                    const h = item.thickness || 8;
                     return `
                         <div class="progress-bar-preview" style="${bgStyle}">
-                            <div class="progress-bar-header" style="color: ${textColor};">
+                            <div class="progress-bar-header">
                                 <span class="progress-bar-label" data-item-key="label">${this.escapeHTML(item.label)}</span>
                                 <span class="progress-bar-value">${item.percentage}%</span>
                             </div>
@@ -3186,45 +3252,7 @@
                     this.handleImageUpload(event, 'cardBg', { itemId, oldImageUrl: item?.bgImageDataUrl });
                 },
 
-                async handleImageGalleryUpload(itemId, files) {
-                    if (!files.length) return;
-                    this.showLoading(`正在上传 ${files.length} 张图片...`);
-
-                    const successItems = [];
-                    const failedFiles = [];
-
-                    const results = await Promise.allSettled(Array.from(files).map(async file => {
-                        const objectUrl = URL.createObjectURL(file);
-                        const compressedUrl = await this.compressImage(objectUrl, 0.9, 1200, file.type);
-                        const blob = this.dataURLToBlob(compressedUrl);
-                        const imageId = this.generateId('img');
-                        await this.saveImageToDB({ id: imageId, blob });
-                        return { id: this.generateId('i'), type: 'image', isVisible: true, url: `idb://${imageId}`, title: '', description: '', imageFillMode: 'cover', layout: { width: 50 } };
-                    }));
-
-                    results.forEach((result, index) => {
-                        if (result.status === 'fulfilled') {
-                            successItems.push(result.value);
-                        } else {
-                            failedFiles.push(files[index].name);
-                            console.error(`处理文件 ${files[index].name} 失败:`, result.reason);
-                        }
-                    });
-
-                    if (successItems.length > 0) {
-                        this.pushHistory(`添加 ${successItems.length} 张图片`);
-                        const insertIndex = this.findItemIndex(itemId) + 1;
-                        this.state.items.splice(insertIndex, 0, ...successItems);
-                        this.debouncedSaveToLocal();
-                    }
-
-                    this.renderAll();
-                    this.hideLoading();
-
-                    if (failedFiles.length > 0) {
-                        this.showErrorModal('部分图片上传失败', `以下文件未能成功上传: ${failedFiles.join(', ')}`);
-                    }
-                },
+                
 
                 /**
                  * @description 从本地存储 (localStorage 和 IndexedDB) 加载应用状态。
@@ -3615,8 +3643,8 @@
                     }
                 },
 
-                async handleImageGalleryUpload(files) {
-                    if (!files.length) return;
+                async handleImageGalleryUpload(files, itemId = null) {
+                    if (!files || !files.length) return;
                     this.showLoading(`正在上传 ${files.length} 张图片...`);
 
                     const successItems = [];
@@ -3636,7 +3664,7 @@
                             title: '',
                             description: '',
                             imageFillMode: 'cover',
-                            layout: { width: 50 } // 默认50%宽度，可以自己调整
+                            layout: { width: 50 }
                         };
                     }));
 
@@ -3651,9 +3679,12 @@
 
                     if (successItems.length > 0) {
                         this.pushHistory(`添加 ${successItems.length} 张图片`);
-
-                        const currentSelectionIndex = this.selection.id ? this.findItemIndex(this.selection.id) : -1;
-                        const insertIndex = currentSelectionIndex > -1 ? currentSelectionIndex + 1 : this.state.items.length;
+                        
+                        let insertIndex = this.state.items.length;
+                        if (itemId) {
+                            const foundIndex = this.findItemIndex(itemId);
+                            if (foundIndex > -1) insertIndex = foundIndex + 1;
+                        }
 
                         this.state.items.splice(insertIndex, 0, ...successItems);
                         this.debouncedSaveToLocal();
@@ -4404,7 +4435,7 @@
                         await processObject(stateClone);
 
                         zip.file("config.json", JSON.stringify(stateClone, null, 2));
-                        zip.file("readme.txt", `Blokko 强化导出备份\n版本: 2.0.1\n导出时间: ${new Date().toLocaleString()}\n\n此 .zip 文件包含了您的配置文件 (config.json) 和所有图片资源 (images/ 文件夹)。`);
+                        zip.file("readme.txt", `Blokko 强化导出备份\n版本: 2.0.2\n导出时间: ${new Date().toLocaleString()}\n\n此 .zip 文件包含了您的配置文件 (config.json) 和所有图片资源 (images/ 文件夹)。`);
 
                         const blob = await zip.generateAsync({ type: "blob" });
                         const filename = this.generateFilename('Enhanced-Backup') + '.zip';
@@ -4620,82 +4651,100 @@
 
                     this.showLoading('正在准备导出...');
                     const sourceElement = this.elements.previewWrapper;
-
-                    // 1. 计算目标尺寸和缩放比例
                     const panel = this.elements.inspectorPanel;
                     const s = this.state.exportSettings;
-                    const isMobileExport = panel.querySelector('#mobile-export-toggle').checked;
+
+                    // 1. 确定导出尺寸
                     const isCustomWidth = panel.querySelector('#custom-width-toggle').checked;
                     const isHD = panel.querySelector('#hd-export-toggle').checked;
+                    const isMobile = panel.querySelector('#mobile-export-toggle').checked; // 获取手机模式状态
+                    
+                    let exportWidth = 1200; // 默认为 PC 标准宽
 
-                    const rect = sourceElement.getBoundingClientRect();
-                    const osWidth = sourceElement.offsetWidth;
+                    if (isCustomWidth) {
+                        exportWidth = s.customWidth;
+                    } else if (isMobile) {
+                        // [修改] 如果是手机模式：默认1200，如果是HD则1800
+                        exportWidth = isHD ? 1800 : 1200; 
+                    } else if (isHD) {
+                        exportWidth = 1800;
+                    }
+
+                    // 2. 获取原始无缩放的尺寸 (暂存 transform)
+                    const originalTransform = sourceElement.style.transform;
+                    sourceElement.style.transform = 'none'; 
+                    const osWidth = sourceElement.offsetWidth; 
                     const osHeight = sourceElement.offsetHeight;
-                    const osRatio = osHeight > 0 && osWidth > 0 ? osHeight / osWidth : 1.5;
+                    sourceElement.style.transform = originalTransform; // 立即恢复，避免闪烁
 
-                    let targetWidth = 1200;
-                    if (isMobileExport) targetWidth = 1200;
-                    else if (isHD) targetWidth = 1800;
-                    else if (isCustomWidth) targetWidth = s.customWidth;
+                    const aspectRatio = osHeight / osWidth;
+                    let exportHeight = Math.round(exportWidth * aspectRatio);
+                    if (isCustomWidth && !s.lockAspectRatio) exportHeight = s.customHeight;
 
-                    let targetHeight = Math.round(targetWidth * osRatio);
-                    if (isCustomWidth && !s.lockAspectRatio) targetHeight = s.customHeight;
+                    const scaleFactor = exportWidth / osWidth;
 
-                    const scaleFactor = targetWidth / osWidth;
+                    // 创建沙盒容器 (防止克隆体影响页面布局)
+                    const sandbox = document.createElement('div');
+                    sandbox.id = 'export-sandbox';
+                    // 放在屏幕左上角，但在视口外，保证渲染引擎优先级
+                    sandbox.style.cssText = 'position: absolute; top: -9999px; left: 0; overflow: hidden;';
+                    document.body.appendChild(sandbox);
 
                     let clone = null;
 
                     try {
-                        // 新增：在开始导出过程时，为body添加一个类来隐藏辅助元素
                         document.body.classList.add('export-mode');
 
-                        // 2. 创建克隆体
+                        // 3. 创建克隆
                         clone = sourceElement.cloneNode(true);
                         clone.id = "export-clone-container";
-
-                        // --- 关键修复：移除所有铅笔图标 ---
                         clone.querySelectorAll('.mobile-edit-pencil').forEach(el => el.remove());
 
-                        // --- 布局修复样式 ---
-                        clone.style.position = 'absolute';
-                        clone.style.left = '-9999px';
-                        clone.style.top = '0px';
-                        clone.style.margin = '0';
-                        clone.style.transform = 'none';
-                        clone.style.boxShadow = 'none';
-                        clone.style.width = `${osWidth}px`;
-                        clone.style.height = `${osHeight}px`;
-                        clone.style.boxSizing = 'border-box';
+                        // 4. 【关键修复】强制样式重置
+                        clone.style.cssText = `
+                            width: ${osWidth}px !important;
+                            height: ${osHeight}px !important;
+                            margin: 0 !important;
+                            transform: none !important;
+                            box-sizing: border-box;
+                            background-color: ${getComputedStyle(sourceElement).backgroundColor};
+                            background-image: ${getComputedStyle(sourceElement).backgroundImage};
+                            border-radius: 0 !important;
+                            /* 确保内容可见 */
+                            opacity: 1 !important;
+                            visibility: visible !important;
+                            display: block !important;
+                        `;
 
-                        document.body.appendChild(clone);
+                        // 5. 【关键修复】注入全局样式，强制禁止动画和过渡
+                        // 这解决了"个人信息区域丢失"的问题（因为它有 fadeIn 动画）
+                        const animationKiller = document.createElement('style');
+                        animationKiller.innerHTML = `
+                            #export-clone-container * {
+                                transition: none !important;
+                                animation: none !important;
+                                opacity: 1 !important; /* 强制显示可能因动画隐藏的元素 */
+                            }
+                            /* 修复书影音标签错位：强制 flex 布局稳定 */
+                            #export-clone-container .showcase-tags {
+                                display: flex !important;
+                                flex-wrap: wrap !important;
+                                width: 100% !important;
+                            }
+                        `;
+                        clone.appendChild(animationKiller);
 
-                        const styleReset = document.createElement('style');
-                        styleReset.innerHTML = `
-            #export-clone-container, #export-clone-container * { 
-                transition: none !important; 
-                animation: none !important; 
-                view-transition-name: none !important;
-            }
-            #export-clone-container {
-                width: ${osWidth}px !important;
-                margin: 0 !important;
-                transform: none !important;
-            }
-        `;
-                        clone.appendChild(styleReset);
+                        sandbox.appendChild(clone);
 
-                        // 3. 内联图片数据
+                        // 6. 图片内联处理 (保持原逻辑)
                         this.showLoading('正在内联图片数据...');
                         const imagePromises = [];
-
                         const inlineImageSrc = async (url) => {
                             if (url && url.startsWith('idb://')) {
                                 try {
                                     const imageId = url.substring(6);
                                     const record = await this.getImageFromDB(imageId);
-                                    if (record && record.blob) {
-                                        return await this.blobToDataURL(record.blob);
-                                    }
+                                    if (record && record.blob) return await this.blobToDataURL(record.blob);
                                 } catch (e) { console.error(`无法内联图片 ${url}:`, e); }
                             }
                             return url;
@@ -4704,52 +4753,34 @@
                         clone.querySelectorAll('img').forEach(img => {
                             const originalImg = Array.from(sourceElement.querySelectorAll('img')).find(orig => orig.src === img.src) || img;
                             const itemEl = originalImg.closest('.preview-item-wrapper, .preview-header');
-
                             let dataUrlKey;
-                            if (itemEl && itemEl.id === 'preview-header') {
-                                dataUrlKey = this.state.personalInfo.avatarDataUrl;
-                            } else if (itemEl) {
-                                const itemId = itemEl.dataset.itemId;
-                                const item = this.findItem(itemId);
+                            if (itemEl && itemEl.id === 'preview-header') dataUrlKey = this.state.personalInfo.avatarDataUrl;
+                            else if (itemEl) {
+                                const item = this.findItem(itemEl.dataset.itemId);
                                 if (item) dataUrlKey = item.url || item.coverArt;
                             }
-
                             if (dataUrlKey && dataUrlKey.startsWith('idb://')) {
-                                const promise = inlineImageSrc(dataUrlKey).then(dataUrl => {
-                                    if (dataUrl) img.src = dataUrl;
-                                });
-                                imagePromises.push(promise);
+                                imagePromises.push(inlineImageSrc(dataUrlKey).then(u => { if(u) img.src = u; }));
                             }
                         });
-
-                        const elementsWithBg = [
-                            { el: clone, url: this.state.pageStyles.pageBgImageDataUrl },
-                            { el: clone.querySelector('.preview-header'), url: null },
-                        ];
+                        
+                        const elementsWithBg = [{ el: clone, url: this.state.pageStyles.pageBgImageDataUrl }];
                         clone.querySelectorAll('.preview-card-inner').forEach(cardInner => {
                             const itemId = cardInner.closest('.preview-item-wrapper').dataset.itemId;
                             const item = this.findItem(itemId);
-                            if (item && item.bgImageDataUrl) {
-                                elementsWithBg.push({ el: cardInner, url: item.bgImageDataUrl });
-                            }
+                            if (item && item.bgImageDataUrl) elementsWithBg.push({ el: cardInner, url: item.bgImageDataUrl });
                         });
-
                         elementsWithBg.forEach(({ el, url }) => {
                             if (el && url && url.startsWith('idb://')) {
-                                const promise = inlineImageSrc(url).then(dataUrl => {
-                                    if (dataUrl) {
-                                        const currentBg = window.getComputedStyle(el).backgroundImage;
-                                        const newBg = `url("${dataUrl}")`;
-                                        el.style.backgroundImage = currentBg.replace(/url\(.+\)/, newBg);
-                                    }
-                                });
-                                imagePromises.push(promise);
+                                imagePromises.push(inlineImageSrc(url).then(u => { 
+                                    if(u) el.style.backgroundImage = getComputedStyle(el).backgroundImage.replace(/url\(.+\)/, `url("${u}")`); 
+                                }));
                             }
                         });
 
                         await Promise.all(imagePromises);
 
-                        // 4. 处理水印
+                        // 7. 水印处理
                         if (panel.querySelector('#export-attribution-toggle').checked) {
                             const attr = this.state.pageStyles.pageBgImageAttribution;
                             let attrHTML = attr && attr.user ? `Photo by ${this.escapeHTML(attr.user)} / ` : '';
@@ -4762,10 +4793,10 @@
 
                         this.showLoading('正在高保真渲染...');
 
-                        // 5. 高清生成配置
-                        const options = {
-                            width: targetWidth,
-                            height: targetHeight,
+                        // 8. Dom-to-image 配置
+                        const domOptions = {
+                            width: exportWidth,
+                            height: exportHeight,
                             style: {
                                 transform: `scale(${scaleFactor})`,
                                 transformOrigin: 'top left',
@@ -4777,40 +4808,35 @@
                             cacheBust: true,
                         };
 
-                        // 6. 生成截图
-                        const dataUrl = await domtoimage.toPng(clone, options);
-
+                        const dataUrl = await domtoimage.toPng(clone, domOptions);
                         let finalDataUrl = dataUrl;
+
+                        // 9. 圆角裁切
                         const exportRounded = panel.querySelector('#export-rounded-corners-toggle').checked;
                         const cornerRadius = parseInt(panel.querySelector('#export-corner-radius-input').value, 10) || 20;
 
-                        // 7. 如果需要圆角
                         if (exportRounded && cornerRadius > 0) {
                             this.showLoading('应用圆角...');
                             const finalCanvas = document.createElement('canvas');
-                            finalCanvas.width = targetWidth;
-                            finalCanvas.height = targetHeight;
+                            finalCanvas.width = exportWidth;
+                            finalCanvas.height = exportHeight;
                             const ctx = finalCanvas.getContext('2d');
                             const img = new Image();
-
                             await new Promise(resolve => { img.onload = resolve; img.src = dataUrl; });
-
+                            
                             const r = cornerRadius * scaleFactor;
-
                             ctx.beginPath();
                             ctx.moveTo(r, 0);
-                            ctx.lineTo(targetWidth - r, 0); ctx.arcTo(targetWidth, 0, targetWidth, r, r);
-                            ctx.lineTo(targetWidth, targetHeight - r); ctx.arcTo(targetWidth, targetHeight, targetWidth - r, targetHeight, r);
-                            ctx.lineTo(r, targetHeight); ctx.arcTo(0, targetHeight, 0, targetHeight - r, r);
+                            ctx.lineTo(exportWidth - r, 0); ctx.arcTo(exportWidth, 0, exportWidth, r, r);
+                            ctx.lineTo(exportWidth, exportHeight - r); ctx.arcTo(exportWidth, exportHeight, exportWidth - r, exportHeight, r);
+                            ctx.lineTo(r, exportHeight); ctx.arcTo(0, exportHeight, 0, exportHeight - r, r);
                             ctx.lineTo(0, r); ctx.arcTo(0, 0, r, 0, r);
                             ctx.closePath();
                             ctx.clip();
-
                             ctx.drawImage(img, 0, 0);
                             finalDataUrl = finalCanvas.toDataURL('image/png');
                         }
 
-                        // 8. 显示下载
                         const filename = this.generateFilename('Image') + '.png';
                         this.hideLoading();
                         this.showDownloadModal(finalDataUrl, filename, '图片已生成');
@@ -4820,10 +4846,13 @@
                         this.hideLoading();
                         this.showErrorModal('导出失败', `生成图片时发生错误：${err.message}.`);
                     } finally {
-                        if (clone && clone.parentNode) clone.parentNode.removeChild(clone);
+                        // 清理沙盒
+                        if (sandbox && sandbox.parentNode) sandbox.parentNode.removeChild(sandbox);
                         document.body.classList.remove('export-mode');
                     }
-                }, updateAttributionLink() {
+                },
+                                
+                updateAttributionLink() {
                     const wrapper = this.elements.inspectorPanel.querySelector('#attribution-link-wrapper');
                     if (!wrapper) return;
 
@@ -4871,12 +4900,13 @@
                     let targetWidth, targetHeight;
                     const originalAspectRatio = el.offsetHeight / el.offsetWidth;
 
-                    if (isMobileExport) {
-                        targetWidth = 1200;
-                        targetHeight = Math.round(targetWidth * originalAspectRatio);
-                    } else if (isCustomWidth) {
+                    if (isCustomWidth) {
                         targetWidth = s.customWidth;
                         targetHeight = s.lockAspectRatio ? Math.round(targetWidth * originalAspectRatio) : s.customHeight;
+                    } else if (isMobileExport) {
+                        // [修改] 预览提示逻辑：同时勾选时显示 HD 尺寸
+                        targetWidth = isHD ? 1800 : 1200;
+                        targetHeight = Math.round(targetWidth * originalAspectRatio);
                     } else if (isHD) {
                         targetWidth = 1800;
                         targetHeight = Math.round(targetWidth * originalAspectRatio);
@@ -4898,15 +4928,6 @@
                     }
                 },
 
-                arrayBufferToBase64(buffer) {
-                    return new Promise((resolve, reject) => {
-                        const blob = new Blob([buffer], { type: 'application/octet-stream' });
-                        const reader = new FileReader();
-                        reader.onload = e => resolve(e.target.result);
-                        reader.onerror = e => reject(e);
-                        reader.readAsDataURL(blob);
-                    });
-                },
                 base64ToArrayBuffer(base64) {
                     const binaryString = atob(base64.split(',')[1]);
                     const len = binaryString.length;
@@ -5528,53 +5549,83 @@
                 applyGridCompactLayout() {
                     const container = this.elements.previewItemsContainer;
                     if (!container || !this.state.systemSettings.masonryEnabled) {
-                        return; // 如果模式未开启，则直接退出
+                        return; 
                     }
 
-                    const gridRowHeight = 10; // 必须与 CSS 中的 grid-auto-rows 一致
+                    const gridRowHeight = 1; // 对应 CSS grid-auto-rows: 1px (为了更精确)
+                    // 确保 CSS 中设置了 grid-auto-rows: 1px，如果原代码是 1px 则这里保持 1
+                    
                     const gap = parseInt(this.state.systemSettings.previewGap || 20);
-
-                    const items = container.querySelectorAll('.preview-item-wrapper:not(.is-hidden)');
+                    const items = Array.from(container.querySelectorAll('.preview-item-wrapper:not(.is-hidden)'));
 
                     items.forEach(itemEl => {
+                        // 注册观察器：如果这个卡片高度变了（图片加载完），自动触发重排
+                        if (this.resizeObserver) this.resizeObserver.observe(itemEl);
+
                         const itemId = itemEl.dataset.itemId;
                         const itemData = this.findItem(itemId);
                         if (!itemData) return;
 
-                        // --- 核心修正 ---
-                        // 1. 立即设置列宽（grid-column），不再等待图片加载
+                        // 1. 设置列宽
                         const width = parseInt(itemData.layout.width, 10);
-                        let colSpan = 6; // 默认100% (6/6)
+                        let colSpan = 6; 
                         if (width === 67) colSpan = 4;
                         else if (width === 50) colSpan = 3;
                         else if (width === 33) colSpan = 2;
-                        itemEl.style.gridColumnEnd = `span ${colSpan}`;
+                        
+                        if (itemEl.style.gridColumnEnd !== `span ${colSpan}`) {
+                            itemEl.style.gridColumnEnd = `span ${colSpan}`;
+                        }
 
-                        // 2. 计算并设置行高（grid-row）
-                        // 为了确保高度计算准确，我们仍然可以等待图片加载，但这不再阻塞宽度的设置
-                        const images = Array.from(itemEl.querySelectorAll('img'));
-                        const imagePromises = images.map(img => {
-                            if (img.complete && img.naturalHeight !== 0) return Promise.resolve();
-                            return new Promise(resolve => { img.onload = img.onerror = resolve; });
-                        });
-
-                        const calculateAndSetHeight = () => {
-                            // 使用 getBoundingClientRect 获取渲染后的精确高度
-                            const contentHeight = itemEl.getBoundingClientRect().height;
-                            // 计算需要跨越的行数
-                            const rowSpan = Math.ceil((contentHeight + gap) / (gridRowHeight + gap));
-                            itemEl.style.gridRowEnd = `span ${rowSpan}`;
-                        };
-
-                        // 无论图片是否加载完成，都先进行一次初步的高度计算
-                        calculateAndSetHeight();
-
-                        // 当所有图片加载完成后，再进行一次精确的高度计算，以防布局跳动
-                        Promise.all(imagePromises).then(() => {
-                            // 延迟一帧，确保浏览器完成图片渲染
-                            requestAnimationFrame(calculateAndSetHeight);
-                        });
+                        // 2. 计算行高 (核心修复：使用 scrollHeight 获取真实占位高度)
+                        // 增加一点 buffer (gap) 避免因为像素取整导致的文字被切
+                        const contentHeight = itemEl.scrollHeight;
+                        const rowSpan = Math.ceil((contentHeight + gap) / (gridRowHeight + gap));
+                        
+                        const newRowStyle = `span ${rowSpan}`;
+                        if (itemEl.style.gridRowEnd !== newRowStyle) {
+                            itemEl.style.gridRowEnd = newRowStyle;
+                        }
                     });
+                },
+
+                /**
+                 * @description 手机端强制模拟 PC 布局 (视口缩放 + 绝对居中)
+                 */
+                applyMobileFullView() {
+                    const PC_BASE_WIDTH = 600; // 必须与 CSS 中的 width: 600px 保持一致
+                    const currentWidth = window.innerWidth;
+                    const wrapper = this.elements.previewWrapper;
+
+                    // 阈值判断：当屏幕小于 PC 基准宽 + 缓冲边距时
+                    if (currentWidth < (PC_BASE_WIDTH + 20)) {
+                        document.body.classList.add('mobile-full-view-mode');
+                        
+                        // 1. 计算缩放比例 (两侧总共留出 20px 边距，避免贴边)
+                        const scale = (currentWidth - 24) / PC_BASE_WIDTH;
+                        
+                        // 2. 核心修复：计算居中所需的左侧偏移量
+                        // 公式：(屏幕宽度 - (原宽 * 缩放比例)) / 2
+                        const scaledWidth = PC_BASE_WIDTH * scale;
+                        const leftOffset = (currentWidth - scaledWidth) / 2;
+
+                        // 3. 应用 缩放 + 位移
+                        wrapper.style.transform = `translateX(${leftOffset}px) scale(${scale})`;
+                        
+                        // 4. 修复高度：计算缩放后的视觉高度差，调整底部边距
+                        requestAnimationFrame(() => {
+                            const originalHeight = wrapper.offsetHeight;
+                            // 计算因缩放产生的下方空白区域高度
+                            const gap = originalHeight - (originalHeight * scale);
+                            wrapper.style.marginBottom = `-${gap}px`;
+                        });
+
+                    } else {
+                        // PC 端或宽屏，清除所有强制样式
+                        document.body.classList.remove('mobile-full-view-mode');
+                        wrapper.style.transform = '';
+                        wrapper.style.marginBottom = '';
+                    }
                 },
 
                 initLayerSortables() {
@@ -6791,7 +6842,8 @@
                     const isLocked = this.elements.previewItemsContainer.classList.contains('locked-mode');
                     if (isLocked) return;
 
-                    this.elements.previewWrapper.querySelectorAll('[data-state-key], [data-item-key], [data-separator-text-key], .tag-pill span[data-tag-id]').forEach(el => {
+                    // 核心修复：增加了 [data-card-key] 选择器，现在时间轴的具体内容上也会出现铅笔图标了
+                    this.elements.previewWrapper.querySelectorAll('[data-state-key], [data-item-key], [data-separator-text-key], [data-card-key], .tag-pill span[data-tag-id]').forEach(el => {
                         const pencil = document.createElement('div');
                         pencil.className = 'mobile-edit-pencil';
                         pencil.innerHTML = '<span class="iconify" data-icon="mdi:pencil"></span>';

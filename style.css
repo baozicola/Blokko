@@ -458,10 +458,9 @@
         }
 
         body.mobile-export-preview-mode .preview-wrapper {
-            width: 375px !important;
+            width: 500px !important; 
             margin: 0 auto;
-            transform: scale(calc(100vw / 390));
-            /* 动态适配手机宽度 */
+            transform: scale(calc(100vw / 420));
             transform-origin: top center;
         }
 
@@ -1801,7 +1800,12 @@
         .progress-bar-fill {
             height: 100%;
             border-radius: 4px;
-            transition: width 0.5s ease;
+            transition: width 0.5s ease, background-color 0.3s;
+        }
+        /* 环形进度条的标签样式 */
+        .progress-bar-preview.circular .progress-bar-label {
+            font-size: 0.95em;
+            opacity: 0.9;
         }
 
         /* 时间轴区块样式 */
@@ -3158,6 +3162,7 @@
             flex-wrap: wrap;
             gap: 6px;
             margin-top: auto;
+            width: 100%; /* 确保容器有明确宽度 */
         }
 
         .showcase-tag {
@@ -3166,11 +3171,19 @@
             border-radius: 4px;
             background-color: rgba(127, 127, 127, 0.1);
             border: 1px solid rgba(127, 127, 127, 0.1);
+            
+            /* --- 核心修复 --- */
+            white-space: nowrap;   /* 强制文字不换行 */
+            flex-shrink: 0;        /* 禁止标签被压缩 */
+            display: inline-block; /* 增强稳定性 */
         }
 
         /* --- 风格 1: 杂志 (Magazine) --- */
         .showcase-card[data-style="magazine"] {
             overflow: visible; /* 允许封面破格 */
+            margin-bottom: 25px; /* 增加底部安全距离，防止遮挡下方内容 */
+            position: relative;
+            z-index: 2; /* 确保破格部分在普通卡片之上 */
         }
         
         .showcase-card[data-style="magazine"][data-layout="horizontal"] {
@@ -3182,14 +3195,53 @@
         .showcase-card[data-style="magazine"] .showcase-cover {
             border-radius: 4px;
             box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            background-color: var(--card-bg-color, #fff); /* 防止透明背景导致穿帮 */
         }
 
         /* 杂志风：垂直布局时的封面处理 */
         .showcase-card[data-style="magazine"][data-layout="vertical"] .showcase-cover {
-            width: calc(100% - 40px);
+            width: calc(100% - 30px);
             height: 200px;
             margin: -30px auto 15px auto; /* 破格向上 */
             border-radius: 8px;
+        }
+
+        /* --- 手机端全尺寸视图模式 (Mobile Full View) --- */
+        body.mobile-full-view-mode .preview-panel {
+            padding: 20px 0 !important;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            /* 关键修复：强制靠左，让元素从 x=0 开始渲染，防止 CSS 自动居中导致起始位置变成负数 */
+            align-items: flex-start !important; 
+            justify-content: flex-start;
+        }
+
+        body.mobile-full-view-mode .preview-wrapper {
+            /* 强制锁定为 PC 端的标准宽度 */
+            width: 600px !important;
+            max-width: none !important;
+            
+            /* 关键修改：基点设为左上角，位置完全由 JS 的 Translate 控制，防止 CSS 自动对齐造成的偏移 */
+            transform-origin: top left !important; 
+            
+            margin: 0 !important; /* 移除 auto margin，避免干扰计算 */
+            -webkit-font-smoothing: subpixel-antialiased;
+            position: relative; /* 确保定位准确 */
+            left: 0;
+        }
+
+        /* 修正手机端铅笔图标在缩放模式下的大小 */
+        body.mobile-full-view-mode .mobile-edit-pencil {
+            width: 32px;
+            height: 32px;
+            font-size: 1.1rem;
+        }
+        
+        /* 确保预览容器允许内容溢出显示 (针对杂志风) */
+        .preview-item-wrapper {
+            overflow: visible !important;
+            isolation: isolate; /* 创建新的层叠上下文 */
         }
 
         /* 杂志风：水平布局时的封面处理 */
@@ -3301,4 +3353,5 @@
             border-left: none;
             border-top: 2px dashed rgba(127,127,127,0.3);
         }
+        
     
